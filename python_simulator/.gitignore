@@ -1,3 +1,7 @@
 output.svg
 vegesvgplot.pyc
 
+
+.idea/
+*.db
+
