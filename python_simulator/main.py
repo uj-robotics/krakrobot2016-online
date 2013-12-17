@@ -16,7 +16,9 @@
 # Links:
 # http://forums.udacity.com/questions/1021963/particle-filter-challenge-implement-hallway-robot-with-sonar
 
-# Problems : traversable walls 
+# Problems : traversable walls
+
+VERSION = "0.0.1a"
 
 # TODO: add logger
 
@@ -145,9 +147,9 @@ class Robot:
         return res
 
 
-    #TODO: add sonar here 
+    #TODO: add sonar here
     # http://pastebin.com/GwXCHtS3 ..
-    # Or allow for 2 collisions ? discuss ? 
+    # Or allow for 2 collisions ? discuss ?
     def sense(self):
         """ Returns estimation for position (GPS signal) """
         return [random.gauss(self.x, self.measurement_noise),
@@ -221,7 +223,7 @@ class KrakrobotSimulator(object):
         self.measurement_noise = measurement_noise
         self.robot_path = []
         self.collision = []
-        self.limit_actions = limit_actions        
+        self.limit_actions = limit_actions
         self.grid = grid
         self.N = len(self.grid)
         self.M = len(self.grid[0])
@@ -229,8 +231,8 @@ class KrakrobotSimulator(object):
         else: self.goal = goal
 
     def create_visualisation_descriptor(self):
-        """ 
-            @returns Descriptor that is sufficient to visualize current frame 
+        """
+            @returns Descriptor that is sufficient to visualize current frame
         """
         data = {}
         data['GoalThreshold'] = self.goal_threshold
@@ -273,12 +275,12 @@ class KrakrobotSimulator(object):
                 command = robot_controller.act()
             except  Exception, e:
                 print "Robot controller failed with exception ",e
-                break 
-            
+                break
+
             if command[0] == KrakrobotSimulator.MOVE:
                 robot = robot.move(float(command[1]), self.speed)
                 self.robot_path.append((robot.x, robot.y))
-    
+
         print "Simulation ended after ",robot.num_steps, " steps with goal reached = ",self.check_goal(robot)
 
 
@@ -290,7 +292,6 @@ class KrakrobotSimulator(object):
 #           [0, 1, 0, 1, 0, 0, 0, 0 ,0,0,0,0],
 #           [0, 0, 0, 1, 0, 1, 0 ,0, 0,0,0,0],
 #           [0, 1, 0, 1, 0, 0,0,0,0,0,0,0]]
-# 
 
 
 
@@ -321,7 +322,150 @@ def fill_visualisation_descriptor(Data):
     Data['Map'] = Map
 
 
+#TODO: Extract this code to GUI module
+from PyQt4 import QtGui, QtCore, QtSvg
 
+class SimulatorWindow(QtGui.QWidget):
+    """Parent class for every window used in simulator"""
+
+    def __init__(self):
+        super(SimulatorWindow, self).__init__()
+        self.init_clientwindow_ui()
+
+
+    def init_clientwindow_ui(self):
+        QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
+
+
+
+        ## Qt event triggered while exiting or closing the window
+    def closeEvent(self, event):
+        choice = QtGui.QMessageBox.question (
+            self,
+            "Quit Snkeaky Snake",
+            "Do you want to quit?",
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+            QtGui.QMessageBox.No
+        )
+
+        if choice == QtGui.QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
+
+
+class MainWindow(QtGui.QMainWindow):
+    """Main window (currently everything-in-one)"""
+
+    simulation_view = None
+
+    def __init__(self, svg_bg):
+        super(MainWindow, self).__init__()
+        self.label = QtGui.QLabel(self)
+
+        self._initUI()
+
+
+    def initPainting(self):
+        pass
+        #self.graphics_view = QtGui.QGraphicsView(self.graphics_scene, self)
+
+
+    def _initUI(self):
+        self.simulation_view = SimulationView(self)
+        self.setCentralWidget(self.simulation_view)
+        #self._centerWindow()
+        self.setWindowTitle("Krakrobot Simulator v" + str(VERSION) );
+
+
+    def _centerWindow(self):
+        frame = self.frameGeometry()
+        foo = QtGui.QDesktopWidget().availableGeometry().center()
+        frame.moveCenter(foo)
+        self.move(frame.topLeft())
+
+
+class SimulationView(QtGui.QGraphicsView):
+    """Graphics view for simulation SVG"""
+
+    graphics_scene = None
+    svg_item = None
+    bg_item = None
+    outline_item = None
+
+    def __init__(self, parent):
+        super(SimulationView, self).__init__(parent)
+        self.setScene(QtGui.QGraphicsScene(self))
+
+    def openFile(self, qfile):
+
+        if not qfile.exists():
+            return -1;
+
+        scene = self.scene()
+
+        if self.bg_item:
+            draw_bg = self.sbg_item.isVisible()
+        else:
+            draw_bg = False
+
+        if self.outline_item:
+            draw_outline = self.outline_item.isVisible()
+        else:
+            draw_outline = True
+
+        # Clean graphics
+        scene.clear()
+        self.resetTransform()
+
+        # Load new graphics
+        self.svg_item = QtSvg.QGraphicsSvgItem(qfile.fileName())
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
+        self.svg_item.setZValue(0);
+
+        self.bg_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
+        self.bg_item.setBrush(QtCore.Qt.white);
+        self.bg_item.setPen(QtGui.QPen(QtCore.Qt.NoPen));
+        self.bg_item.setVisible(draw_bg);
+        self.bg_item.setZValue(-1);
+
+        self.outline_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
+        outline = QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.DashLine);
+        outline.setCosmetic(True);
+        self.outline_item.setPen(outline);
+        self.outline_item.setBrush(QtGui.QBrush(QtCore.Qt.NoBrush));
+        self.outline_item.setVisible(draw_outline);
+        self.outline_item.setZValue(1);
+
+        scene.addItem(self.bg_item);
+        scene.addItem(self.svg_item);
+        scene.addItem(self.outline_item);
+
+        scene.setSceneRect(self.outline_item.boundingRect().adjusted(-10, -10, 10, 10));
+
+        self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
+
+
+def initGUI(argv, svg_descriptor):
+    """ Initialize GUI
+    @param argv - program arguments values
+    """
+
+    app = QtGui.QApplication(argv)
+
+    main_window = MainWindow(svg_descriptor)
+    main_window.initPainting()
+    main_window.show()
+    main_window.simulation_view.openFile(QtCore.QFile("output.svg"))
+
+    sys.exit(app.exec_())
+
+
+#NOTE: End of extraction
+
+
+import sys
 def main():
 
     OutputFileName = 'output.svg'
@@ -332,6 +476,7 @@ def main():
             [0, 1, 0, 1, 0, 0],
             [0, 0, 0, 1, 0, 1],
             [0, 1, 0, 1, 0, 0]]
+
     simulator = KrakrobotSimulator(grid, (0, 0))
     forward_controller = ForwardTurningRobotController
     simulator.run(forward_controller)
@@ -347,6 +492,8 @@ def main():
     print 'Saving SVG to "' + OutputFileName + '"...'
     Save(SVG.encode('utf_8'), OutputFileName)
     print 'Done.'
+
+    initGUI(sys.argv, Data)
 
 
 
