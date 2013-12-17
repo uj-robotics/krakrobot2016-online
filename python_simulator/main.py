@@ -25,7 +25,8 @@ from math import (
   floor, ceil, exp
 )
 import random
-from visualisation import *
+from visualisation import RenderToSVG, Save
+from utils import logger
 
 class Robot:
     """ The main class representing robot that can sense and move """
@@ -178,7 +179,7 @@ class Robot:
 
 class RobotController(object):
     """ You have to implement this class """
-    def init(self, starting_position):
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise):
         """ @param starting_position - (x,y) tuple representing current_position """
         raise NotImplementedError()
     def act(self):
@@ -188,17 +189,23 @@ class RobotController(object):
 
 class ForwardTurningRobotController(RobotController):
     """ Exemplary robot controller """
-    def init(self, starting_position):
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise):
         pass
 
     def act(self):
-        return KrakrobotSimulator.MOVE, 0.1
+        return KrakrobotSimulator.MOVE, 0.2
+
+class KrakrobotException(Exception):
+    pass
 
 class KrakrobotSimulator(object):
     MOVE = "move" # (move, steer) -> OK
     SENSE_RADAR = "sense_radar" # (sense_radar) -> ([alpha,dist],[alpha,dist]....)
     SENSE_GPS = "sense_gps" # (sense_gps) -> (x,y)
     SENSE_LIGHT_SENSOR = "sense_light_sensor"  # (sense_light_sensor) -> (field_type)   #TODO: add or erase it ? everytime robot knows the field?
+
+
+
 
     def __init__(self,  grid, init_position, steering_noise=0.1, distance_noise=0.03,
                  measurement_noise=0.3, limit_actions = 100, speed = 0.4, goal=None
@@ -220,7 +227,7 @@ class KrakrobotSimulator(object):
         self.goal_threshold = 0.5 # When to declare goal reach
         self.measurement_noise = measurement_noise
         self.robot_path = []
-        self.collision = []
+        self.collisions = []
         self.limit_actions = limit_actions        
         self.grid = grid
         self.N = len(self.grid)
@@ -234,7 +241,7 @@ class KrakrobotSimulator(object):
         """
         data = {}
         data['GoalThreshold'] = self.goal_threshold
-        data['Sparks'] = list(self.collision)
+        data['Sparks'] = list(self.collisions)
         data['ActualPath'] = list(self.robot_path)
         data['Map'] = self.grid
         data['StartPos'] = self.init_position
@@ -243,12 +250,15 @@ class KrakrobotSimulator(object):
 
     def check_goal(self, robot):
         """ Checks if goal is within threshold distance"""
-        dist =  sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
+        dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
         return dist < self.goal_threshold
 
 
+    #TODO: test
     def reset(self):
+        """ Reset state of the KrakrobotSimulator """
         self.robot_path = []
+        self.collisions = []
 
     def run(self, robot_controller_class):
         """ Runs simulations by quering the robot """
@@ -256,7 +266,7 @@ class KrakrobotSimulator(object):
 
         # Initialize robot controller object given by contestant
         robot_controller = robot_controller_class()
-        robot_controller.init(self.init_position)
+        robot_controller.init(self.init_position, self.steering_noise, self.distance_noise, self.measurement_noise)
 
         # Initialize robot object
         robot = Robot()
@@ -266,21 +276,46 @@ class KrakrobotSimulator(object):
 #               print '##### Collision ####'
 # 
 
+        collision_counter = 0 # We have maximum collision allowed
+        try:
+            while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
+                command = None
+                try:
+                    command = list(robot_controller.act())
+                except Exception, e:
+                    print "Robot controller failed with exception ",e
+                    break
 
-        while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
-            command = None
-            try:
-                command = robot_controller.act()
-            except  Exception, e:
-                print "Robot controller failed with exception ",e
-                break 
-            
-            if command[0] == KrakrobotSimulator.MOVE:
-                robot = robot.move(float(command[1]), self.speed)
-                self.robot_path.append((robot.x, robot.y))
+
+
+                if command[0] == KrakrobotSimulator.MOVE:
+                    # Parse move command
+                    if len(command) <= 1 or len(command) > 3:
+                        raise KrakrobotException("Wrong command length")
+                    if len(command) == 2:
+                        command.append(self.speed)
+                    if command[2] > self.speed:
+                        raise KrakrobotException("Distance exceedes the maximum distance allowed")
+
+                    # Move robot
+                    robot = robot.move(command[1], self.speed)
+                    self.robot_path.append((robot.x, robot.y))
+
+                if not robot.check_collision(self.grid):
+                    collision_counter += 1
+                    self.collisions.append((robot.x, robot.y))
+                    if collision_counter >= 2:
+                        raise KrakrobotException\
+                                ("The robot has been destroyed by electric wall. Sorry! We miss WALLE already..")
+
+
+                else:
+                    collision_counter = 0
+
+        except Exception, e:
+            print "Simulation failed with exception ", e, " after ",robot.num_steps, " steps"
     
-        print "Simulation ended after ",robot.num_steps, " steps with goal reached = ",self.check_goal(robot)
-
+        logger.info("Simulation ended after "+str(robot.num_steps)+ " steps with goal reached = "+str(self.check_goal(robot)))
 
 
 
