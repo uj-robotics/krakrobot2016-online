@@ -1198,7 +1198,7 @@ def DoFunStuff(Data):
   #BStr = u'β%s%g' % (MMSEquals,  Beta)
   #MuStr = u'µ%s%g' % (MMSEquals, Tolerance)
 
-  Data['Title'] = 'Krakrobot Eliminacje, przejazd.."
+  Data['Title'] = 'Krakrobot Eliminacje, przejazd..'
 
   Grid = {
     'CanvasMinima': (0.5, 1.5),
