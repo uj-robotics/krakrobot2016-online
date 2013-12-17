@@ -27,7 +27,10 @@ from math import (
   floor, ceil, exp
 )
 import random
-from visualisation import *
+from visualisation import RenderToSVG, Save
+from utils import logger
+from defines import *
+from robot_controller import *
 
 class Robot:
     """ The main class representing robot that can sense and move """
@@ -77,16 +80,19 @@ class Robot:
         """
         Checks for collisions
         @note: Cannot be called by contestant
+        @returns: True if no collisions
         """
+        # Box based (sharp edges):
+        for i in xrange(len(grid)):
+            for j in xrange(len(grid[0])):
+                # not sure about chained operators..
+                if grid[i][j] == 1 \
+                    and (float(i+1) - SQUARE_SIDE) > self.x > (float(i) - SQUARE_SIDE )\
+                    and (float(j+1) - SQUARE_SIDE) > self.y > (float(j) - SQUARE_SIDE):
 
-        for i in range(len(grid)):
-            for j in range(len(grid[0])):
-                if grid[i][j] == 1:
-                    dist = sqrt((self.x - float(i)) ** 2 +
-                                (self.y - float(j)) ** 2)
-                    if dist < 0.5:
-                        self.num_collisions += 1
-                        return False
+                    self.num_collisions += 1
+                    return False
+
         return True
 
 
@@ -109,6 +115,7 @@ class Robot:
 
         # make a new copy
         res = Robot()
+        # TODO: not add new variables
         res.length            = self.length
         res.steering_noise    = self.steering_noise
         res.distance_noise    = self.distance_noise
@@ -118,7 +125,7 @@ class Robot:
 
         # apply noise
         steering2 = random.gauss(steering, self.steering_noise)
-        distance2 = random.gauss(distance, self.distance_noise)
+        distance2 = random.gauss(distance, self.distance_noise) if distance > 0 else 0.0
 
 
         # Execute motion
@@ -150,8 +157,10 @@ class Robot:
     #TODO: add sonar here
     # http://pastebin.com/GwXCHtS3 ..
     # Or allow for 2 collisions ? discuss ?
-    def sense(self):
+    def sense_gps(self):
         """ Returns estimation for position (GPS signal) """
+        self.num_steps += KrakrobotSimulator.SENSE_GPS
+
         return [random.gauss(self.x, self.measurement_noise),
                 random.gauss(self.y, self.measurement_noise)]
 
@@ -178,29 +187,17 @@ class Robot:
 
 
 
-class RobotController(object):
-    """ You have to implement this class """
-    def init(self, starting_position):
-        """ @param starting_position - (x,y) tuple representing current_position """
-        raise NotImplementedError()
-    def act(self):
-        """ It should return move command """
-        raise NotImplementedError()
+
+class KrakrobotException(Exception):
+    pass
 
 
-class ForwardTurningRobotController(RobotController):
-    """ Exemplary robot controller """
-    def init(self, starting_position):
-        pass
+#TODO: add Java/C++ RobotController classes with TCP server attached
 
-    def act(self):
-        return KrakrobotSimulator.MOVE, 0.1
+
 
 class KrakrobotSimulator(object):
-    MOVE = "move" # (move, steer) -> OK
-    SENSE_RADAR = "sense_radar" # (sense_radar) -> ([alpha,dist],[alpha,dist]....)
-    SENSE_GPS = "sense_gps" # (sense_gps) -> (x,y)
-    SENSE_LIGHT_SENSOR = "sense_light_sensor"  # (sense_light_sensor) -> (field_type)   #TODO: add or erase it ? everytime robot knows the field?
+    COLLISION_THRESHOLD = 50
 
     def __init__(self,  grid, init_position, steering_noise=0.1, distance_noise=0.03,
                  measurement_noise=0.3, limit_actions = 100, speed = 0.4, goal=None
@@ -211,7 +208,7 @@ class KrakrobotSimulator(object):
             @param distance_noise - variance of distance in move
             @param measurement_noise - variance of measurement (GPS??) 
             @param grid - 0/1 matrix representing the maze
-            @param init_position - starting position of the Robot (can be moved to map class)
+            @param init_position - starting position of the Robot (can be moved to map class) [x,y,heading]
             @param limit_actions - maximum number of actions contestant can make
             @param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
         """
@@ -222,9 +219,11 @@ class KrakrobotSimulator(object):
         self.goal_threshold = 0.5 # When to declare goal reach
         self.measurement_noise = measurement_noise
         self.robot_path = []
-        self.collision = []
+        self.collisions = []
         self.limit_actions = limit_actions
         self.grid = grid
+        self.goal_achieved = False
+        self.robot_timer = 0.0
         self.N = len(self.grid)
         self.M = len(self.grid[0])
         if goal is None: self.goal = (self.N - 1, self.M - 1)
@@ -236,21 +235,29 @@ class KrakrobotSimulator(object):
         """
         data = {}
         data['GoalThreshold'] = self.goal_threshold
-        data['Sparks'] = list(self.collision)
+        data['Sparks'] = list(self.collisions)
         data['ActualPath'] = list(self.robot_path)
         data['Map'] = self.grid
         data['StartPos'] = self.init_position
         data['GoalPos'] = self.goal
+        data['GoalAchieved'] = self.goal_achieved
         return data
 
     def check_goal(self, robot):
         """ Checks if goal is within threshold distance"""
-        dist =  sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
+        dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
         return dist < self.goal_threshold
 
 
+    #TODO: test
     def reset(self):
+        """ Reset state of the KrakrobotSimulator """
         self.robot_path = []
+        self.collisions = []
+        self.goal_achieved = False
+        self.robot_timer = 0.0
+
+
 
     def run(self, robot_controller_class):
         """ Runs simulations by quering the robot """
@@ -258,7 +265,7 @@ class KrakrobotSimulator(object):
 
         # Initialize robot controller object given by contestant
         robot_controller = robot_controller_class()
-        robot_controller.init(self.init_position)
+        robot_controller.init(self.init_position, self.steering_noise, self.distance_noise, self.measurement_noise)
 
         # Initialize robot object
         robot = Robot()
@@ -268,22 +275,58 @@ class KrakrobotSimulator(object):
 #               print '##### Collision ####'
 # 
 
+        robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
+        robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise)
+        self.robot_path.append((robot.x, robot.y))
+        collision_counter = 0 # We have maximum collision allowed
+        try:
+            while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
+                #print robot.x, robot.y, robot.orientation
 
-        while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
-            command = None
-            try:
-                command = robot_controller.act()
-            except  Exception, e:
-                print "Robot controller failed with exception ",e
-                break
+                command = None
+                try:
+                    command = list(robot_controller.act())
+                except Exception, e:
+                    logger.error("Robot controller failed with exception " + str(e))
+                    break
 
-            if command[0] == KrakrobotSimulator.MOVE:
-                robot = robot.move(float(command[1]), self.speed)
-                self.robot_path.append((robot.x, robot.y))
+                if not command or len(command) == 0:
+                    raise KrakrobotException("No command passed, or zero length command passed")
 
-        print "Simulation ended after ",robot.num_steps, " steps with goal reached = ",self.check_goal(robot)
+                if command[0] == SENSE_GPS:
+                    robot_controller.on_sense(SENSE_GPS, robot.sense_gps())
+                elif command[0] == SENSE_SONAR:
+                    robot_controller.on_sense(SENSE_SONAR, 0.0)
+                elif command[0] == MOVE:
+                    # Parse move command
+                    if len(command) <= 1 or len(command) > 3:
+                        raise KrakrobotException("Wrong command length")
+                    if len(command) == 2:
+                        command.append(self.speed)
+                    if command[2] > self.speed:
+                        raise KrakrobotException("Distance exceedes the maximum distance allowed")
+
+                    # Move robot
+                    robot_proposed = robot.move(command[1], self.speed)
 
 
+                    if not robot_proposed.check_collision(self.grid):
+                        print "##Collision##"
+                        collision_counter += 1
+                        self.collisions.append((robot_proposed.x, robot_proposed.y))
+                        if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
+                            raise KrakrobotException\
+                                    ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
+                    else:
+                        print robot_proposed.x, robot_proposed.y
+                        robot = robot_proposed
+                        self.robot_path.append((robot.x, robot.y))
+
+        except Exception, e:
+            logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.num_steps)+ " steps")
+    
+        logger.info("Simulation ended after "+str(robot.num_steps)+ " steps with goal reached = "+str(self.check_goal(robot)))
+        self.goal_achieved = self.check_goal(robot)
 
 
 
@@ -471,16 +514,13 @@ def main():
     OutputFileName = 'output.svg'
 
     print 'Driving a car through a maze...'
-    grid = [[0, 1, 0, 0, 0, 0],
-            [0, 1, 0, 1, 1, 0],
-            [0, 1, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0, 1],
-            [0, 1, 0, 1, 0, 0]]
-
-    simulator = KrakrobotSimulator(grid, (0, 0))
-    forward_controller = ForwardTurningRobotController
-    simulator.run(forward_controller)
-
+    grid = [[1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 1, 1, 1],
+            [1, 1, 0, 1, 0, 1],
+            [1, 0, 0, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1]]
+    simulator = KrakrobotSimulator(grid, (1, 1, 0))
+    simulator.run(OmitCollisions)
 
     Data = simulator.create_visualisation_descriptor()
     fill_visualisation_descriptor(Data)
