@@ -367,6 +367,7 @@ def fill_visualisation_descriptor(Data):
 
 #TODO: Extract this code to GUI module
 from PyQt4 import QtGui, QtCore, QtSvg
+from threading import Thread
 
 class SimulatorWindow(QtGui.QWidget):
     """Parent class for every window used in simulator"""
@@ -490,14 +491,31 @@ class SimulationView(QtGui.QGraphicsView):
         self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
 
 
-def initGUI(argv, svg_descriptor):
+def startGUI(argv, simulator):
     """ Initialize GUI
     @param argv - program arguments values
     """
+    #NOTE: This part should be placed in non-graphic application aswell
+    simulator_thread = Thread(target=simulator.run, args=(OmitCollisions,))
+    simulator_thread.start()
+
+    sim_data = simulator.create_visualisation_descriptor()
+    fill_visualisation_descriptor(sim_data)
+
+    print 'Rendering SVG...'
+    SVG = RenderToSVG(sim_data)
+    print 'Done.'
+
+    OutputFileName = 'output.svg'
+    print 'Saving SVG to "' + OutputFileName + '"...'
+    Save(SVG.encode('utf_8'), OutputFileName)
+    print 'Done.'
+    #NOTE: end
+
 
     app = QtGui.QApplication(argv)
 
-    main_window = MainWindow(svg_descriptor)
+    main_window = MainWindow(sim_data)
     main_window.initPainting()
     main_window.show()
     main_window.simulation_view.openFile(QtCore.QFile("output.svg"))
@@ -505,13 +523,11 @@ def initGUI(argv, svg_descriptor):
     sys.exit(app.exec_())
 
 
-#NOTE: End of extraction
+#NOTE: End of future extraction
 
 
 import sys
 def main():
-
-    OutputFileName = 'output.svg'
 
     print 'Driving a car through a maze...'
     grid = [[1, 1, 1, 1, 1, 1],
@@ -520,20 +536,11 @@ def main():
             [1, 0, 0, 1, 0, 1],
             [1, 1, 1, 1, 1, 1]]
     simulator = KrakrobotSimulator(grid, (1, 1, 0))
-    simulator.run(OmitCollisions)
 
-    Data = simulator.create_visualisation_descriptor()
-    fill_visualisation_descriptor(Data)
+    #simulator.run(OmitCollisions)
 
-    print 'Rendering SVG...'
-    SVG = RenderToSVG(Data)
-    print 'Done.'
 
-    print 'Saving SVG to "' + OutputFileName + '"...'
-    Save(SVG.encode('utf_8'), OutputFileName)
-    print 'Done.'
-
-    initGUI(sys.argv, Data)
+    startGUI(sys.argv, simulator)
 
 
 
