@@ -46,6 +46,7 @@ class Robot:
         self.length = length
         self.steering_noise    = 0.0
         self.distance_noise    = 0.0
+        self.sonar_noise = 0.0
         self.measurement_noise = 0.0
         self.num_collisions    = 0
         self.num_steps         = 0
@@ -64,7 +65,7 @@ class Robot:
 
 
     #TODO: extract from this class
-    def set_noise(self, new_s_noise, new_d_noise, new_m_noise):
+    def set_noise(self, new_s_noise, new_d_noise, new_m_noise, new_sonar_noise):
         """
         Set noise parameter
         @note: Cannot be called by contestant
@@ -74,6 +75,7 @@ class Robot:
         self.steering_noise     = float(new_s_noise)
         self.distance_noise    = float(new_d_noise)
         self.measurement_noise = float(new_m_noise)
+        self.sonar_noise = float(new_sonar_noise)
 
     #TODO: extract from this class
     def check_collision(self, grid):
@@ -120,6 +122,7 @@ class Robot:
         res.steering_noise    = self.steering_noise
         res.distance_noise    = self.distance_noise
         res.measurement_noise = self.measurement_noise
+        res.sonar_noise = self.sonar_noise
         res.num_collisions    = self.num_collisions
         res.num_steps         = self.num_steps + 1
 
@@ -164,7 +167,15 @@ class Robot:
         return [random.gauss(self.x, self.measurement_noise),
                 random.gauss(self.y, self.measurement_noise)]
 
+    def sense_sonar(self):
+        """ Returns distance to wall """
+        # check y
+        # check x
+        # find minimum over y, than x
+        x_disc, y_disc = int(self.x - SQUARE_SIDE/2.0), int(self.y - SQUARE_SIDE/2.0)
 
+
+        return 0.0
 
     def measurement_prob(self, measurement):
         # compute errors
@@ -199,7 +210,7 @@ class KrakrobotException(Exception):
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self,  grid, init_position, steering_noise=0.1, distance_noise=0.03,
+    def __init__(self,  grid, init_position, steering_noise=0.1, sonar_noise = 0.1, distance_noise=0.03,
                  measurement_noise=0.3, limit_actions = 100, speed = 0.4, goal=None
                  ):
         """ 
@@ -213,6 +224,7 @@ class KrakrobotSimulator(object):
             @param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
         """
         self.steering_noise    = steering_noise
+        self.sonar_noise = sonar_noise
         self.init_position = tuple(init_position)
         self.speed = speed
         self.distance_noise    = distance_noise
@@ -223,6 +235,7 @@ class KrakrobotSimulator(object):
         self.limit_actions = limit_actions
         self.grid = grid
         self.goal_achieved = False
+        self.frames = []
         self.robot_timer = 0.0
         self.N = len(self.grid)
         self.M = len(self.grid[0])
@@ -243,6 +256,13 @@ class KrakrobotSimulator(object):
         data['GoalAchieved'] = self.goal_achieved
         return data
 
+
+    def get_visualisation_descriptor(self, i):
+        """
+            @returns i-th frame descriptor
+        """
+        return self.frames[i]
+
     def check_goal(self, robot):
         """ Checks if goal is within threshold distance"""
         dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
@@ -256,6 +276,7 @@ class KrakrobotSimulator(object):
         self.collisions = []
         self.goal_achieved = False
         self.robot_timer = 0.0
+        self.frames = []
 
 
 
@@ -276,7 +297,7 @@ class KrakrobotSimulator(object):
 # 
 
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
-        robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise)
+        robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise, self.sonar_noise)
         self.robot_path.append((robot.x, robot.y))
         collision_counter = 0 # We have maximum collision allowed
         try:
@@ -321,6 +342,8 @@ class KrakrobotSimulator(object):
                         print robot_proposed.x, robot_proposed.y
                         robot = robot_proposed
                         self.robot_path.append((robot.x, robot.y))
+
+                self.frames.append(self.create_visualisation_descriptor())
 
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.num_steps)+ " steps")
