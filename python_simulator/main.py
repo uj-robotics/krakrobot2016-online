@@ -83,18 +83,14 @@ class Robot:
         # Box based (sharp edges):
         for i in xrange(len(grid)):
             for j in xrange(len(grid[0])):
-                if grid[i][j] == 1 and float(i+1) > self.x > float(i) and float(j+1) > self.y > float(j):
+                # not sure about chained operators..
+                if grid[i][j] == 1 \
+                    and (float(i+1) - SQUARE_SIDE) > self.x > (float(i) - SQUARE_SIDE )\
+                    and (float(j+1) - SQUARE_SIDE) > self.y > (float(j) - SQUARE_SIDE):
+
+                    self.num_collisions += 1
                     return False
 
-        # Spherical
-        #for i in range(len(grid)):
-        #    for j in range(len(grid[0])):
-        #        if grid[i][j] == 1:
-        #            dist = sqrt((self.x - float(i)) ** 2 +
-        #                        (self.y - float(j)) ** 2)
-        #            if dist < 0.5:
-        #                self.num_collisions += 1
-        #                return False
         return True
 
 
@@ -117,6 +113,7 @@ class Robot:
 
         # make a new copy
         res = Robot()
+        # TODO: not add new variables
         res.length            = self.length
         res.steering_noise    = self.steering_noise
         res.distance_noise    = self.distance_noise
@@ -126,7 +123,7 @@ class Robot:
 
         # apply noise
         steering2 = random.gauss(steering, self.steering_noise)
-        distance2 = random.gauss(distance, self.distance_noise)
+        distance2 = random.gauss(distance, self.distance_noise) if distance > 0 else 0.0
 
 
         # Execute motion
@@ -289,8 +286,9 @@ class KrakrobotSimulator(object):
                     raise KrakrobotException("No command passed, or zero length command passed")
 
                 if command[0] == SENSE_GPS:
-                    robot_controller.on_sense([SENSE_GPS] + robot.sense_gps())
-
+                    robot_controller.on_sense(SENSE_GPS, robot.sense_gps())
+                elif command[0] == SENSE_SONAR:
+                    robot_controller.on_sense(SENSE_SONAR, 0.0)
                 elif command[0] == MOVE:
                     # Parse move command
                     if len(command) <= 1 or len(command) > 3:
@@ -310,8 +308,9 @@ class KrakrobotSimulator(object):
                         self.collisions.append((robot_proposed.x, robot_proposed.y))
                         if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
                             raise KrakrobotException\
-                                    ("The robot has been destroyed by electric wall. Sorry! We miss WALLE already..")
+                                    ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
                     else:
+                        print robot_proposed.x, robot_proposed.y
                         robot = robot_proposed
                         self.robot_path.append((robot.x, robot.y))
 
@@ -371,8 +370,7 @@ def main():
             [1, 0, 0, 1, 0, 1],
             [1, 1, 1, 1, 1, 1]]
     simulator = KrakrobotSimulator(grid, (1, 1, 0))
-    forward_controller = ForwardTurningRobotController
-    simulator.run(forward_controller)
+    simulator.run(OmitCollisions)
 
 
     Data = simulator.create_visualisation_descriptor()
