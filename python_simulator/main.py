@@ -17,6 +17,7 @@
 # http://forums.udacity.com/questions/1021963/particle-filter-challenge-implement-hallway-robot-with-sonar
 
 # Problems : traversable walls
+from sklearn.ensemble._gradient_boosting import np_bool
 
 VERSION = "0.0.1a"
 
@@ -26,6 +27,7 @@ from math import (
   pi, sqrt, hypot, sin, cos, tan, asin, acos, atan, atan2, radians, degrees,
   floor, ceil, exp
 )
+import numpy as np
 import random
 from visualisation import RenderToSVG, Save
 from utils import logger
@@ -178,18 +180,15 @@ class Robot:
                 random.gauss(self.y, self.measurement_noise)]
 
     def sense_sonar(self, grid):
-        """ Returns distance to wall """
-        # check y
-        # check x
-        # find minimum over y, than x
-        # TODO: add 128bit precision here after making work for 32bit precision
-
-        tolerane_angle = 1e-6
-        tolerance_a = 1e-5
+        """
+        Returns distance to wall using 128bit precision floats
+        """
+        tolerance_a = np.float128(1e-5)
+        max_a = np.float128(1e4)
         found = False
 
         def is_hit(x, y):
-            tolerance_xy = 1e-1 # will check nearby
+            tolerance_xy = np.float128(1e-4) # will check nearby
             exact_hit = grid[int(x)][int(y)] == 1
             hit_right = int(x) < (len(grid)-1) and grid[int(x)+1][int(y)] == 1 and (x - int(x)) > (SQUARE_SIDE-tolerance_xy)
             hit_left = int(x) > 0 and grid[int(x)-1][int(y)] == 1 and (x - int(x)) < tolerance_xy
@@ -198,72 +197,63 @@ class Robot:
             return exact_hit or hit_right or hit_left or hit_top or hit_bottom
 
 
-        # check special case when alpha is very close to pi/2 or 3pi/2
+        x_min_col, y_min_col = [np.float128(0), np.float128(0), np.float128(1e100)], [np.float128(0), np.float128(0),
+                                                                                      np.float128(1e100)]
 
-        if abs(self.orientation - pi/2.0) < tolerane_angle or abs(self.orientation - 3*pi/2.0) < tolerane_angle:
-            raise NotImplementedError()
-
-        x_min_col, y_min_col = [0, 0, 1e100], [0, 0, 1e100]
-
-        x, y = (self.x + SQUARE_SIDE/2.0), (self.y + SQUARE_SIDE/2.0)
+        x, y = np.float128(self.x + SQUARE_SIDE/2.0), np.float128((self.y + SQUARE_SIDE/2.0))
         logger.info(("robot:",x," ",y," ",self.orientation))
         x_disc, y_disc = int(x), int(y)
 
-        orient_x = cos(self.orientation)
-        orient_y = sin(self.orientation)
-        a = tan(self.orientation)
-        b = y - a*x
+        orient_x = np.float128(np.cos(np.float128(self.orientation)))
+        orient_y = np.float128(np.sin(np.float128(self.orientation)))
+        a = np.float128(np.tan(np.float128(self.orientation)))
+        b = np.float128(y - a*x)
 
         logger.info(("A=", a," B=", b))
 
         # Find collisions with x walls
         for i in xrange(0, len(grid)):
 
-            cross_x, cross_y = float(i)+1e-10, a*(float(i)+1e-10) + b
+            if a > max_a:
+                cross_x, cross_y = np.float128(float(i)+1e-10), np.float128(self.y)
+            else:
+                cross_x, cross_y = np.float128(float(i)+1e-10), np.float128(a*(float(i)+1e-10) + b)
 
             if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
                 continue
 
 
-            diff_x, diff_y = cross_x - x, cross_y-y
-            #print "Crosses on ",cross_x," ",cross_y
+            diff_x, diff_y = np.float128(cross_x - x), np.float128(cross_y-y)
             if orient_x*diff_x + orient_y*diff_y > 0:
-                # problem with accuracy here..
                 if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < x_min_col[2]:
                     x_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
                     found = True
-                    #print "Collision on ", x_min_col
 
         # Find collisions with y walls
         for i in xrange(0, len(grid[0])):
 
             if abs(a) > tolerance_a:
-                cross_x, cross_y = (float(i)+1e-10 - b)/a, float(i)+1e-10
+                cross_x, cross_y = np.float128((float(i)+np.float128(1e-10) - b)/a), \
+                                   np.float128(float(i)+1e-10)
             else:
-                cross_x, cross_y = self.x, float(i)+1e-10
+                cross_x, cross_y = np.float128(self.x), np.float128(float(i)+1e-10)
 
 
             if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
                 continue
 
 
-            diff_x, diff_y = cross_x - x, cross_y - y
-            #print "Crosses on ",cross_x," ",cross_y
+            diff_x, diff_y = np.float128(cross_x - x), np.float128(cross_y - y)
             if orient_x*diff_x + orient_y*diff_y > 0:
-                #print "Correct orientation"
-                #problem with accuracy here....
                 if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < y_min_col[2]:
                     y_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
                     found = True
-                    #print "Collision on ", x_min_col
 
         if not found:
             raise KrakrobotException("Something went wrong with sonar - not found wall! Note: boundary should be walled")
 
 
-        logger.info(( x_min_col," ",y_min_col ))
-
-        return sqrt(min(x_min_col[2], y_min_col[2]))
+        return float(sqrt(min(x_min_col[2], y_min_col[2])))
 
     def measurement_prob(self, measurement):
         # compute errors
