@@ -270,20 +270,24 @@ class SimulationRenderThread(QtCore.QThread):
             time.sleep(1)
 
         i = 0
+        rendered_frames = 1
         svg_data = None
 
         try:
             while True:
-                while len(self.simulator.frames) <= 0:
+                while len(self.simulator.frames) <= rendered_frames:
                     #print "... NO FRAMES"
                     time.sleep(0.5)
 
-                time.sleep(0.125) #TODO: Parametrize
 
-                self.sim_data = self.simulator.get_visualisation_descriptor(i)
+
+                time.sleep(0.01) #TODO: Parametrize
+
+                self.sim_data = self.simulator.get_visualisation_descriptor(rendered_frames)
                 fill_visualisation_descriptor(self.sim_data)
 
                 svg_data = RenderToSVG(self.sim_data)
+                rendered_frames += 1
 
                 self.parent.update(svg_data)
 
