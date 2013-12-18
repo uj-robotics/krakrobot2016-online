@@ -29,7 +29,6 @@ from math import (
 )
 import numpy as np
 import random
-from threading import Thread
 from utils import logger
 
 from visualisation import RenderToSVG, Save
@@ -235,17 +234,80 @@ def fill_visualisation_descriptor(Data):
 
 
 #TODO: Extract this code to GUI module
+import time
+from threading import Thread
+import mutex
+
 from PyQt4 import QtGui, QtCore, QtSvg
 
-import time
+
+class SimulationQThread(QtCore.QThread):
+    """QThread running KrakrobotSimulator"""
+
+    def __init__(self, simulator):
+        super(SimulationQThread, self).__init__()
+        self.simulator = simulator
+
+    def run(self):
+        self.simulator.run(OmitCollisions)
+        self.exec_()
+
+
+class SimulationRenderThread(QtCore.QThread):
+    """QThread running SVG rendering for parent SimulationGraphicsView"""
+
+    def __init__(self, simulator, parent):
+        super(SimulationRenderThread, self).__init__()
+        self.simulator = simulator
+        self.parent = parent
+
+
+    def run(self):
+        self.simulation_process_thread = SimulationQThread(self.simulator)
+        self.simulation_process_thread.start()
+
+        while not QtGui.QApplication.instance():
+            time.sleep(1)
+
+        i = 0
+        svg_data = None
+
+        try:
+            while True:
+                while len(self.simulator.frames) <= 0:
+                    #print "... NO FRAMES"
+                    time.sleep(0.5)
+
+                time.sleep(0.125) #TODO: Parametrize
+
+                self.sim_data = self.simulator.get_visualisation_descriptor(i)
+                fill_visualisation_descriptor(self.sim_data)
+
+                svg_data = RenderToSVG(self.sim_data)
+
+                self.parent.update(svg_data)
+
+                i += 1
+
+
+        except IndexError:
+            print 'Done painting.'
+
+        if svg_data:
+            OutputFileName = 'output.svg'
+            print 'Saving SVG to "' + OutputFileName + '"...'
+            Save(svg_data.encode('utf_8'), OutputFileName)
+            print 'Saved.'
+
+        self.exec_()
 
 
 class SimulationGraphicsView(QtGui.QGraphicsView):
-
+    """QGraphicsView viewing SVG rendered from QSvgRenderer with QXmlStreamReader"""
 
     def __init__(self, simulator, parent):
         super(SimulationGraphicsView, self).__init__(parent)
-        self.simulator = simulator
+        self.simulation_render_thread = SimulationRenderThread(simulator, self)
         self._init_ui()
 
 
@@ -260,56 +322,13 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.setDragMode(self.ScrollHandDrag)
         self.setViewportUpdateMode(self.FullViewportUpdate)
 
-        scene = self.scene()
-
-        # Clean graphics
-        #scene.clear()
-        #self.resetTransform()
-
 
     def run_simulation(self):
-        self.simulator_thread = Thread(target=self.simulator.run, args=(OmitCollisions,))
-        self.simulator_thread.start()
-        self.sim_data = self.simulator.create_visualisation_descriptor()
-        fill_visualisation_descriptor(self.sim_data)
-
-        #time.sleep(1)
-        i = 0
-
-        try:
-            while True:
-                self.sim_data = self.simulator.get_visualisation_descriptor(i)
-                fill_visualisation_descriptor(self.sim_data)
-                #print self.sim_data
-
-                print 'Rendering SVG...'
-                SVG = RenderToSVG(self.sim_data)
-
-                # GUI Case
-                print "xml_stream_reader.addData(SVG)"
-                #self.xml_stream_reader.addData(SVG)
-                self.update(SVG)
-                #self.xml_stream_reader = QtCore.QXmlStreamReader(SVG)
-
-                time.sleep(0.1)
-                i += 1
-
-
-        except IndexError:
-            print 'Done painting.'
-
-        OutputFileName = 'output.svg'
-        print 'Saving SVG to "' + OutputFileName + '"...'
-        Save(SVG.encode('utf_8'), OutputFileName)
-        print 'Done.'
+        self.simulation_render_thread.start()
 
 
     def update(self, svg_data):
-        print "Opening stream"
         self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
-
-        #if event.timerId() != self.timer.timerId():
-        #    super(SimulationView, self).timerEvent(event)
 
         scene = self.scene()
 
@@ -323,19 +342,13 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         else:
             draw_outline = True
 
-        # Clean graphics
-        #scene.clear()
-        #self.resetTransform()
-
         # Load new graphics
-        print "Creating QGraphicsSvgItem"
         self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
         self.svg_item = QtSvg.QGraphicsSvgItem()
         self.svg_item.setSharedRenderer(self.svg_renderer)
         self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
         self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
         self.svg_item.setZValue(0);
-        print "Created"
 
         self.outline_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
         outline = QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.DashLine);
@@ -345,27 +358,32 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.outline_item.setVisible(draw_outline);
         self.outline_item.setZValue(1);
 
-        scene.addItem(self.bg_item);
         scene.addItem(self.svg_item);
         scene.addItem(self.outline_item);
 
         scene.setSceneRect(self.outline_item.boundingRect().adjusted(-10, -10, 10, 10));
-        self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
+        parent = self.parent()
 
 
 
 class MainWindow(QtGui.QMainWindow):
-    """Main window (currently everything-in-one window)"""
+    """Main window (all-in-one window)"""
 
     def __init__(self, simulator):
         super(MainWindow, self).__init__()
+        self.simulation_thread = None
         self._init_ui(simulator)
 
 
     def _init_ui(self, simulator):
         self.simulation_view = SimulationGraphicsView(simulator, self)
         self.setCentralWidget(self.simulation_view)
-        self.setWindowTitle("Krakrobot Simulator v" + str(VERSION) )
+        self.setWindowTitle('Krakrobot Simulator v' + str(VERSION) )
+
+        #Toolbar
+        main_toolbar = self.addToolBar('Krakrobot Simulator')
+        start_sim_action = main_toolbar.addAction('Start Sim')
+        start_sim_action.triggered.connect(self.run_simulation)
 
 
     def run_simulation(self):
@@ -381,7 +399,10 @@ class SimulatorGUI(object):
 
     def __init__(self, argv, simulator):
         """ Initialize GUI
+
         @param argv - program arguments values
+        @param simulator - KrakrobotSimulator object
+
         """
         self.simulator = simulator
         self.qt_app = QtGui.QApplication(argv)
@@ -389,11 +410,7 @@ class SimulatorGUI(object):
 
     def run(self):
         main_window = MainWindow(self.simulator)
-        main_window.show()
-
-        simulation_thread = Thread(target=main_window.run_simulation)
-        simulation_thread.start()
-        #main_window.run_simulation()
+        main_window.showMaximized()
 
         sys.exit(self.qt_app.exec_())
 
@@ -414,11 +431,8 @@ def main():
 
     #simulator.run(OmitCollisions)
 
-
     gui = SimulatorGUI(sys.argv, simulator)
     gui.run()
-
-
 
 
 if __name__ == '__main__':
