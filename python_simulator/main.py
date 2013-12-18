@@ -84,13 +84,14 @@ class Robot:
         @note: Cannot be called by contestant
         @returns: True if no collisions
         """
+        print "Checking collisions ",self.x, " ",self.y," ", self.orientation
         # Box based (sharp edges):
         for i in xrange(len(grid)):
             for j in xrange(len(grid[0])):
                 # not sure about chained operators..
                 if grid[i][j] == 1 \
-                    and (float(i+1) - SQUARE_SIDE) > self.x > (float(i) - SQUARE_SIDE )\
-                    and (float(j+1) - SQUARE_SIDE) > self.y > (float(j) - SQUARE_SIDE):
+                    and (float(i+1) - SQUARE_SIDE/2.0) > self.x > (float(i) - SQUARE_SIDE/2.0)\
+                    and (float(j+1) - SQUARE_SIDE/2.0) > self.y > (float(j) - SQUARE_SIDE/2.0):
 
                     self.num_collisions += 1
                     return False
@@ -98,7 +99,7 @@ class Robot:
         return True
 
 
-    #TODO: collision resolution? by distance thresholding? probably a good idea. So let threshold = a/2.0 (a - thickness of maze wall)
+
     def move(self,  steering, distance, tolerance = 0.001, max_steering_angle = pi / 4.0):
         """ 
         Move the robot using bicycle model from Udacity class.
@@ -130,26 +131,34 @@ class Robot:
         steering2 = random.gauss(steering, self.steering_noise)
         distance2 = random.gauss(distance, self.distance_noise) if distance > 0 else 0.0
 
+        print "Rotating by ",steering2, " with distance2=",distance2, " Wanted ",steering2, " ",distance2
 
-        # Execute motion
-        turn = tan(steering2) * distance2 / res.length
+        if distance > 0.0:
+            # Execute motion
+            turn = tan(steering2) * distance2 / res.length
 
-        if abs(turn) < tolerance:
+            if abs(turn) < tolerance:
 
-            # approximate by straight line motion
+                # approximate by straight line motion
 
-            res.x = self.x + (distance2 * cos(self.orientation))
-            res.y = self.y + (distance2 * sin(self.orientation))
-            res.orientation = (self.orientation + turn) % (2.0 * pi)
+                res.x = self.x + (distance2 * cos(self.orientation))
+                res.y = self.y + (distance2 * sin(self.orientation))
+                res.orientation = (self.orientation + turn) % (2.0 * pi)
 
+            else:
+                # approximate bicycle model for motion
+                radius = distance2 / turn
+                cx = self.x - (sin(self.orientation) * radius)
+                cy = self.y + (cos(self.orientation) * radius)
+                res.orientation = (self.orientation + turn) % (2.0 * pi)
+                res.x = cx + (sin(res.orientation) * radius)
+                res.y = cy - (cos(res.orientation) * radius)
         else:
-            # approximate bicycle model for motion
-            radius = distance2 / turn
-            cx = self.x - (sin(self.orientation) * radius)
-            cy = self.y + (cos(self.orientation) * radius)
-            res.orientation = (self.orientation + turn) % (2.0 * pi)
-            res.x = cx + (sin(res.orientation) * radius)
-            res.y = cy - (cos(res.orientation) * radius)
+            # Rotational only move
+            print "Rotating"
+            res.x = self.x #TODO: add noise?
+            res.y = self.y #TODO: add noise?
+            res.orientation = (self.orientation + steering2) % (2.0 * pi)
 
         # check for collision
         # res.check_collision(grid)
@@ -167,15 +176,76 @@ class Robot:
         return [random.gauss(self.x, self.measurement_noise),
                 random.gauss(self.y, self.measurement_noise)]
 
-    def sense_sonar(self):
+    def sense_sonar(self, grid):
         """ Returns distance to wall """
         # check y
         # check x
         # find minimum over y, than x
-        x_disc, y_disc = int(self.x - SQUARE_SIDE/2.0), int(self.y - SQUARE_SIDE/2.0)
+        tolerane_angle = 1e-6
+        found = False
+
+        # check special case when alpha is very close to pi/2 or 3pi/2
+
+        if abs(self.orientation - pi/2.0) < tolerane_angle or abs(self.orientation - 3*pi/2.0) < tolerane_angle:
+            raise NotImplementedError()
+
+        x_min_col, y_min_col = [0, 0, 1e100], [0, 0, 1e100]
+
+        x, y = (self.x + SQUARE_SIDE/2.0), (self.y + SQUARE_SIDE/2.0)
+        logger.info(("robot:",x," ",y," ",self.orientation))
+        x_disc, y_disc = int(x), int(y)
+
+        orient_x = cos(self.orientation)
+        orient_y = sin(self.orientation)
+        a = tan(self.orientation)
+        b = y - a*x
+
+        logger.info(("A=", a," B=", b))
+
+        # Find collisions with x walls
+        for i in xrange(0, len(grid)):
+
+            cross_x, cross_y = float(i)+1e-10, a*(float(i)+1e-10) + b
+
+            if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
+                continue
 
 
-        return 0.0
+            diff_x, diff_y = cross_x - x, cross_y-y
+            #print "Crosses on ",cross_x," ",cross_y
+            if orient_x*diff_x + orient_y*diff_y > 0:
+                #print "Correct orientation"
+                if grid[int(cross_x)][int(cross_y)] == 1 and (diff_x**2 + diff_y**2) < x_min_col[2]:
+                    x_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
+                    found = True
+                    #print "Collision on ", x_min_col
+
+        # Find collisions with y walls
+        if abs(self.orientation) > tolerane_angle and abs(self.orientation - pi) > tolerane_angle:
+            for i in xrange(0, len(grid[0])):
+
+                cross_x, cross_y = (float(i)+1e-10 - b)/a, float(i)+1e-10
+
+                if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
+                    continue
+
+
+                diff_x, diff_y = cross_x - x, cross_y-y
+                #print "Crosses on ",cross_x," ",cross_y
+                if orient_x*diff_x + orient_y*diff_y > 0:
+                    #print "Correct orientation"
+                    if grid[int(cross_x)][int(cross_y)] == 1 and (diff_x**2 + diff_y**2) < y_min_col[2]:
+                        y_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
+                        found = True
+                        #print "Collision on ", x_min_col
+
+        if not found:
+            raise KrakrobotException("Something went wrong with sonar - not found wall! Note: boundary should be walled")
+
+
+        logger.info(( x_min_col," ",y_min_col ))
+
+        return sqrt(min(x_min_col[2], y_min_col[2]))
 
     def measurement_prob(self, measurement):
         # compute errors
@@ -291,10 +361,7 @@ class KrakrobotSimulator(object):
         # Initialize robot object
         robot = Robot()
 
-#           if not myrobot.check_collision(grid):
-#               Data['Sparks'].append((myrobot.x, myrobot.y))
-#               print '##### Collision ####'
-# 
+
 
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise, self.sonar_noise)
@@ -302,7 +369,6 @@ class KrakrobotSimulator(object):
         collision_counter = 0 # We have maximum collision allowed
         try:
             while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
-                #print robot.x, robot.y, robot.orientation
 
                 command = None
                 try:
@@ -310,16 +376,17 @@ class KrakrobotSimulator(object):
                 except Exception, e:
                     logger.error("Robot controller failed with exception " + str(e))
                     break
-
+                logger.info("Received command "+str(command))
                 if not command or len(command) == 0:
                     raise KrakrobotException("No command passed, or zero length command passed")
 
                 if command[0] == SENSE_GPS:
                     robot_controller.on_sense(SENSE_GPS, robot.sense_gps())
                 elif command[0] == SENSE_SONAR:
-                    robot_controller.on_sense(SENSE_SONAR, 0.0)
+                    robot_controller.on_sense(SENSE_SONAR, robot.sense_sonar(self.grid))
                 elif command[0] == MOVE:
                     # Parse move command
+
                     if len(command) <= 1 or len(command) > 3:
                         raise KrakrobotException("Wrong command length")
                     if len(command) == 2:
@@ -328,13 +395,13 @@ class KrakrobotSimulator(object):
                         raise KrakrobotException("Distance exceedes the maximum distance allowed")
 
                     # Move robot
-                    robot_proposed = robot.move(command[1], self.speed)
+                    robot_proposed = robot.move(command[1], command[2])
 
 
                     if not robot_proposed.check_collision(self.grid):
-                        print "##Collision##"
                         collision_counter += 1
                         self.collisions.append((robot_proposed.x, robot_proposed.y))
+                        print "##Collision##"
                         if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
                             raise KrakrobotException\
                                     ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
