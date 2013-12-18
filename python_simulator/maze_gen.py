@@ -16,11 +16,21 @@ def create_parser():
 
 import json
 def load_map(file_path):
+    """ Loads map and encodes it as a grid (TODO: change class to map) """
     lines = [l.strip('\n') for l in open(file_path, "r")]
     params = json.loads("{"+lines.pop(0)+"}")
     print params
-    for row in lines:
+    # Read map
+    grid = [[0]*params["M"] for i in xrange(params["N"])]
+    for x in xrange(params["N"]):
+        row = lines.pop(0)
         print row
+        for y in xrange(params["M"]):
+            grid[x][y] = int(row[y])
+    print grid
+    # Read special fields
+    for k in xrange(params["K"]):
+        pass
 
 
 if __name__ == "__main__":
