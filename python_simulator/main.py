@@ -134,8 +134,6 @@ class KrakrobotSimulator(object):
         # Initialize robot object
         robot = Robot()
 
-
-
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise, self.sonar_noise)
         self.robot_path.append((robot.x, robot.y))
@@ -152,7 +150,7 @@ class KrakrobotSimulator(object):
                 logger.info("Received command "+str(command))
                 if not command or len(command) == 0:
                     raise KrakrobotException("No command passed, or zero length command passed")
-
+ut
                 # Dispatch command
                 if command[0] == SENSE_GPS:
                     robot_controller.on_sense_gps(robot.sense_gps())
