@@ -38,7 +38,6 @@ from robot import Robot
 
 
 
-
 class KrakrobotException(Exception):
     pass
 
@@ -52,8 +51,7 @@ class KrakrobotSimulator(object):
 
     def __init__(self,  grid, init_position, steering_noise=0.1, sonar_noise = 0.1, distance_noise=0.03,
                  measurement_noise=0.3, limit_actions = 100, speed = 0.4, execution_time_limit = 1.0,
-                 collision_threshold = 50,
-                 goal=None
+                 collision_threshold = 50
                  ):
         """ 
             Initialize KrakrobotSimulator object 
@@ -85,8 +83,10 @@ class KrakrobotSimulator(object):
         self.robot_timer = 0.0
         self.N = len(self.grid)
         self.M = len(self.grid[0])
-        if goal is None: self.goal = (self.N - 1, self.M - 1)
-        else: self.goal = goal
+        for i in xrange(self.N):
+            for j in xrange(self.M):
+                if self.grid[i][j] == MAP_GOAL:
+                    self.goal = (i,j)
 
     def create_visualisation_descriptor(self):
         """
@@ -134,8 +134,6 @@ class KrakrobotSimulator(object):
 
         # Initialize robot object
         robot = Robot()
-
-
 
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise, self.sonar_noise)
@@ -426,7 +424,7 @@ def main():
     print 'Driving a car through a maze...'
     grid = [[1, 1, 1, 1, 1, 1],
             [1, 0, 0, 1, 1, 1],
-            [1, 1, 0, 1, 0, 1],
+            [1, 1, 0, 1, MAP_GOAL, 1],
             [1, 0, 0, 1, 0, 1],
             [1, 1, 1, 1, 1, 1]]
     simulator = KrakrobotSimulator(grid, (1, 1, 0))

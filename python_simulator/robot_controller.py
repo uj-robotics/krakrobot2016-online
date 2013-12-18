@@ -62,7 +62,7 @@ class OmitCollisions(RobotController):
         return self.command_queue.pop()
 
     def on_sense_sonar(self, distance):
-        if distance < 0.2:
+        if distance < 0.4:
             self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
         else:
             self.phase = OmitCollisions.STATE_FORWARD
