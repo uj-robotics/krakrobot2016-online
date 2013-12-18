@@ -27,8 +27,10 @@ from math import (
   floor, ceil, exp
 )
 import random
-from visualisation import RenderToSVG, Save
+from threading import Thread
 from utils import logger
+
+from visualisation import RenderToSVG, Save
 from defines import *
 from robot_controller import *
 
@@ -390,7 +392,6 @@ def fill_visualisation_descriptor(Data):
 
 #TODO: Extract this code to GUI module
 from PyQt4 import QtGui, QtCore, QtSvg
-from threading import Thread
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -438,16 +439,16 @@ class SimulationView(QtGui.QGraphicsView):
 
 
     def openStream(self, qxmlstreamreader):
-        svg_renderer = QtSvg.QSvgRenderer(xml_stream)
-        main_window.simulation_view.svg_item = QtSvg.QGraphicsSvgItem()
-        main_window.simulation_view.svg_item.setSharedRenderer(svg_renderer)
-        main_window.simulation_view.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
-        main_window.simulation_view.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
-        main_window.simulation_view.svg_item.setZValue(0);
-        main_window.simulation_view.scene().clear()
-        main_window.simulation_view.resetTransform()
-        main_window.simulation_view.scene().addItem(main_window.simulation_view.svg_item);
-        main_window.resize(main_window.simulation_view.sizeHint() + QtCore.QSize(80, 80) )
+        svg_renderer = QtSvg.QSvgRenderer(qxmlstreamreader)
+        self.svg_item = QtSvg.QGraphicsSvgItem()
+        self.svg_item.setSharedRenderer(svg_renderer)
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
+        self.svg_item.setZValue(0);
+        self.scene().clear()
+        self.resetTransform()
+        self.scene().addItem(self.svg_item);
+        self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
 
 
     def openFile(self, qfile):
@@ -500,19 +501,22 @@ class SimulationView(QtGui.QGraphicsView):
         self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
 
 
-class SimulatorApp(object):
+class SimulatorApp(Thread):
     """Application (text or GUI) master class"""
 
     simulator = None
     simulator_thread = None
     sim_data = None
     xml_stream_reader = QtCore.QXmlStreamReader()
+    main_window = None
 
-    def __init__(self, simulator):
+    def __init__(self, simulator, main_window=None):
+        Thread.__init__(self, name="SimulatorApp")
         self.simulator = simulator
+        self.main_window = main_window
 
 
-    def run(self, main_window=None):
+    def run(self):
         self.simulator_thread = Thread(target=self.simulator.run, args=(OmitCollisions,))
         self.simulator_thread.start()
         self.sim_data = self.simulator.create_visualisation_descriptor()
@@ -529,29 +533,32 @@ class SimulatorApp(object):
 
                 print 'Rendering SVG...'
                 SVG = RenderToSVG(self.sim_data)
-                #print 'Done.'
-                #OutputFileName = 'output.svg'
-                #print 'Saving SVG to "' + OutputFileName + '"...'
-                #Save(SVG.encode('utf_8'), OutputFileName)
-                #print 'Done.'
-
-                fill_visualisation_descriptor(self.sim_data)
 
                 # GUI Case
-                if main_window:
+                if self.main_window:
+                    print "STREAM"
                     xml_stream = QtCore.QXmlStreamReader(SVG)
+                    self.main_window.simulation_view.openStream(xml_stream)
 
-
-                time.sleep(0.25)
+                time.sleep(0.1)
                 i += 1
+
+
         except IndexError:
             print 'Done painting.'
+
+        OutputFileName = 'output.svg'
+        print 'Saving SVG to "' + OutputFileName + '"...'
+        Save(SVG.encode('utf_8'), OutputFileName)
+        print 'Done.'
+
 
 
 import time
 class SimulatorGUI(SimulatorApp):
     """GUI master class"""
 
+    simulator = None
     application = None
     qt_app = None
 
@@ -559,7 +566,7 @@ class SimulatorGUI(SimulatorApp):
         """ Initialize GUI
         @param argv - program arguments values
         """
-        self.application = SimulatorApp(simulator)
+        self.simulator = simulator
         self.qt_app = QtGui.QApplication(argv)
 
 
@@ -570,8 +577,8 @@ class SimulatorGUI(SimulatorApp):
         main_window.show()
         #main_window.simulation_view.openFile(QtCore.QFile("output.svg"))
 
-        self.application_thread = Thread(target=self.application.run, args=(main_window,))
-        self.application_thread.start()
+        self.application = SimulatorApp(self.simulator, main_window)
+        self.application.start()
 
         sys.exit(self.qt_app.exec_())
 
