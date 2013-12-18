@@ -29,8 +29,10 @@ from math import (
 )
 import numpy as np
 import random
-from visualisation import RenderToSVG, Save
+from threading import Thread
 from utils import logger
+
+from visualisation import RenderToSVG, Save
 from defines import *
 from robot_controller import *
 from robot import Robot
@@ -235,87 +237,84 @@ def fill_visualisation_descriptor(Data):
 #TODO: Extract this code to GUI module
 from PyQt4 import QtGui, QtCore, QtSvg
 
-class SimulatorWindow(QtGui.QWidget):
-    """Parent class for every window used in simulator"""
-
-    def __init__(self):
-        super(SimulatorWindow, self).__init__()
-        self.init_clientwindow_ui()
+import time
 
 
-    def init_clientwindow_ui(self):
-        QtGui.QToolTip.setFont(QtGui.QFont('SansSerif', 10))
+class SimulationGraphicsView(QtGui.QGraphicsView):
 
 
-
-        ## Qt event triggered while exiting or closing the window
-    def closeEvent(self, event):
-        choice = QtGui.QMessageBox.question (
-            self,
-            "Quit Snkeaky Snake",
-            "Do you want to quit?",
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
-            QtGui.QMessageBox.No
-        )
-
-        if choice == QtGui.QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
+    def __init__(self, simulator, parent):
+        super(SimulationGraphicsView, self).__init__(parent)
+        self.simulator = simulator
+        self._init_ui()
 
 
-class MainWindow(QtGui.QMainWindow):
-    """Main window (currently everything-in-one)"""
+    def _init_ui(self):
+        self.svg_item = QtSvg.QGraphicsSvgItem()
+        self.bg_item = QtGui.QGraphicsRectItem()
+        self.outline_item = QtGui.QGraphicsRectItem()
 
-    simulation_view = None
-
-    def __init__(self, svg_bg):
-        super(MainWindow, self).__init__()
-        self.label = QtGui.QLabel(self)
-
-        self._initUI()
-
-
-    def initPainting(self):
-        pass
-        #self.graphics_view = QtGui.QGraphicsView(self.graphics_scene, self)
-
-
-    def _initUI(self):
-        self.simulation_view = SimulationView(self)
-        self.setCentralWidget(self.simulation_view)
-        #self._centerWindow()
-        self.setWindowTitle("Krakrobot Simulator v" + str(VERSION) );
-
-
-    def _centerWindow(self):
-        frame = self.frameGeometry()
-        foo = QtGui.QDesktopWidget().availableGeometry().center()
-        frame.moveCenter(foo)
-        self.move(frame.topLeft())
-
-
-class SimulationView(QtGui.QGraphicsView):
-    """Graphics view for simulation SVG"""
-
-    graphics_scene = None
-    svg_item = None
-    bg_item = None
-    outline_item = None
-
-    def __init__(self, parent):
-        super(SimulationView, self).__init__(parent)
+        # Settings #
         self.setScene(QtGui.QGraphicsScene(self))
+        self.setTransformationAnchor(self.AnchorUnderMouse)
+        self.setDragMode(self.ScrollHandDrag)
+        self.setViewportUpdateMode(self.FullViewportUpdate)
 
-    def openFile(self, qfile):
+        scene = self.scene()
 
-        if not qfile.exists():
-            return -1;
+        # Clean graphics
+        #scene.clear()
+        #self.resetTransform()
+
+
+    def run_simulation(self):
+        self.simulator_thread = Thread(target=self.simulator.run, args=(OmitCollisions,))
+        self.simulator_thread.start()
+        self.sim_data = self.simulator.create_visualisation_descriptor()
+        fill_visualisation_descriptor(self.sim_data)
+
+        #time.sleep(1)
+        i = 0
+
+        try:
+            while True:
+                self.sim_data = self.simulator.get_visualisation_descriptor(i)
+                fill_visualisation_descriptor(self.sim_data)
+                #print self.sim_data
+
+                print 'Rendering SVG...'
+                SVG = RenderToSVG(self.sim_data)
+
+                # GUI Case
+                print "xml_stream_reader.addData(SVG)"
+                #self.xml_stream_reader.addData(SVG)
+                self.update(SVG)
+                #self.xml_stream_reader = QtCore.QXmlStreamReader(SVG)
+
+                time.sleep(0.1)
+                i += 1
+
+
+        except IndexError:
+            print 'Done painting.'
+
+        OutputFileName = 'output.svg'
+        print 'Saving SVG to "' + OutputFileName + '"...'
+        Save(SVG.encode('utf_8'), OutputFileName)
+        print 'Done.'
+
+
+    def update(self, svg_data):
+        print "Opening stream"
+        self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
+
+        #if event.timerId() != self.timer.timerId():
+        #    super(SimulationView, self).timerEvent(event)
 
         scene = self.scene()
 
         if self.bg_item:
-            draw_bg = self.sbg_item.isVisible()
+            draw_bg = self.bg_item.isVisible()
         else:
             draw_bg = False
 
@@ -325,20 +324,18 @@ class SimulationView(QtGui.QGraphicsView):
             draw_outline = True
 
         # Clean graphics
-        scene.clear()
-        self.resetTransform()
+        #scene.clear()
+        #self.resetTransform()
 
         # Load new graphics
-        self.svg_item = QtSvg.QGraphicsSvgItem(qfile.fileName())
+        print "Creating QGraphicsSvgItem"
+        self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
+        self.svg_item = QtSvg.QGraphicsSvgItem()
+        self.svg_item.setSharedRenderer(self.svg_renderer)
         self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
         self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
         self.svg_item.setZValue(0);
-
-        self.bg_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
-        self.bg_item.setBrush(QtCore.Qt.white);
-        self.bg_item.setPen(QtGui.QPen(QtCore.Qt.NoPen));
-        self.bg_item.setVisible(draw_bg);
-        self.bg_item.setZValue(-1);
+        print "Created"
 
         self.outline_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
         outline = QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.DashLine);
@@ -353,32 +350,59 @@ class SimulationView(QtGui.QGraphicsView):
         scene.addItem(self.outline_item);
 
         scene.setSceneRect(self.outline_item.boundingRect().adjusted(-10, -10, 10, 10));
-
         self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
 
 
-def initGUI(argv, svg_descriptor):
-    """ Initialize GUI
-    @param argv - program arguments values
-    """
 
-    app = QtGui.QApplication(argv)
+class MainWindow(QtGui.QMainWindow):
+    """Main window (currently everything-in-one window)"""
 
-    main_window = MainWindow(svg_descriptor)
-    main_window.initPainting()
-    main_window.show()
-    main_window.simulation_view.openFile(QtCore.QFile("output.svg"))
-
-    sys.exit(app.exec_())
+    def __init__(self, simulator):
+        super(MainWindow, self).__init__()
+        self._init_ui(simulator)
 
 
-#NOTE: End of extraction
+    def _init_ui(self, simulator):
+        self.simulation_view = SimulationGraphicsView(simulator, self)
+        self.setCentralWidget(self.simulation_view)
+        self.setWindowTitle("Krakrobot Simulator v" + str(VERSION) )
+
+
+    def run_simulation(self):
+        self.simulation_view.run_simulation()
+
+
+class SimulatorGUI(object):
+    """GUI master class"""
+
+    simulator = None
+    application_thread = None
+    qt_app = None
+
+    def __init__(self, argv, simulator):
+        """ Initialize GUI
+        @param argv - program arguments values
+        """
+        self.simulator = simulator
+        self.qt_app = QtGui.QApplication(argv)
+
+
+    def run(self):
+        main_window = MainWindow(self.simulator)
+        main_window.show()
+
+        simulation_thread = Thread(target=main_window.run_simulation)
+        simulation_thread.start()
+        #main_window.run_simulation()
+
+        sys.exit(self.qt_app.exec_())
+
+
+#NOTE: End of future extraction
 
 
 import sys
 def main():
-
-    OutputFileName = 'output.svg'
 
     print 'Driving a car through a maze...'
     grid = [[1, 1, 1, 1, 1, 1],
@@ -387,20 +411,12 @@ def main():
             [1, 0, 0, 1, 0, 1],
             [1, 1, 1, 1, 1, 1]]
     simulator = KrakrobotSimulator(grid, (1, 1, 0))
-    simulator.run(OmitCollisions)
 
-    Data = simulator.create_visualisation_descriptor()
-    fill_visualisation_descriptor(Data)
+    #simulator.run(OmitCollisions)
 
-    print 'Rendering SVG...'
-    SVG = RenderToSVG(Data)
-    print 'Done.'
 
-    print 'Saving SVG to "' + OutputFileName + '"...'
-    Save(SVG.encode('utf_8'), OutputFileName)
-    print 'Done.'
-
-    initGUI(sys.argv, Data)
+    gui = SimulatorGUI(sys.argv, simulator)
+    gui.run()
 
 
 
