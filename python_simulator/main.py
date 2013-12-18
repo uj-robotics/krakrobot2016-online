@@ -17,6 +17,7 @@
 # http://forums.udacity.com/questions/1021963/particle-filter-challenge-implement-hallway-robot-with-sonar
 
 # Problems : traversable walls
+from sklearn.ensemble._gradient_boosting import np_bool
 
 VERSION = "0.0.1a"
 
@@ -26,6 +27,7 @@ from math import (
   pi, sqrt, hypot, sin, cos, tan, asin, acos, atan, atan2, radians, degrees,
   floor, ceil, exp
 )
+import numpy as np
 import random
 from threading import Thread
 from utils import logger
@@ -33,170 +35,7 @@ from utils import logger
 from visualisation import RenderToSVG, Save
 from defines import *
 from robot_controller import *
-
-class Robot:
-    """ The main class representing robot that can sense and move """
-
-    def __init__(self, length = 0.5):
-        """
-        Initialize robot    
-        """
-
-        self.x = 0.0
-        self.y = 0.0
-        self.orientation = 0.0
-        self.length = length
-        self.steering_noise    = 0.0
-        self.distance_noise    = 0.0
-        self.sonar_noise = 0.0
-        self.measurement_noise = 0.0
-        self.num_collisions    = 0
-        self.num_steps         = 0
-
-    
-    #TODO: extract  
-    def set(self, new_x, new_y, new_orientation):
-        """
-        Set robot position
-        @note: Cannot be called by contestant
-        """
-
-        self.x = float(new_x)
-        self.y = float(new_y)
-        self.orientation = float(new_orientation) % (2.0 * pi)
-
-
-    #TODO: extract from this class
-    def set_noise(self, new_s_noise, new_d_noise, new_m_noise, new_sonar_noise):
-        """
-        Set noise parameter
-        @note: Cannot be called by contestant
-        """
-        # makes it possible to change the noise parameters
-        # this is often useful in particle filters
-        self.steering_noise     = float(new_s_noise)
-        self.distance_noise    = float(new_d_noise)
-        self.measurement_noise = float(new_m_noise)
-        self.sonar_noise = float(new_sonar_noise)
-
-    #TODO: extract from this class
-    def check_collision(self, grid):
-        """
-        Checks for collisions
-        @note: Cannot be called by contestant
-        @returns: True if no collisions
-        """
-        # Box based (sharp edges):
-        for i in xrange(len(grid)):
-            for j in xrange(len(grid[0])):
-                # not sure about chained operators..
-                if grid[i][j] == 1 \
-                    and (float(i+1) - SQUARE_SIDE) > self.x > (float(i) - SQUARE_SIDE )\
-                    and (float(j+1) - SQUARE_SIDE) > self.y > (float(j) - SQUARE_SIDE):
-
-                    self.num_collisions += 1
-                    return False
-
-        return True
-
-
-    #TODO: collision resolution? by distance thresholding? probably a good idea. So let threshold = a/2.0 (a - thickness of maze wall)
-    def move(self,  steering, distance, tolerance = 0.001, max_steering_angle = pi / 4.0):
-        """ 
-        Move the robot using bicycle model from Udacity class.
-        @param steering front wheel steering angle
-        @param distance distance to be driven
-        """
-
-
-        if steering > max_steering_angle:
-            steering = max_steering_angle
-        if steering < -max_steering_angle:
-            steering = -max_steering_angle
-        if distance < 0.0:
-            distance = 0.0
-
-
-        # make a new copy
-        res = Robot()
-        # TODO: not add new variables
-        res.length            = self.length
-        res.steering_noise    = self.steering_noise
-        res.distance_noise    = self.distance_noise
-        res.measurement_noise = self.measurement_noise
-        res.sonar_noise = self.sonar_noise
-        res.num_collisions    = self.num_collisions
-        res.num_steps         = self.num_steps + 1
-
-        # apply noise
-        steering2 = random.gauss(steering, self.steering_noise)
-        distance2 = random.gauss(distance, self.distance_noise) if distance > 0 else 0.0
-
-
-        # Execute motion
-        turn = tan(steering2) * distance2 / res.length
-
-        if abs(turn) < tolerance:
-
-            # approximate by straight line motion
-
-            res.x = self.x + (distance2 * cos(self.orientation))
-            res.y = self.y + (distance2 * sin(self.orientation))
-            res.orientation = (self.orientation + turn) % (2.0 * pi)
-
-        else:
-            # approximate bicycle model for motion
-            radius = distance2 / turn
-            cx = self.x - (sin(self.orientation) * radius)
-            cy = self.y + (cos(self.orientation) * radius)
-            res.orientation = (self.orientation + turn) % (2.0 * pi)
-            res.x = cx + (sin(res.orientation) * radius)
-            res.y = cy - (cos(res.orientation) * radius)
-
-        # check for collision
-        # res.check_collision(grid)
-
-        return res
-
-
-    #TODO: add sonar here
-    # http://pastebin.com/GwXCHtS3 ..
-    # Or allow for 2 collisions ? discuss ?
-    def sense_gps(self):
-        """ Returns estimation for position (GPS signal) """
-        self.num_steps += KrakrobotSimulator.SENSE_GPS
-
-        return [random.gauss(self.x, self.measurement_noise),
-                random.gauss(self.y, self.measurement_noise)]
-
-    def sense_sonar(self):
-        """ Returns distance to wall """
-        # check y
-        # check x
-        # find minimum over y, than x
-        x_disc, y_disc = int(self.x - SQUARE_SIDE/2.0), int(self.y - SQUARE_SIDE/2.0)
-
-
-        return 0.0
-
-    def measurement_prob(self, measurement):
-        # compute errors
-        error_x = measurement[0] - self.x
-        error_y = measurement[1] - self.y
-
-        # calculate Gaussian
-        error = exp(- (error_x ** 2) / (self.measurement_noise ** 2) / 2.0) \
-            / sqrt(2.0 * pi * (self.measurement_noise ** 2))
-        error *= exp(- (error_y ** 2) / (self.measurement_noise ** 2) / 2.0) \
-            / sqrt(2.0 * pi * (self.measurement_noise ** 2))
-
-        return error
-
-
-
-    def __repr__(self):
-        # return '[x=%.5f y=%.5f orient=%.5f]'  % (self.x, self.y, self.orientation)
-        return '[%.5f, %.5f]'  % (self.x, self.y)
+from robot import Robot
 
 
 
@@ -213,7 +52,9 @@ class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
     def __init__(self,  grid, init_position, steering_noise=0.1, sonar_noise = 0.1, distance_noise=0.03,
-                 measurement_noise=0.3, limit_actions = 100, speed = 0.4, goal=None
+                 measurement_noise=0.3, limit_actions = 100, speed = 0.4, execution_time_limit = 1.0,
+                 collision_threshold = 50,
+                 goal=None
                  ):
         """ 
             Initialize KrakrobotSimulator object 
@@ -224,11 +65,15 @@ class KrakrobotSimulator(object):
             @param init_position - starting position of the Robot (can be moved to map class) [x,y,heading]
             @param limit_actions - maximum number of actions contestant can make
             @param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
+            @param execution_time_limit - limit in ms for whole robot execution (also with init)
+            @param collision_threshold - maximum number of collisions after which robot is destroyed
         """
         self.steering_noise    = steering_noise
+        self.collision_threshold = collision_threshold
         self.sonar_noise = sonar_noise
         self.init_position = tuple(init_position)
         self.speed = speed
+        self.execution_time_limit = execution_time_limit
         self.distance_noise    = distance_noise
         self.goal_threshold = 0.5 # When to declare goal reach
         self.measurement_noise = measurement_noise
@@ -280,8 +125,6 @@ class KrakrobotSimulator(object):
         self.robot_timer = 0.0
         self.frames = []
 
-
-
     def run(self, robot_controller_class):
         """ Runs simulations by quering the robot """
         self.reset()
@@ -293,10 +136,7 @@ class KrakrobotSimulator(object):
         # Initialize robot object
         robot = Robot()
 
-#           if not myrobot.check_collision(grid):
-#               Data['Sparks'].append((myrobot.x, myrobot.y))
-#               print '##### Collision ####'
-# 
+
 
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise, self.sonar_noise)
@@ -304,24 +144,29 @@ class KrakrobotSimulator(object):
         collision_counter = 0 # We have maximum collision allowed
         try:
             while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
-                #print robot.x, robot.y, robot.orientation
-
+                # Get command
                 command = None
                 try:
                     command = list(robot_controller.act())
                 except Exception, e:
                     logger.error("Robot controller failed with exception " + str(e))
                     break
-
+                logger.info("Received command "+str(command))
                 if not command or len(command) == 0:
                     raise KrakrobotException("No command passed, or zero length command passed")
 
+                # Dispatch command
                 if command[0] == SENSE_GPS:
-                    robot_controller.on_sense(SENSE_GPS, robot.sense_gps())
+                    robot_controller.on_sense_gps(robot.sense_gps())
                 elif command[0] == SENSE_SONAR:
-                    robot_controller.on_sense(SENSE_SONAR, 0.0)
+                    w = robot.sense_sonar(self.grid)
+                    logger.info("Sensed sonar : "+str(w))
+                    robot_controller.on_sense_sonar(w)
+                elif command[0] == SENSE_FIELD:
+                    w = robot.sense_field(self.grid)
+                    if w == MAP_WHITE or w == MAP_WALL: robot_controller.on_sense_field(w, 0)
+                    else: robot_controller.on_sense_field(w[0], w[1])
                 elif command[0] == MOVE:
-                    # Parse move command
                     if len(command) <= 1 or len(command) > 3:
                         raise KrakrobotException("Wrong command length")
                     if len(command) == 2:
@@ -330,13 +175,13 @@ class KrakrobotSimulator(object):
                         raise KrakrobotException("Distance exceedes the maximum distance allowed")
 
                     # Move robot
-                    robot_proposed = robot.move(command[1], self.speed)
+                    robot_proposed = robot.move(command[1], command[2])
 
 
                     if not robot_proposed.check_collision(self.grid):
-                        print "##Collision##"
                         collision_counter += 1
                         self.collisions.append((robot_proposed.x, robot_proposed.y))
+                        logger.error("##Collision##")
                         if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
                             raise KrakrobotException\
                                     ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
@@ -345,6 +190,7 @@ class KrakrobotSimulator(object):
                         robot = robot_proposed
                         self.robot_path.append((robot.x, robot.y))
 
+                # Save simulation frame descriptor for visualisation
                 self.frames.append(self.create_visualisation_descriptor())
 
         except Exception, e:
