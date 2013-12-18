@@ -393,152 +393,59 @@ def fill_visualisation_descriptor(Data):
 #TODO: Extract this code to GUI module
 from PyQt4 import QtGui, QtCore, QtSvg
 
-
-class MainWindow(QtGui.QMainWindow):
-    """Main window (currently everything-in-one)"""
-
-    simulation_view = None
-
-    def __init__(self, svg_bg):
-        super(MainWindow, self).__init__()
-        self.label = QtGui.QLabel(self)
-
-        self._initUI()
+import time
 
 
-    def initPainting(self):
-        pass
-        #self.graphics_view = QtGui.QGraphicsView(self.graphics_scene, self)
+class SimulationGraphicsView(QtGui.QGraphicsView):
 
 
-    def _initUI(self):
-        self.simulation_view = SimulationView(self)
-        self.setCentralWidget(self.simulation_view)
-        self.setWindowTitle("Krakrobot Simulator v" + str(VERSION) );
+    def __init__(self, simulator, parent):
+        super(SimulationGraphicsView, self).__init__(parent)
+        self.simulator = simulator
+        self._init_ui()
 
 
-    def _centerWindow(self):
-        frame = self.frameGeometry()
-        foo = QtGui.QDesktopWidget().availableGeometry().center()
-        frame.moveCenter(foo)
-        self.move(frame.topLeft())
-
-
-class SimulationView(QtGui.QGraphicsView):
-    """Graphics view for simulation SVG"""
-
-    graphics_scene = None
-    svg_item = None
-    bg_item = None
-    outline_item = None
-
-
-    def __init__(self, parent):
-        super(SimulationView, self).__init__(parent)
-        self.setScene(QtGui.QGraphicsScene(self))
-
-
-    def openStream(self, qxmlstreamreader):
-        svg_renderer = QtSvg.QSvgRenderer(qxmlstreamreader)
+    def _init_ui(self):
         self.svg_item = QtSvg.QGraphicsSvgItem()
-        self.svg_item.setSharedRenderer(svg_renderer)
-        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
-        self.svg_item.setZValue(0);
-        self.scene().clear()
-        self.resetTransform()
-        self.scene().addItem(self.svg_item);
-        self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
+        self.bg_item = QtGui.QGraphicsRectItem()
+        self.outline_item = QtGui.QGraphicsRectItem()
 
-
-    def openFile(self, qfile):
-
-        if not qfile.exists():
-            return -1;
+        # Settings #
+        self.setScene(QtGui.QGraphicsScene(self))
+        self.setTransformationAnchor(self.AnchorUnderMouse)
+        self.setDragMode(self.ScrollHandDrag)
+        self.setViewportUpdateMode(self.FullViewportUpdate)
 
         scene = self.scene()
 
-        if self.bg_item:
-            draw_bg = self.bg_item.isVisible()
-        else:
-            draw_bg = False
-
-        if self.outline_item:
-            draw_outline = self.outline_item.isVisible()
-        else:
-            draw_outline = True
-
         # Clean graphics
-        scene.clear()
-        self.resetTransform()
-
-        # Load new graphics
-        self.svg_item = QtSvg.QGraphicsSvgItem(qfile.fileName())
-        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
-        self.svg_item.setZValue(0);
-
-        self.bg_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
-        self.bg_item.setBrush(QtCore.Qt.white);
-        self.bg_item.setPen(QtGui.QPen(QtCore.Qt.NoPen));
-        self.bg_item.setVisible(draw_bg);
-        self.bg_item.setZValue(-1);
-
-        self.outline_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
-        outline = QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.DashLine);
-        outline.setCosmetic(True);
-        self.outline_item.setPen(outline);
-        self.outline_item.setBrush(QtGui.QBrush(QtCore.Qt.NoBrush));
-        self.outline_item.setVisible(draw_outline);
-        self.outline_item.setZValue(1);
-
-        scene.addItem(self.bg_item);
-        scene.addItem(self.svg_item);
-        scene.addItem(self.outline_item);
-
-        scene.setSceneRect(self.outline_item.boundingRect().adjusted(-10, -10, 10, 10));
-
-        self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
+        #scene.clear()
+        #self.resetTransform()
 
 
-class SimulatorApp(Thread):
-    """Application (text or GUI) master class"""
-
-    simulator = None
-    simulator_thread = None
-    sim_data = None
-    xml_stream_reader = QtCore.QXmlStreamReader()
-    main_window = None
-
-    def __init__(self, simulator, main_window=None):
-        Thread.__init__(self, name="SimulatorApp")
-        self.simulator = simulator
-        self.main_window = main_window
-
-
-    def run(self):
+    def run_simulation(self):
         self.simulator_thread = Thread(target=self.simulator.run, args=(OmitCollisions,))
         self.simulator_thread.start()
         self.sim_data = self.simulator.create_visualisation_descriptor()
         fill_visualisation_descriptor(self.sim_data)
 
-        time.sleep(1)
+        #time.sleep(1)
         i = 0
 
         try:
             while True:
                 self.sim_data = self.simulator.get_visualisation_descriptor(i)
                 fill_visualisation_descriptor(self.sim_data)
-                print self.sim_data
+                #print self.sim_data
 
                 print 'Rendering SVG...'
                 SVG = RenderToSVG(self.sim_data)
 
                 # GUI Case
-                if self.main_window:
-                    print "STREAM"
-                    xml_stream = QtCore.QXmlStreamReader(SVG)
-                    self.main_window.simulation_view.openStream(xml_stream)
+                print "xml_stream_reader.addData(SVG)"
+                #self.xml_stream_reader.addData(SVG)
+                self.update(SVG)
+                #self.xml_stream_reader = QtCore.QXmlStreamReader(SVG)
 
                 time.sleep(0.1)
                 i += 1
@@ -553,13 +460,79 @@ class SimulatorApp(Thread):
         print 'Done.'
 
 
+    def update(self, svg_data):
+        print "Opening stream"
+        self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
 
-import time
-class SimulatorGUI(SimulatorApp):
+        #if event.timerId() != self.timer.timerId():
+        #    super(SimulationView, self).timerEvent(event)
+
+        scene = self.scene()
+
+        if self.bg_item:
+            draw_bg = self.bg_item.isVisible()
+        else:
+            draw_bg = False
+
+        if self.outline_item:
+            draw_outline = self.outline_item.isVisible()
+        else:
+            draw_outline = True
+
+        # Clean graphics
+        #scene.clear()
+        #self.resetTransform()
+
+        # Load new graphics
+        print "Creating QGraphicsSvgItem"
+        self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
+        self.svg_item = QtSvg.QGraphicsSvgItem()
+        self.svg_item.setSharedRenderer(self.svg_renderer)
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
+        self.svg_item.setZValue(0);
+        print "Created"
+
+        self.outline_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
+        outline = QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.DashLine);
+        outline.setCosmetic(True);
+        self.outline_item.setPen(outline);
+        self.outline_item.setBrush(QtGui.QBrush(QtCore.Qt.NoBrush));
+        self.outline_item.setVisible(draw_outline);
+        self.outline_item.setZValue(1);
+
+        scene.addItem(self.bg_item);
+        scene.addItem(self.svg_item);
+        scene.addItem(self.outline_item);
+
+        scene.setSceneRect(self.outline_item.boundingRect().adjusted(-10, -10, 10, 10));
+        self.parent().resize(self.sizeHint() + QtCore.QSize(80, 80) )
+
+
+
+class MainWindow(QtGui.QMainWindow):
+    """Main window (currently everything-in-one window)"""
+
+    def __init__(self, simulator):
+        super(MainWindow, self).__init__()
+        self._init_ui(simulator)
+
+
+    def _init_ui(self, simulator):
+        self.simulation_view = SimulationGraphicsView(simulator, self)
+        self.setCentralWidget(self.simulation_view)
+        self.setWindowTitle("Krakrobot Simulator v" + str(VERSION) )
+
+
+    def run_simulation(self):
+        self.simulation_view.run_simulation()
+
+
+class SimulatorGUI(object):
     """GUI master class"""
 
     simulator = None
-    application = None
+    application_thread = None
     qt_app = None
 
     def __init__(self, argv, simulator):
@@ -571,17 +544,14 @@ class SimulatorGUI(SimulatorApp):
 
 
     def run(self):
-
-        main_window = MainWindow(self.sim_data)
-        main_window.initPainting()
+        main_window = MainWindow(self.simulator)
         main_window.show()
-        #main_window.simulation_view.openFile(QtCore.QFile("output.svg"))
 
-        self.application = SimulatorApp(self.simulator, main_window)
-        self.application.start()
+        simulation_thread = Thread(target=main_window.run_simulation)
+        simulation_thread.start()
+        #main_window.run_simulation()
 
         sys.exit(self.qt_app.exec_())
-
 
 
 #NOTE: End of future extraction
