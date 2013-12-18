@@ -48,8 +48,7 @@ class OmitCollisions(RobotController):
         return self.command_queue.pop()
 
     def on_sense(self, sensor, reading):
-        print "Received reading ",reading
-        if reading < 0.6:
+        if reading < 0.2:
             self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
         else:
             self.phase = OmitCollisions.STATE_FORWARD

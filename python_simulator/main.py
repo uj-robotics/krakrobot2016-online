@@ -40,7 +40,8 @@ class Robot:
         Initialize robot    
         """
 
-        self.x = 0.0
+        self.x = 0
+        .0
         self.y = 0.0
         self.orientation = 0.0
         self.length = length
@@ -181,8 +182,21 @@ class Robot:
         # check y
         # check x
         # find minimum over y, than x
+        # TODO: add 128bit precision here after making work for 32bit precision
+
         tolerane_angle = 1e-6
+        tolerance_a = 1e-5
         found = False
+
+        def is_hit(x, y):
+            tolerance_xy = 1e-1 # will check nearby
+            exact_hit = grid[int(x)][int(y)] == 1
+            hit_right = int(x) < (len(grid)-1) and grid[int(x)+1][int(y)] == 1 and (x - int(x)) > (SQUARE_SIDE-tolerance_xy)
+            hit_left = int(x) > 0 and grid[int(x)-1][int(y)] == 1 and (x - int(x)) < tolerance_xy
+            hit_top = int(y) < (len(grid[0])-1) and grid[int(x)][int(y)+1] == 1 and (y - int(y)) > (SQUARE_SIDE-tolerance_xy)
+            hit_bottom = int(y) > 0 and grid[int(x)][int(y)-1] == 1 and (y - int(y)) < tolerance_xy
+            return exact_hit or hit_right or hit_left or hit_top or hit_bottom
+
 
         # check special case when alpha is very close to pi/2 or 3pi/2
 
@@ -214,30 +228,34 @@ class Robot:
             diff_x, diff_y = cross_x - x, cross_y-y
             #print "Crosses on ",cross_x," ",cross_y
             if orient_x*diff_x + orient_y*diff_y > 0:
-                #print "Correct orientation"
-                if grid[int(cross_x)][int(cross_y)] == 1 and (diff_x**2 + diff_y**2) < x_min_col[2]:
+                # problem with accuracy here..
+                if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < x_min_col[2]:
                     x_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
                     found = True
                     #print "Collision on ", x_min_col
 
         # Find collisions with y walls
-        if abs(self.orientation) > tolerane_angle and abs(self.orientation - pi) > tolerane_angle:
-            for i in xrange(0, len(grid[0])):
+        for i in xrange(0, len(grid[0])):
 
+            if abs(a) > tolerance_a:
                 cross_x, cross_y = (float(i)+1e-10 - b)/a, float(i)+1e-10
+            else:
+                cross_x, cross_y = self.x, float(i)+1e-10
 
-                if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
-                    continue
+
+            if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
+                continue
 
 
-                diff_x, diff_y = cross_x - x, cross_y-y
-                #print "Crosses on ",cross_x," ",cross_y
-                if orient_x*diff_x + orient_y*diff_y > 0:
-                    #print "Correct orientation"
-                    if grid[int(cross_x)][int(cross_y)] == 1 and (diff_x**2 + diff_y**2) < y_min_col[2]:
-                        y_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
-                        found = True
-                        #print "Collision on ", x_min_col
+            diff_x, diff_y = cross_x - x, cross_y - y
+            #print "Crosses on ",cross_x," ",cross_y
+            if orient_x*diff_x + orient_y*diff_y > 0:
+                #print "Correct orientation"
+                #problem with accuracy here....
+                if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < y_min_col[2]:
+                    y_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
+                    found = True
+                    #print "Collision on ", x_min_col
 
         if not found:
             raise KrakrobotException("Something went wrong with sonar - not found wall! Note: boundary should be walled")
@@ -368,7 +386,7 @@ class KrakrobotSimulator(object):
         self.robot_path.append((robot.x, robot.y))
         collision_counter = 0 # We have maximum collision allowed
         try:
-            while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
+            while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions+1000:
 
                 command = None
                 try:
@@ -383,7 +401,9 @@ class KrakrobotSimulator(object):
                 if command[0] == SENSE_GPS:
                     robot_controller.on_sense(SENSE_GPS, robot.sense_gps())
                 elif command[0] == SENSE_SONAR:
-                    robot_controller.on_sense(SENSE_SONAR, robot.sense_sonar(self.grid))
+                    w = robot.sense_sonar(self.grid)
+                    logger.info("Sensed sonar : "+str(w))
+                    robot_controller.on_sense(SENSE_SONAR, w)
                 elif command[0] == MOVE:
                     # Parse move command
 
@@ -401,7 +421,7 @@ class KrakrobotSimulator(object):
                     if not robot_proposed.check_collision(self.grid):
                         collision_counter += 1
                         self.collisions.append((robot_proposed.x, robot_proposed.y))
-                        print "##Collision##"
+                        logger.error("##Collision##")
                         if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
                             raise KrakrobotException\
                                     ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
