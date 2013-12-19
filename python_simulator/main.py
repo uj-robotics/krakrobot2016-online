@@ -51,7 +51,7 @@ class KrakrobotSimulator(object):
                  turning_speed = 4*pi,
                  execution_time_limit = 10.0,
                  simulation_dt = 0.1,
-                 frame_dt = 1,
+                 frame_dt = 0.1,
                  collision_threshold = 50
                  ):
         """ 
@@ -195,7 +195,6 @@ class KrakrobotSimulator(object):
                     ### Process current command ###
 
                     if current_command[0] == TURN:
-                        logger.info(current_command)
 
                         robot = robot.turn(1)
                         if current_command[1] > 1: current_command = [current_command[0], current_command[1] - 1]
@@ -204,7 +203,7 @@ class KrakrobotSimulator(object):
 
 
                     elif current_command[0] == MOVE:
-                        robot_proposed = robot.move(current_command[1])
+                        robot_proposed = robot.move(1)
 
 
 
@@ -361,7 +360,7 @@ class SimulationRenderThread(QtCore.QThread):
 
             print "Frames to render ",len(self.simulator.frames), " rendered so far ", rendered_frames+1
 
-            time.sleep(0.03) #TODO: Parametrize
+            time.sleep(self.simulator.frame_dt)
 
             print "self.simulator.get_frames_count() = ", self.simulator.get_frames_count()
             print "Rendering", rendered_frames, " frame"

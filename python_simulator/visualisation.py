@@ -225,8 +225,7 @@ def RenderToSVG(Data):
       for j in range(len(Map[0])):
         if Map[i][j] != 0:
           Result += IT('<circle cx="%g" cy="%g" r="0.495"/>\n' % (i, j))
-          #Result += IT('<rect x="%g", y="%g" '
-          #             'width="1" height="1" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" />\n' % (i, j))
+          #Result += IT('<rect x="%g", y="%g" width="1" height="1" />\n' % (i, j))
 
     Result += SVGGroupEnd(IT)
 

@@ -60,7 +60,7 @@ class OmitCollisions(RobotController):
                 self.command_queue.append([TURN, 10])
                 self.command_queue.append([SENSE_SONAR])
             else:
-                self.command_queue.append([MOVE, 10])
+                self.command_queue.append([MOVE, 1])
                 self.command_queue.append([SENSE_SONAR])
 
         return self.command_queue.pop(0)
