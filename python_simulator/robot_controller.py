@@ -107,6 +107,8 @@ from collections import defaultdict
 
 
 
+#TODO: add timing
+#TODO: add C++ and Java interfaces (piping)
 class TimedRobotController(RobotController):
     """ Wrapper class to manage time consumption (also for other language packages) """
     def init(self, rc):
@@ -126,3 +128,4 @@ class TimedRobotController(RobotController):
 
     def on_sense_gps(self, x, y):
         self.rc.on_sense_gps(x,y)
+
