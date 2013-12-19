@@ -33,7 +33,6 @@ from math import (
 import numpy as np
 import random
 from utils import logger
-import mutex
 
 from visualisation import RenderToSVG, Save
 from defines import *
@@ -239,27 +238,12 @@ def fill_visualisation_descriptor(Data):
 
 #TODO: Extract this code to GUI module
 import time
-from threading import Thread
-import mutex
+from threading import Thread, Lock
 
 from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 
 
-class SimulationQThread(QtCore.QThread):
-    """QThread running KrakrobotSimulator"""
-
-    def __init__(self, simulator):
-        super(SimulationQThread, self).__init__()
-        self.simulator = simulator
-
-    def run(self):
-        self.simulator.reset()
-        self.simulator.run(OmitCollisions)
-        self.exec_()
-
-
 class SimulationRenderThread(QtCore.QThread):
-    """QThread running SVG rendering for parent SimulationGraphicsView"""
 
     def __init__(self, simulator, parent):
         super(SimulationRenderThread, self).__init__()
@@ -267,8 +251,16 @@ class SimulationRenderThread(QtCore.QThread):
         self.parent = parent
 
 
+    def run_simulation(self):
+        """Running KrakrobotSimulator simulation"""
+        self.simulator.reset()
+        self.simulator.run(OmitCollisions)
+        self.exec_()
+
+
     def run(self):
-        self.simulation_process_thread = SimulationQThread(self.simulator)
+        """SVG rendering"""
+        self.simulation_process_thread = Thread(target=self.run_simulation)
         self.simulation_process_thread.start()
 
         i = 0
@@ -282,7 +274,7 @@ class SimulationRenderThread(QtCore.QThread):
                         break
                     time.sleep(0.25)
 
-                time.sleep(0.01) #TODO: Parametrize
+                #time.sleep(0.01) #TODO: Parametrize
 
                 self.sim_data = self.simulator.get_visualisation_descriptor(rendered_frames)
                 fill_visualisation_descriptor(self.sim_data)
@@ -292,7 +284,11 @@ class SimulationRenderThread(QtCore.QThread):
                 print "Rendered."
                 rendered_frames += 1
 
-                self.parent.update(svg_data)
+                print "update"
+                if i == 0:
+                    self.parent.setup_scene(svg_data)
+                else:
+                    self.parent.update(svg_data)
 
                 i += 1
 
@@ -309,13 +305,13 @@ class SimulationRenderThread(QtCore.QThread):
         self.quit()
 
 
+import copy
 class SimulationGraphicsView(QtGui.QGraphicsView):
     """QGraphicsView viewing SVG rendered from QSvgRenderer with QXmlStreamReader"""
 
     def __init__(self, simulator, parent):
         super(SimulationGraphicsView, self).__init__(parent)
         self.parent = parent
-        self.setOptimizationFlags(QtGui.QGraphicsView.DontSavePainterState)
         self.simulation_render_thread = SimulationRenderThread(simulator, self)
         self.simulation_render_thread.finished.connect(self._animation_finished)
         self._init_ui()
@@ -332,7 +328,8 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.setScene(QtGui.QGraphicsScene(self))
         self.setTransformationAnchor(self.AnchorUnderMouse)
         self.setDragMode(self.ScrollHandDrag)
-        self.setViewportUpdateMode(self.SmartViewportUpdate)
+        self.setCacheMode(self.CacheBackground)
+        self.setViewportUpdateMode(self.BoundingRectViewportUpdate)
 
 
     def run_simulation(self):
@@ -343,22 +340,44 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.parent.status_bar_message(message)
 
 
-    def update(self, svg_data):
-        self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
-
-        scene = self.scene()
+    def setup_scene(self, svg_data):
 
         # Load new graphics
+        self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
         self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
         self.svg_item = QtSvg.QGraphicsSvgItem()
         self.svg_item.setSharedRenderer(self.svg_renderer)
-        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
-        self.svg_item.setZValue(0);
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.DeviceCoordinateCache)
+        self.svg_item.setZValue(0)
 
-        scene.addItem(self.svg_item);
+        scene = self.scene()
+        scene.addItem(self.svg_item)
 
-        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10));
+        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+        print "setted up"
+
+
+    def update(self, svg_data):
+
+        # Load new graphics
+        self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
+        self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
+        self.svg_item = QtSvg.QGraphicsSvgItem()
+        self.svg_item.setSharedRenderer(self.svg_renderer)
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
+        self.svg_item.setZValue(0)
+
+        scene = self.scene()
+        scene.items()[0].hide()
+        scene.addItem(self.svg_item)
+
+        print 'items: ', len(scene.items())
+
+        #scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+        #self.updateSceneRect(self.svg_item.boundingRect().adjusted(-10,-10,10,10))
+        print "setted up"
 
 
     def open_file(self, qfile):
@@ -374,13 +393,14 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
 
         # Load new graphics
         self.svg_item = QtSvg.QGraphicsSvgItem(qfile.fileName())
-        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
-        self.svg_item.setZValue(0);
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
+        self.svg_item.setZValue(0)
 
-        scene.addItem(self.svg_item);
+        scene.addItem(self.svg_item)
 
-        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10));
+        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+        print self.svg_item.maximumCacheSize()
 
 
     def paintEvent(self, event):
@@ -432,7 +452,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
     def _set_high_quality_aa(self, value):
         if not QT_NO_OPENGL:
             self.setRenderHint(QtGui.QPainter.HighQualityAntialiasing, value)
-        #Chandle? else:
+        #else: # Handle?
         #QtCore.Q_UNUSED(value)
 
 
@@ -442,7 +462,6 @@ class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, simulator):
         super(MainWindow, self).__init__()
-        self.simulation_thread = None
         self._init_ui(simulator)
 
 
@@ -565,7 +584,6 @@ class SimulatorGUI(object):
 import sys
 def main():
 
-    print 'Driving a car through a maze...'
     grid = [[1, 1, 1, 1, 1, 1],
             [1, 0, 0, 1, 1, 1],
             [1, 1, 0, 1, MAP_GOAL, 1],
