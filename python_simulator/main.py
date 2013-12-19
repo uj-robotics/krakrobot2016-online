@@ -19,7 +19,10 @@
 # Problems : traversable walls
 from sklearn.ensemble._gradient_boosting import np_bool
 
-VERSION = "0.0.1a"
+VERSION = '0.0.1a'
+APP_NAME = 'Krakrobot Simulator'
+APP_FULL_NAME = APP_NAME + ' ' + VERSION
+MSG_EMP = '-> '
 
 # TODO: add logger
 
@@ -30,6 +33,7 @@ from math import (
 import numpy as np
 import random
 from utils import logger
+import mutex
 
 from visualisation import RenderToSVG, Save
 from defines import *
@@ -74,13 +78,10 @@ class KrakrobotSimulator(object):
         self.distance_noise    = distance_noise
         self.goal_threshold = 0.5 # When to declare goal reach
         self.measurement_noise = measurement_noise
-        self.robot_path = []
-        self.collisions = []
+        #TODO: Move adequate actions from __init__() to reset()
+        self.reset()
         self.limit_actions = limit_actions
         self.grid = grid
-        self.goal_achieved = False
-        self.frames = []
-        self.robot_timer = 0.0
         self.N = len(self.grid)
         self.M = len(self.grid[0])
         for i in xrange(self.N):
@@ -123,6 +124,7 @@ class KrakrobotSimulator(object):
         self.goal_achieved = False
         self.robot_timer = 0.0
         self.frames = []
+        self.finished = False
 
     def run(self, robot_controller_class):
         """ Runs simulations by quering the robot """
@@ -192,7 +194,9 @@ class KrakrobotSimulator(object):
 
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.num_steps)+ " steps")
-    
+
+        # Simulation process finished
+        self.finished = True
         logger.info("Simulation ended after "+str(robot.num_steps)+ " steps with goal reached = "+str(self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
@@ -238,7 +242,7 @@ import time
 from threading import Thread
 import mutex
 
-from PyQt4 import QtGui, QtCore, QtSvg
+from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 
 
 class SimulationQThread(QtCore.QThread):
@@ -249,6 +253,7 @@ class SimulationQThread(QtCore.QThread):
         self.simulator = simulator
 
     def run(self):
+        self.simulator.reset()
         self.simulator.run(OmitCollisions)
         self.exec_()
 
@@ -266,9 +271,6 @@ class SimulationRenderThread(QtCore.QThread):
         self.simulation_process_thread = SimulationQThread(self.simulator)
         self.simulation_process_thread.start()
 
-        while not QtGui.QApplication.instance():
-            time.sleep(1)
-
         i = 0
         rendered_frames = 1
         svg_data = None
@@ -276,17 +278,18 @@ class SimulationRenderThread(QtCore.QThread):
         try:
             while True:
                 while len(self.simulator.frames) <= rendered_frames:
-                    #print "... NO FRAMES"
-                    time.sleep(0.5)
-
-
+                    if self.simulator.finished:
+                        break
+                    time.sleep(0.25)
 
                 time.sleep(0.01) #TODO: Parametrize
 
                 self.sim_data = self.simulator.get_visualisation_descriptor(rendered_frames)
                 fill_visualisation_descriptor(self.sim_data)
 
+                print "Rendering SVG..."
                 svg_data = RenderToSVG(self.sim_data)
+                print "Rendered."
                 rendered_frames += 1
 
                 self.parent.update(svg_data)
@@ -303,7 +306,7 @@ class SimulationRenderThread(QtCore.QThread):
             Save(svg_data.encode('utf_8'), OutputFileName)
             print 'Saved.'
 
-        self.exec_()
+        self.quit()
 
 
 class SimulationGraphicsView(QtGui.QGraphicsView):
@@ -311,11 +314,16 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
 
     def __init__(self, simulator, parent):
         super(SimulationGraphicsView, self).__init__(parent)
+        self.parent = parent
+        self.setOptimizationFlags(QtGui.QGraphicsView.DontSavePainterState)
         self.simulation_render_thread = SimulationRenderThread(simulator, self)
+        self.simulation_render_thread.finished.connect(self._animation_finished)
         self._init_ui()
 
 
     def _init_ui(self):
+        self._set_renderer('OpenGL')
+        self.image = QtGui.QImage()
         self.svg_item = QtSvg.QGraphicsSvgItem()
         self.bg_item = QtGui.QGraphicsRectItem()
         self.outline_item = QtGui.QGraphicsRectItem()
@@ -324,27 +332,21 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.setScene(QtGui.QGraphicsScene(self))
         self.setTransformationAnchor(self.AnchorUnderMouse)
         self.setDragMode(self.ScrollHandDrag)
-        self.setViewportUpdateMode(self.FullViewportUpdate)
+        self.setViewportUpdateMode(self.SmartViewportUpdate)
 
 
     def run_simulation(self):
         self.simulation_render_thread.start()
 
 
+    def message(self, message):
+        self.parent.status_bar_message(message)
+
+
     def update(self, svg_data):
         self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
 
         scene = self.scene()
-
-        if self.bg_item:
-            draw_bg = self.bg_item.isVisible()
-        else:
-            draw_bg = False
-
-        if self.outline_item:
-            draw_outline = self.outline_item.isVisible()
-        else:
-            draw_outline = True
 
         # Load new graphics
         self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
@@ -354,19 +356,84 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
         self.svg_item.setZValue(0);
 
-        self.outline_item = QtGui.QGraphicsRectItem(self.svg_item.boundingRect());
-        outline = QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.DashLine);
-        outline.setCosmetic(True);
-        self.outline_item.setPen(outline);
-        self.outline_item.setBrush(QtGui.QBrush(QtCore.Qt.NoBrush));
-        self.outline_item.setVisible(draw_outline);
-        self.outline_item.setZValue(1);
+        scene.addItem(self.svg_item);
+
+        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10));
+
+
+    def open_file(self, qfile):
+
+        if not qfile.exists():
+            return -1;
+
+        scene = self.scene()
+
+        # Clean graphics
+        scene.clear()
+        self.resetTransform()
+
+        # Load new graphics
+        self.svg_item = QtSvg.QGraphicsSvgItem(qfile.fileName())
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape);
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache);
+        self.svg_item.setZValue(0);
 
         scene.addItem(self.svg_item);
-        scene.addItem(self.outline_item);
 
-        scene.setSceneRect(self.outline_item.boundingRect().adjusted(-10, -10, 10, 10));
-        parent = self.parent()
+        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10));
+
+
+    def paintEvent(self, event):
+
+        if type(event != QtGui.QPaintEvent):
+            pass
+
+        if (self.renderer == 'Image'):
+            if self.image.size() != self.viewport().size():
+                self.image = QtGui.QImage(
+                    self.viewport().size(),
+                    QtGui.QImage.Format_ARGB32_Premultiplied
+                )
+
+            image_painter = QtGui.QPainter(self.image)
+            QtGui.QGraphicsView.render(self, image_painter)
+            image_painter.end()
+
+            painter = QtGui.QPainter(self.viewport())
+            painter.drawImage(0, 0, self.image)
+
+        else:
+            QtGui.QGraphicsView.paintEvent(self, event)
+
+
+    def wheelEvent(self, event):
+        factor = pow(1.2, event.delta()/240.0)
+        self.scale(factor, factor)
+        event.accept()
+
+
+    def _animation_finished(self):
+        self.message(MSG_EMP+'Animation has finished!')
+
+
+    def _set_renderer(self, renderer):
+        self.renderer = renderer
+
+        if self.renderer == 'OpenGL' and not QT_NO_OPENGL:
+            self.setViewport(
+                QtOpenGL.QGLWidget(
+                    QtOpenGL.QGLFormat(QtOpenGL.QGL.SampleBuffers)
+                )
+            )
+        else:
+            self.setViewport(QtGui.QWidget())
+
+
+    def _set_high_quality_aa(self, value):
+        if not QT_NO_OPENGL:
+            self.setRenderHint(QtGui.QPainter.HighQualityAntialiasing, value)
+        #Chandle? else:
+        #QtCore.Q_UNUSED(value)
 
 
 
@@ -381,17 +448,90 @@ class MainWindow(QtGui.QMainWindow):
 
     def _init_ui(self, simulator):
         self.simulation_view = SimulationGraphicsView(simulator, self)
-        self.setCentralWidget(self.simulation_view)
-        self.setWindowTitle('Krakrobot Simulator v' + str(VERSION) )
 
-        #Toolbar
+        file_menu = QtGui.QMenu('&File', self)
+        self.open_action = file_menu.addAction('&Open SVG...')
+        self.open_action.triggered.connect(self.open_svg)
+        self.menuBar().addMenu(file_menu)
+
+        renderer_menu = QtGui.QMenu('&Renderer', self)
+        self.native_action = renderer_menu.addAction('&Native')
+        self.native_action.setCheckable(True)
+        self.native_action.setChecked(True)
+        if not QT_NO_OPENGL:
+            self.gl_action = renderer_menu.addAction('&OpenGL')
+            self.gl_action.setCheckable(True)
+            self.native_action.setChecked(False)
+            self.gl_action.setChecked(True)
+        self.image_action = renderer_menu.addAction('&Image')
+        self.image_action.setCheckable(True)
+        if not QT_NO_OPENGL:
+            renderer_menu.addSeparator()
+            self.hqaa_action = renderer_menu.addAction('&HQ Antialiasing')
+            self.hqaa_action.setEnabled(True)
+            self.hqaa_action.setCheckable(True)
+            self.hqaa_action.setChecked(False)
+            self.hqaa_action.toggled.connect(
+                self.simulation_view._set_high_quality_aa
+            )
+        self.renderer_group = QtGui.QActionGroup(self)
+        self.renderer_group.addAction(self.native_action)
+        if not QT_NO_OPENGL:
+            self.renderer_group.addAction(self.gl_action)
+        self.renderer_group.addAction(self.image_action)
+        self.renderer_group.triggered.connect(self._set_renderer)
+        self.menuBar().addMenu(renderer_menu)
+
         main_toolbar = self.addToolBar('Krakrobot Simulator')
         start_sim_action = main_toolbar.addAction('Start Sim')
         start_sim_action.triggered.connect(self.run_simulation)
 
+        self.setCentralWidget(self.simulation_view)
+        self.setWindowTitle(APP_FULL_NAME)
+        self.status_bar_message('Welcome to ' + APP_FULL_NAME + '!')
+
+
+    def status_bar_message(self, message):
+        self.statusBar().showMessage(message)
+
 
     def run_simulation(self):
+        self.status_bar_message('Simulation process started...')
         self.simulation_view.run_simulation()
+
+
+    def open_file(self):
+
+        file_name = QtGui.QFileDialog.getOpenFileName(
+            self, 'Open file', '.'
+        )
+
+        input_file = open(file_name, 'r')
+
+        with input_file:
+            data = input_file.read()
+
+
+    def open_svg(self):
+
+        file_name = QtGui.QFileDialog.getOpenFileName(
+            self, 'Open file', '.'
+        )
+
+        self.simulation_view.open_file(QtCore.QFile(file_name))
+
+
+    def _set_renderer(self, action):
+        if not QT_NO_OPENGL:
+            self.hqaa_action.setEnabled(False)
+
+        if action == self.native_action:
+            self.simulation_view._set_renderer('Native')
+        elif (not QT_NO_OPENGL) and action == self.gl_action:
+            self.hqaa_action.setEnabled(True)
+            self.simulation_view._set_renderer('OpenGL')
+        elif action == self.image_action:
+            self.simulation_view._set_renderer('Image')
 
 
 class SimulatorGUI(object):

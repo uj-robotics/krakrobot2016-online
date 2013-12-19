@@ -29,3 +29,6 @@ CONSTANT_MAP = {"direction":MAP_SPECIAL_DIRECTION, "east": DIRECTION_E, "northea
                 "northwest":DIRECTION_NW, "west": DIRECTION_W, "southwest": DIRECTION_SW, "south": DIRECTION_S, "southeast": DIRECTION_SE
                 }
 
+# GUI
+QT_NO_OPENGL = False
+
