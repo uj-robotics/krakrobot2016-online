@@ -12,22 +12,26 @@ from copy import deepcopy
 class Robot:
     """ The main class representing robot that can sense and move """
 
-    def __init__(self, length = 0.5):
+    def __init__(self,  speed, speed_turn, gps_time, sonar_time):
         """
         Initialize robot
         """
+        self.speed = speed
 
+        self.tick_move = 0.01
+        self.tick_rotate = 0.01
+
+        self.speed_turn = speed_turn
         self.x = 0.0
         self.y = 0.0
         self.orientation = 0.0
-        self.length = length
         self.steering_noise    = 0.0
         self.distance_noise    = 0.0
         self.sonar_noise = 0.0
         self.measurement_noise = 0.0
-        self.num_collisions    = 0
-        self.num_steps         = 0
-        self.time_limit = 0.0
+        self.time_elapsed = 0.0
+        self.gps_time = gps_time
+        self.sonar_time = sonar_time
 
     #TODO: extract
     def set(self, new_x, new_y, new_orientation):
@@ -70,8 +74,6 @@ class Robot:
                 if grid[i][j] == 1 \
                     and (float(i+1) - SQUARE_SIDE/2.0) > self.x > (float(i) - SQUARE_SIDE/2.0)\
                     and (float(j+1) - SQUARE_SIDE/2.0) > self.y > (float(j) - SQUARE_SIDE/2.0):
-
-                    self.num_collisions += 1
                     return False
 
         return True
@@ -80,7 +82,7 @@ class Robot:
 
     def move(self,  x):
         """
-        Move the robot forward by x units
+        Move the robot forward by x **Ticks**
         """
 
         # make a new copy (TODO: use deepcopy)
@@ -90,12 +92,13 @@ class Robot:
 
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
+        res.time_elapsed += distance/self.speed # speed is 1.0/time_unit
 
         return res
 
     def turn(self,  x):
         """
-        Turn robot by x units (radians)
+        Turn robot by x **Ticks**
         """
 
         # make a new copy (TODO: use deepcopy)
@@ -103,8 +106,9 @@ class Robot:
 
         turn = random.gauss(x, self.steering_noise)
         res.orientation = (res.orientation+turn)%(2*pi)
-
+        res.time_elapsed += turn/self.speed_turn # speed is pi/time_unit
         return res
+
 
     def sense_field(self, grid):
         disc_x, disc_y = int(self.x + SQUARE_SIDE/2.0), int(self.y + SQUARE_SIDE/2.0)
@@ -112,8 +116,7 @@ class Robot:
 
     def sense_gps(self):
         """ Returns estimation for position (GPS signal) """
-        self.num_steps += SENSE_GPS_ACTIONS
-
+        self.time_elapsed += self.gps_time
         return [random.gauss(self.x, self.measurement_noise),
                 random.gauss(self.y, self.measurement_noise)]
 
@@ -148,7 +151,7 @@ class Robot:
         b = np.float128(y - a*x)
 
         logger.info(("A=", a," B=", b))
-
+        logger.info((orient_x, orient_y))
         # Find collisions with x walls
         for i in xrange(0, len(grid)):
 
@@ -161,7 +164,9 @@ class Robot:
                 continue
 
             diff_x, diff_y = np.float128(cross_x - x), np.float128(cross_y-y)
+            logger.info((cross_x, cross_y))
             if orient_x*diff_x + orient_y*diff_y > 0:
+                logger.info((cross_x, cross_y))
                 if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < x_min_col[2]:
                     x_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
                     found = True
@@ -189,6 +194,9 @@ class Robot:
         if not found:
             raise KrakrobotException("Something went wrong with sonar - not found wall! Note: boundary should be walled")
 
+
+        self.time_elapsed += self.sonar_time
+        logger.info("Senses "+str(x_min_col)+" "+str(y_min_col))
         return float(sqrt(min(x_min_col[2], y_min_col[2])))
 
 

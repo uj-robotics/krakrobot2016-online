@@ -1,8 +1,9 @@
 from defines import *
+from utils import *
 
 class RobotController(object):
     """ You have to implement this class """
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_distance,
+    def init(self, starting_position, steering_noise, distance_noise, speed, turning_speed,
              maximum_turn):
         """ @param starting_position - (x,y) tuple representing current_position """
         raise NotImplementedError()
@@ -25,8 +26,8 @@ class RobotController(object):
 
 class ForwardTurningRobotController(RobotController):
     """ Exemplary robot controller """
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_distance, maximum_turn):
-        self.speed = maximum_distance
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed):
+        self.speed = speed
 
     def act(self):
         return MOVE, 0.0, self.speed
@@ -46,24 +47,27 @@ class OmitCollisions(RobotController):
     STATE_FORWARD = 0
     STATE_LOOK_FOR_SPACE = 1
 
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_distance, maximum_turn):
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed):
         self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-        self.speed = maximum_distance
-        self.turn_speed = maximum_turn
+        self.speed = speed
+        self.turn_speed = turning_speed
         self.command_queue = []
+        self.last_distance = 0.0
 
     def act(self):
         if len(self.command_queue) == 0:
             if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
-                self.command_queue.append([TURN, self.turn_speed])
+                self.command_queue.append([TURN, self.turn_speed/10.0])
                 self.command_queue.append([SENSE_SONAR])
             else:
-                self.command_queue.append([MOVE, self.speed])
+                self.command_queue.append([MOVE, self.last_distance])
                 self.command_queue.append([SENSE_SONAR])
 
         return self.command_queue.pop()
 
     def on_sense_sonar(self, distance):
+        self.last_distance = distance
+        logger.info(self.last_distance +" last_distance updated ")
         if distance < 0.4:
             self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
         else:

@@ -17,3 +17,4 @@ def test1():
 #TODO: add colliding robot
 #TODO: add robot exceeding speed
 #TODO: add robot DFSing
+#TODO: add robot which is moving exactly to the boundary
