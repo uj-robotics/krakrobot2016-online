@@ -77,6 +77,7 @@ class Robot:
 
 
 
+    #TODO: change moving model, it is steering wheel for now which is wrong!!
     def move(self,  steering, distance, tolerance = 0.001, max_steering_angle = pi / 4.0):
         """
         Move the robot using bicycle model from Udacity class.

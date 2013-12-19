@@ -2,7 +2,8 @@ from defines import *
 
 class RobotController(object):
     """ You have to implement this class """
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_speed):
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_distance,
+             maximum_turn):
         """ @param starting_position - (x,y) tuple representing current_position """
         raise NotImplementedError()
 
@@ -24,11 +25,11 @@ class RobotController(object):
 
 class ForwardTurningRobotController(RobotController):
     """ Exemplary robot controller """
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise):
-        pass
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_distance, maximum_turn):
+        self.speed = maximum_distance
 
     def act(self):
-        return MOVE, 0.09
+        return MOVE, 0.0, self.speed
 
 
     def on_sense_sonar(self, dist):
@@ -45,18 +46,19 @@ class OmitCollisions(RobotController):
     STATE_FORWARD = 0
     STATE_LOOK_FOR_SPACE = 1
 
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise):
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_distance, maximum_turn):
         self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-        self.speed = 0.1
+        self.speed = maximum_distance
+        self.turn_speed = maximum_turn
         self.command_queue = []
 
     def act(self):
         if len(self.command_queue) == 0:
             if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
-                self.command_queue.append([MOVE, 0.1, 0.0])
+                self.command_queue.append([MOVE, self.turn_speed, 0.0])
                 self.command_queue.append([SENSE_SONAR])
             else:
-                self.command_queue.append([MOVE, 0.0, 0.1])
+                self.command_queue.append([MOVE, 0.0, self.speed])
                 self.command_queue.append([SENSE_SONAR])
 
         return self.command_queue.pop()
