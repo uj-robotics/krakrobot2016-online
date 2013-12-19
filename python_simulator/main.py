@@ -51,7 +51,7 @@ class KrakrobotSimulator(object):
                  turning_speed = pi/4.0,
                  execution_time_limit = 10.0,
                  simulation_dt = 0.1,
-                 frame_rate = 1,
+                 frame_dt = 1,
                  collision_threshold = 50
                  ):
         """ 
@@ -66,7 +66,7 @@ class KrakrobotSimulator(object):
             @param execution_time_limit - limit in ms for whole robot execution (also with init)
             @param collision_threshold - maximum number of collisions after which robot is destroyed
 
-            @param frame_rate - save frame every i-th simulation step
+            @param frame_dt - save frame every dt
 
 
         """
@@ -78,9 +78,12 @@ class KrakrobotSimulator(object):
         self.speed = speed
         self.turning_speed = turning_speed
         self.simulation_dt = simulation_dt
-        self.frame_rate = frame_rate
+        self.frame_dt = frame_dt
         self.sonar_time = 0.01
         self.gps_time = 1.0
+
+        self.tick_move = 0.01
+        self.tick_rotate = 0.01
 
         self.execution_time_limit = execution_time_limit
 
@@ -155,7 +158,7 @@ class KrakrobotSimulator(object):
         self.reset()
 
         # Initialize robot object
-        robot = Robot(self.speed, self.turning_speed, self.gps_time, self.sonar_time)
+        robot = Robot(self.speed, self.turning_speed, self.gps_time, self.sonar_time, self.tick_move, self.tick_rotate)
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(self.steering_noise_coef,
                         self.distance_noise_coef,
@@ -186,6 +189,7 @@ class KrakrobotSimulator(object):
                     logger.error("Robot controller failed with exception " + str(e))
                     break
                 logger.info("Received command "+str(command))
+                logger.info("Robot timer "+str(robot.time_elapsed))
                 if not command or len(command) == 0:
                     raise KrakrobotException("No command passed, or zero length command passed")
 
