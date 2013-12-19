@@ -16,8 +16,6 @@
 # Links:
 # http://forums.udacity.com/questions/1021963/particle-filter-challenge-implement-hallway-robot-with-sonar
 
-# Problems : traversable walls
-from sklearn.ensemble._gradient_boosting import np_bool
 
 VERSION = '0.0.1a'
 APP_NAME = 'Krakrobot Simulator'
@@ -89,7 +87,7 @@ class KrakrobotSimulator(object):
                 if self.grid[i][j] == MAP_GOAL:
                     self.goal = (i,j)
 
-    def create_visualisation_descriptor(self):
+    def create_visualisation_descriptor(self, robot):
         """
             @returns Descriptor that is sufficient to visualize current frame
         """
@@ -97,6 +95,8 @@ class KrakrobotSimulator(object):
         data['GoalThreshold'] = self.goal_threshold
         data['Sparks'] = list(self.collisions)
         data['ActualPath'] = list(self.robot_path)
+        data['ActualPosition'] = [robot.x, robot.y]
+        data['ActualOrientation'] = robot.orientation
         data['Map'] = self.grid
         data['StartPos'] = self.init_position
         data['GoalPos'] = self.goal
@@ -190,7 +190,7 @@ class KrakrobotSimulator(object):
                         self.robot_path.append((robot.x, robot.y))
 
                 # Save simulation frame descriptor for visualisation
-                self.frames.append(self.create_visualisation_descriptor())
+                self.frames.append(self.create_visualisation_descriptor(robot))
 
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.num_steps)+ " steps")
@@ -257,7 +257,7 @@ class SimulationQThread(QtCore.QThread):
         self.simulator.run(OmitCollisions)
         self.exec_()
 
-
+import datetime
 class SimulationRenderThread(QtCore.QThread):
     """QThread running SVG rendering for parent SimulationGraphicsView"""
 
@@ -274,7 +274,8 @@ class SimulationRenderThread(QtCore.QThread):
         i = 0
         rendered_frames = 1
         svg_data = None
-
+        time_elapsed = datetime.timedelta(0)
+        time_elapsed_update = datetime.timedelta(0)
         try:
             while True:
                 while len(self.simulator.frames) <= rendered_frames:
@@ -288,12 +289,15 @@ class SimulationRenderThread(QtCore.QThread):
                 fill_visualisation_descriptor(self.sim_data)
 
                 print "Rendering SVG..."
+                start = datetime.datetime.now()
                 svg_data = RenderToSVG(self.sim_data)
-                print "Rendered."
+                time_elapsed += datetime.datetime.now() - start
+
                 rendered_frames += 1
-
+                start = datetime.datetime.now()
                 self.parent.update(svg_data)
-
+                time_elapsed_update += datetime.datetime.now() - start
+                print "Rendered , time elapsed for RenderTOSVG", time_elapsed, " update ",time_elapsed_update
                 i += 1
 
 
