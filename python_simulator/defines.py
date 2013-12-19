@@ -1,4 +1,5 @@
 MOVE = "move" # (move, steer) -> OK
+TURN = "turn"
 SENSE_SONAR = "sense_sonar" # (sense_radar) -> ([alpha,dist],[alpha,dist]....)
 SENSE_GPS = "sense_gps" # (sense_gps) -> (x,y)
 SENSE_GPS_ACTIONS = 3

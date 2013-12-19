@@ -51,7 +51,7 @@ class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
     def __init__(self,  grid, init_position, steering_noise_coef=0.1, sonar_noise = 0.1, distance_noise_coef=0.03,
-                 measurement_noise=0.3, limit_actions = 100, maximum_speed = 0.07,
+                 measurement_noise=0.3, limit_actions = 500, maximum_speed = 0.07,
                  maximum_turning_speed = 0.05, execution_time_limit = 1.0,
                  collision_threshold = 50
                  ):
@@ -178,20 +178,27 @@ class KrakrobotSimulator(object):
                     w = robot.sense_field(self.grid)
                     if w == MAP_WHITE or w == MAP_WALL: robot_controller.on_sense_field(w, 0)
                     else: robot_controller.on_sense_field(w[0], w[1])
-                elif command[0] == MOVE:
-                    if len(command) <= 1 or len(command) > 3:
+                elif command[0] == TURN:
+                    if len(command) <= 1 or len(command) > 2:
                         raise KrakrobotException("Wrong command length")
-                    if len(command) == 2:
-                        command.append(self.maximum_speed)
+
 
                     if command[1] > self.maximum_turning_speed:
                         raise KrakrobotException("Turning exceedes the maximum turning allowed")
-                    if command[2] > self.maximum_speed:
-                        raise KrakrobotException("Distance exceedes the maximum distance allowed")
+
+                    # Turn robot
+                    robot = robot.turn(command[1])
+
+                elif command[0] == MOVE:
+                    if len(command) <= 1 or len(command) > 2:
+                        raise KrakrobotException("Wrong command length")
+
+
+                    if command[1] > self.maximum_speed:
+                        raise KrakrobotException("Turning exceedes the maximum turning allowed")
 
                     # Move robot
-                    robot_proposed = robot.move(command[1], command[2])
-
+                    robot_proposed = robot.move(command[1])
 
                     if not robot_proposed.check_collision(self.grid):
                         collision_counter += 1
@@ -292,7 +299,7 @@ class SimulationRenderThread(QtCore.QThread):
 
             print "Frames to render ",len(self.simulator.frames), " rendered so far ", rendered_frames+1
 
-            time.sleep(0.03) #TODO: Parametrize
+            time.sleep(0.06) #TODO: Parametrize
 
             print "self.simulator.get_frames_count() = ", self.simulator.get_frames_count()
             print "Rendering", rendered_frames, " frame"

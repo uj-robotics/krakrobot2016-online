@@ -55,10 +55,10 @@ class OmitCollisions(RobotController):
     def act(self):
         if len(self.command_queue) == 0:
             if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
-                self.command_queue.append([MOVE, self.turn_speed, 0.0])
+                self.command_queue.append([TURN, self.turn_speed])
                 self.command_queue.append([SENSE_SONAR])
             else:
-                self.command_queue.append([MOVE, 0.0, self.speed])
+                self.command_queue.append([MOVE, self.speed])
                 self.command_queue.append([SENSE_SONAR])
 
         return self.command_queue.pop()

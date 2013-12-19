@@ -7,6 +7,7 @@ from math import (
 import numpy as np
 import random
 from utils import *
+from copy import deepcopy
 
 class Robot:
     """ The main class representing robot that can sense and move """
@@ -16,8 +17,7 @@ class Robot:
         Initialize robot
         """
 
-        self.x = 0
-        .0
+        self.x = 0.0
         self.y = 0.0
         self.orientation = 0.0
         self.length = length
@@ -54,15 +54,16 @@ class Robot:
         self.measurement_noise = float(new_m_noise)
         self.sonar_noise = float(new_sonar_noise)
 
-    #TODO: extract from this class
+
     def check_collision(self, grid):
         """
-        Checks for collisions
+        Checks for collisions with some slack
         @note: Cannot be called by contestant
         @returns: True if no collisions
         """
         print "Checking collisions ",self.x, " ",self.y," ", self.orientation
         # Box based (sharp edges):
+        # TODO: add slack here !!
         for i in xrange(len(grid)):
             for j in xrange(len(grid[0])):
                 # not sure about chained operators..
@@ -77,69 +78,31 @@ class Robot:
 
 
 
-    #TODO: change moving model, it is steering wheel for now which is wrong!!
-    def move(self,  steering, distance, tolerance = 0.001, max_steering_angle = pi / 4.0):
+    def move(self,  x):
         """
-        Move the robot using bicycle model from Udacity class.
-        @param steering front wheel steering angle
-        @param distance distance to be driven
+        Move the robot forward by x units
         """
 
+        # make a new copy (TODO: use deepcopy)
+        res = deepcopy(self)
 
-        if steering > max_steering_angle:
-            steering = max_steering_angle
-        if steering < -max_steering_angle:
-            steering = -max_steering_angle
-        if distance < 0.0:
-            distance = 0.0
+        distance = random.gauss(x, self.distance_noise)
 
+        res.x += distance * cos(res.orientation)
+        res.y += distance * sin(res.orientation)
 
-        # make a new copy
-        res = Robot()
-        # TODO: not add new variables
-        res.length            = self.length
-        res.steering_noise    = self.steering_noise
-        res.distance_noise    = self.distance_noise
-        res.measurement_noise = self.measurement_noise
-        res.sonar_noise = self.sonar_noise
-        res.num_collisions    = self.num_collisions
-        res.num_steps         = self.num_steps + 1
+        return res
 
-        # apply noise
-        steering2 = random.gauss(steering, self.steering_noise)
-        distance2 = random.gauss(distance, self.distance_noise) if distance > 0 else 0.0
+    def turn(self,  x):
+        """
+        Turn robot by x units (radians)
+        """
 
-        print "Rotating by ",steering2, " with distance2=",distance2, " Wanted ",steering2, " ",distance2
+        # make a new copy (TODO: use deepcopy)
+        res = deepcopy(self)
 
-        if distance > 0.0:
-            # Execute motion
-            turn = tan(steering2) * distance2 / res.length
-
-            if abs(turn) < tolerance:
-
-                # approximate by straight line motion
-
-                res.x = self.x + (distance2 * cos(self.orientation))
-                res.y = self.y + (distance2 * sin(self.orientation))
-                res.orientation = (self.orientation + turn) % (2.0 * pi)
-
-            else:
-                # approximate bicycle model for motion
-                radius = distance2 / turn
-                cx = self.x - (sin(self.orientation) * radius)
-                cy = self.y + (cos(self.orientation) * radius)
-                res.orientation = (self.orientation + turn) % (2.0 * pi)
-                res.x = cx + (sin(res.orientation) * radius)
-                res.y = cy - (cos(res.orientation) * radius)
-        else:
-            # Rotational only move
-            print "Rotating"
-            res.x = self.x #TODO: add noise?
-            res.y = self.y #TODO: add noise?
-            res.orientation = (self.orientation + steering2) % (2.0 * pi)
-
-        # check for collision
-        # res.check_collision(grid)
+        turn = random.gauss(x, self.steering_noise)
+        res.orientation = (res.orientation+turn)%(2*pi)
 
         return res
 
