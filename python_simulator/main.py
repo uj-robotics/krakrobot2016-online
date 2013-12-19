@@ -299,7 +299,7 @@ class SimulationRenderThread(QtCore.QThread):
 
             print "Frames to render ",len(self.simulator.frames), " rendered so far ", rendered_frames+1
 
-            time.sleep(0.06) #TODO: Parametrize
+            time.sleep(0.03) #TODO: Parametrize
 
             print "self.simulator.get_frames_count() = ", self.simulator.get_frames_count()
             print "Rendering", rendered_frames, " frame"
@@ -319,7 +319,7 @@ class SimulationRenderThread(QtCore.QThread):
                 self.parent.setup_scene(svg_data)
             else:
                 self.parent.update_mutex.lock()
-                self.parent.update(svg_data)
+                self.parent.update_data(svg_data)
             rendered_frames += 1
 
             time_elapsed_update += datetime.datetime.now() - start
@@ -392,23 +392,14 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         print "setted up"
 
 
-    def update(self, svg_data):
-
-        # Load new graphics
-        self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
-        self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
-        self.svg_item = QtSvg.QGraphicsSvgItem()
-        self.svg_item.setSharedRenderer(self.svg_renderer)
-        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
-        self.svg_item.setZValue(0)
-
-        scene = self.scene()
-        scene.items()[0].hide()
-        scene.addItem(self.svg_item)
+    def update_data(self, svg_data):
+        self.svg_data = svg_data
 
         self.update_mutex.unlock()
         print "updated"
+
+    #def update(self, svg_data):
+
 
 
     def open_file(self, qfile):
@@ -438,6 +429,22 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
 
         if type(event != QtGui.QPaintEvent):
             pass
+
+        # Load new graphics
+        if self.svg_data:
+            self.xml_stream_reader = QtCore.QXmlStreamReader(self.svg_data)
+            self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
+            self.svg_item = QtSvg.QGraphicsSvgItem()
+            self.svg_item.setSharedRenderer(self.svg_renderer)
+            self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+            self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
+            self.svg_item.setZValue(0)
+
+            scene = self.scene()
+            scene.items()[0].hide()
+            scene.addItem(self.svg_item)
+
+            scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
         if (self.renderer == 'Image'):
             if self.image.size() != self.viewport().size():
