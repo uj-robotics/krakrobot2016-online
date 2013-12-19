@@ -363,6 +363,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.simulation_render_thread = SimulationRenderThread(simulator, self)
         self.simulation_render_thread.finished.connect(self._animation_finished)
         self.update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+        self.svg_data = None
         self._init_ui()
 
 
