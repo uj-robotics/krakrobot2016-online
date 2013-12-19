@@ -11,3 +11,9 @@ def test1():
     simulator = KrakrobotSimulator(grid, (0, 0, 0))
     forward_controller = ForwardTurningRobotController
     simulator.run(forward_controller)
+
+
+
+#TODO: add colliding robot
+#TODO: add robot exceeding speed
+#TODO: add robot DFSing

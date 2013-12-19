@@ -50,8 +50,9 @@ class KrakrobotException(Exception):
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self,  grid, init_position, steering_noise=0.1, sonar_noise = 0.1, distance_noise=0.03,
-                 measurement_noise=0.3, limit_actions = 100, speed = 0.4, execution_time_limit = 1.0,
+    def __init__(self,  grid, init_position, steering_noise_coef=0.1, sonar_noise = 0.1, distance_noise_coef=0.03,
+                 measurement_noise=0.3, limit_actions = 100, maximum_speed = 0.07,
+                 maximum_turning_speed = 0.05, execution_time_limit = 1.0,
                  collision_threshold = 50
                  ):
         """ 
@@ -66,15 +67,21 @@ class KrakrobotSimulator(object):
             @param execution_time_limit - limit in ms for whole robot execution (also with init)
             @param collision_threshold - maximum number of collisions after which robot is destroyed
         """
-        self.steering_noise    = steering_noise
+
         self.collision_threshold = collision_threshold
-        self.sonar_noise = sonar_noise
+
         self.init_position = tuple(init_position)
-        self.speed = speed
+        self.maximum_speed = maximum_speed
+        self.maximum_turning_speed = maximum_turning_speed
         self.execution_time_limit = execution_time_limit
-        self.distance_noise    = distance_noise
+
         self.goal_threshold = 0.5 # When to declare goal reach
+
+        self.sonar_noise = sonar_noise
+        self.distance_noise_coef    = distance_noise_coef
         self.measurement_noise = measurement_noise
+        self.steering_noise_coef    = steering_noise_coef
+
         #TODO: Move adequate actions from __init__() to reset()
         self.reset()
         self.limit_actions = limit_actions
@@ -114,6 +121,8 @@ class KrakrobotSimulator(object):
         dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
         return dist < self.goal_threshold
 
+    def get_frames_count(self):
+        return self.frames_count
 
     #TODO: test
     def reset(self):
@@ -123,25 +132,30 @@ class KrakrobotSimulator(object):
         self.goal_achieved = False
         self.robot_timer = 0.0
         self.frames = []
+        self.frames_count = 0
         self.finished = False
 
     def run(self, robot_controller_class):
         """ Runs simulations by quering the robot """
         self.reset()
 
-        # Initialize robot controller object given by contestant
-        robot_controller = robot_controller_class()
-        robot_controller.init(self.init_position, self.steering_noise, self.distance_noise, self.measurement_noise)
-
         # Initialize robot object
         robot = Robot()
-
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
-        robot.set_noise(self.steering_noise, self.distance_noise, self.measurement_noise, self.sonar_noise)
+        robot.set_noise(self.steering_noise_coef*self.maximum_turning_speed,
+                        self.distance_noise_coef*self.maximum_speed, self.measurement_noise, self.sonar_noise)
+
+        # Initialize robot controller object given by contestant
+        robot_controller = robot_controller_class()
+        robot_controller.init(self.init_position, robot.steering_noise
+            ,robot.distance_noise, robot.measurement_noise, self.maximum_speed, self.maximum_turning_speed)
+
+
         self.robot_path.append((robot.x, robot.y))
         collision_counter = 0 # We have maximum collision allowed
         try:
             while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
+                #logger.info((robot.x, robot.y))
                 # Get command
                 command = None
                 try:
@@ -168,8 +182,11 @@ class KrakrobotSimulator(object):
                     if len(command) <= 1 or len(command) > 3:
                         raise KrakrobotException("Wrong command length")
                     if len(command) == 2:
-                        command.append(self.speed)
-                    if command[2] > self.speed:
+                        command.append(self.maximum_speed)
+
+                    if command[1] > self.maximum_turning_speed:
+                        raise KrakrobotException("Turning exceedes the maximum turning allowed")
+                    if command[2] > self.maximum_speed:
                         raise KrakrobotException("Distance exceedes the maximum distance allowed")
 
                     # Move robot
@@ -190,7 +207,7 @@ class KrakrobotSimulator(object):
 
                 # Save simulation frame descriptor for visualisation
                 self.frames.append(self.create_visualisation_descriptor(robot))
-
+                self.frames_count += 1
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.num_steps)+ " steps")
 
@@ -238,7 +255,7 @@ def fill_visualisation_descriptor(Data):
 
 #TODO: Extract this code to GUI module
 import time
-from threading import Thread, Lock
+from threading import Thread
 import datetime
 
 from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
@@ -268,38 +285,39 @@ class SimulationRenderThread(QtCore.QThread):
         svg_data = None
         time_elapsed = datetime.timedelta(0)
         time_elapsed_update = datetime.timedelta(0)
-        try:
-            while True:
-                while len(self.simulator.frames) <= rendered_frames:
-                    if self.simulator.finished:
-                        break
-                    time.sleep(0.25)
 
-                #time.sleep(0.01) #TODO: Parametrize
+        while (not self.simulator.finished) or (self.simulator.get_frames_count() > rendered_frames):
+            while self.simulator.get_frames_count() <= rendered_frames:
+                time.sleep(0.01)
 
-                self.sim_data = self.simulator.get_visualisation_descriptor(rendered_frames)
-                fill_visualisation_descriptor(self.sim_data)
+            print "Frames to render ",len(self.simulator.frames), " rendered so far ", rendered_frames+1
 
-                print "Rendering SVG..."
-                start = datetime.datetime.now()
-                svg_data = RenderToSVG(self.sim_data)
-                time_elapsed += datetime.datetime.now() - start
+            time.sleep(0.03) #TODO: Parametrize
 
-                start = datetime.datetime.now()
+            print "self.simulator.get_frames_count() = ", self.simulator.get_frames_count()
+            print "Rendering", rendered_frames, " frame"
+            self.sim_data = self.simulator.get_visualisation_descriptor(rendered_frames)
+            fill_visualisation_descriptor(self.sim_data)
 
-                print "update"
-                if rendered_frames == 0:
-                    self.parent.setup_scene(svg_data)
-                else:
-                    self.parent.update(svg_data)
-                rendered_frames += 1
+            print "Rendering SVG..."
+            start = datetime.datetime.now()
+            svg_data = RenderToSVG(self.sim_data)
+            time_elapsed += datetime.datetime.now() - start
 
-                time_elapsed_update += datetime.datetime.now() - start
-                print "Rendered , time elapsed for RenderTOSVG", time_elapsed, " update ",time_elapsed_update
+            start = datetime.datetime.now()
 
+            print "update"
+            if rendered_frames == 0:
+                self.parent.update_mutex.lock()
+                self.parent.setup_scene(svg_data)
+            else:
+                self.parent.update_mutex.lock()
+                self.parent.update(svg_data)
+            rendered_frames += 1
 
-        except IndexError:
-            print 'Done painting.'
+            time_elapsed_update += datetime.datetime.now() - start
+            print "Rendered , time elapsed for RenderTOSVG", time_elapsed, " update ",time_elapsed_update
+
 
         if svg_data:
             OutputFileName = 'output.svg'
@@ -311,6 +329,8 @@ class SimulationRenderThread(QtCore.QThread):
 
 
 import copy
+
+
 class SimulationGraphicsView(QtGui.QGraphicsView):
     """QGraphicsView viewing SVG rendered from QSvgRenderer with QXmlStreamReader"""
 
@@ -319,6 +339,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.parent = parent
         self.simulation_render_thread = SimulationRenderThread(simulator, self)
         self.simulation_render_thread.finished.connect(self._animation_finished)
+        self.update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
         self._init_ui()
 
 
@@ -334,7 +355,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.setTransformationAnchor(self.AnchorUnderMouse)
         self.setDragMode(self.ScrollHandDrag)
         self.setCacheMode(self.CacheBackground)
-        self.setViewportUpdateMode(self.BoundingRectViewportUpdate)
+        self.setViewportUpdateMode(self.FullViewportUpdate)
 
 
     def run_simulation(self):
@@ -350,7 +371,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         # Load new graphics
         self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
         self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
-        self.svg_item = QtSvg.QGraphicsSvgItem()
+        self.svg_item = QtSvg.QGraphicsSvgItem(str(time.ctime()))
         self.svg_item.setSharedRenderer(self.svg_renderer)
         self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
         self.svg_item.setCacheMode(QtGui.QGraphicsItem.DeviceCoordinateCache)
@@ -360,6 +381,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         scene.addItem(self.svg_item)
 
         scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+        self.update_mutex.unlock()
         print "setted up"
 
 
@@ -375,14 +397,10 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.svg_item.setZValue(0)
 
         scene = self.scene()
-        print 'scene.items()[0].hide()'
-        #scene.items()[0].hide()
+        scene.items()[0].hide()
         scene.addItem(self.svg_item)
 
-        print 'items: ', len(scene.items())
-
-        #scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-        #self.updateSceneRect(self.svg_item.boundingRect().adjusted(-10,-10,10,10))
+        self.update_mutex.unlock()
         print "updated"
 
 
