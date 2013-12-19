@@ -12,14 +12,14 @@ from copy import deepcopy
 class Robot:
     """ The main class representing robot that can sense and move """
 
-    def __init__(self,  speed, speed_turn, gps_time, sonar_time):
+    def __init__(self,  speed, speed_turn, gps_time, sonar_time, tick_move, tick_rotate):
         """
         Initialize robot
         """
         self.speed = speed
 
-        self.tick_move = 0.01
-        self.tick_rotate = 0.01
+        self.tick_move = tick_move
+        self.tick_rotate = tick_rotate
 
         self.speed_turn = speed_turn
         self.x = 0.0
@@ -88,7 +88,7 @@ class Robot:
         # make a new copy (TODO: use deepcopy)
         res = deepcopy(self)
 
-        distance = random.gauss(x, self.distance_noise)
+        distance = random.gauss(int(x)*self.tick_move, self.distance_noise)
 
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
@@ -104,7 +104,7 @@ class Robot:
         # make a new copy (TODO: use deepcopy)
         res = deepcopy(self)
 
-        turn = random.gauss(x, self.steering_noise)
+        turn = random.gauss(int(x)*self.tick_rotate, self.steering_noise)
         res.orientation = (res.orientation+turn)%(2*pi)
         res.time_elapsed += turn/self.speed_turn # speed is pi/time_unit
         return res
@@ -164,7 +164,7 @@ class Robot:
                 continue
 
             diff_x, diff_y = np.float128(cross_x - x), np.float128(cross_y-y)
-            logger.info((cross_x, cross_y))
+
             if orient_x*diff_x + orient_y*diff_y > 0:
                 logger.info((cross_x, cross_y))
                 if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < x_min_col[2]:

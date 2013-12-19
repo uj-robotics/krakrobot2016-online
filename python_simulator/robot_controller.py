@@ -57,18 +57,18 @@ class OmitCollisions(RobotController):
     def act(self):
         if len(self.command_queue) == 0:
             if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
-                self.command_queue.append([TURN, self.turn_speed/10.0])
+                self.command_queue.append([TURN, 10])
                 self.command_queue.append([SENSE_SONAR])
             else:
-                self.command_queue.append([MOVE, self.last_distance])
+                self.command_queue.append([MOVE, 10])
                 self.command_queue.append([SENSE_SONAR])
 
-        return self.command_queue.pop()
+        return self.command_queue.pop(0)
 
     def on_sense_sonar(self, distance):
         self.last_distance = distance
-        logger.info(self.last_distance +" last_distance updated ")
-        if distance < 0.4:
+        logger.info(str(self.last_distance) +" last_distance updated ")
+        if distance < 0.5:
             self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
         else:
             self.phase = OmitCollisions.STATE_FORWARD
