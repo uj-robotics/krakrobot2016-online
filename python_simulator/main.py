@@ -39,11 +39,6 @@ from robot_controller import *
 from robot import Robot
 
 
-
-class KrakrobotException(Exception):
-    pass
-
-
 #TODO: add Java/C++ RobotController classes with TCP server attached
 
 
@@ -51,9 +46,13 @@ class KrakrobotException(Exception):
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self,  grid, init_position, steering_noise_coef=0.1, sonar_noise = 0.1, distance_noise_coef=0.03,
-                 measurement_noise=0.3, limit_actions = 500, maximum_speed = 0.07,
-                 maximum_turning_speed = 0.05, execution_time_limit = 1.0,
+    def __init__(self,  grid, init_position, steering_noise=0.1, sonar_noise = 0.1, distance_noise=0.03,
+                 measurement_noise=0.3, time_limit = 50,
+                 speed = 1.0,
+                 turning_speed = pi/4.0,
+                 execution_time_limit = 10.0,
+                 simulation_dt = 0.1,
+                 frame_rate = 1,
                  collision_threshold = 50
                  ):
         """ 
@@ -63,30 +62,43 @@ class KrakrobotSimulator(object):
             @param measurement_noise - variance of measurement (GPS??) 
             @param grid - 0/1 matrix representing the maze
             @param init_position - starting position of the Robot (can be moved to map class) [x,y,heading]
-            @param limit_actions - maximum number of actions contestant can make
+
             @param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
             @param execution_time_limit - limit in ms for whole robot execution (also with init)
             @param collision_threshold - maximum number of collisions after which robot is destroyed
+
+            @param frame_rate - save frame every i-th simulation step
+
+
         """
 
         self.collision_threshold = collision_threshold
 
         self.init_position = tuple(init_position)
-        self.maximum_speed = maximum_speed
-        self.maximum_turning_speed = maximum_turning_speed
+
+        self.speed = speed
+        self.turning_speed = turning_speed
+        self.simulation_dt = simulation_dt
+        self.frame_rate = frame_rate
+        self.sonar_time = 0.01
+        self.gps_time = 1.0
+
         self.execution_time_limit = execution_time_limit
 
         self.goal_threshold = 0.5 # When to declare goal reach
 
         self.sonar_noise = sonar_noise
-        self.distance_noise_coef    = distance_noise_coef
+        self.distance_noise_coef    = distance_noise
         self.measurement_noise = measurement_noise
-        self.steering_noise_coef    = steering_noise_coef
+        self.steering_noise_coef    = steering_noise
 
         #TODO: Move adequate actions from __init__() to reset()
         self.reset()
-        self.limit_actions = limit_actions
+
+        self.time_limit = time_limit
+
         self.grid = grid
+
         self.N = len(self.grid)
         self.M = len(self.grid[0])
         for i in xrange(self.N):
@@ -136,26 +148,36 @@ class KrakrobotSimulator(object):
         self.frames_count = 0
         self.finished = False
 
+
+
+
     def run(self, robot_controller_class):
         """ Runs simulations by quering the robot """
         self.reset()
 
         # Initialize robot object
-        robot = Robot()
+        robot = Robot(self.speed, self.turning_speed, self.gps_time, self.sonar_time)
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
-        robot.set_noise(self.steering_noise_coef*self.maximum_turning_speed,
-                        self.distance_noise_coef*self.maximum_speed, self.measurement_noise, self.sonar_noise)
+        robot.set_noise(self.steering_noise_coef,
+                        self.distance_noise_coef,
+                        self.measurement_noise,
+                        self.sonar_noise)
 
         # Initialize robot controller object given by contestant
         robot_controller = robot_controller_class()
         robot_controller.init(self.init_position, robot.steering_noise
-            ,robot.distance_noise, robot.measurement_noise, self.maximum_speed, self.maximum_turning_speed)
+            ,robot.distance_noise, robot.measurement_noise, self.speed, self.turning_speed)
 
 
         self.robot_path.append((robot.x, robot.y))
         collision_counter = 0 # We have maximum collision allowed
+
+
+        frame_time_left = self.simulation_dt
+        frame_count = 0
+        current_command = None
         try:
-            while not self.check_goal(robot) and not robot.num_steps >= self.limit_actions:
+            while not self.check_goal(robot) and not robot.time_elapsed >= self.time_limit:
                 #logger.info((robot.x, robot.y))
                 # Get command
                 command = None
@@ -183,10 +205,6 @@ class KrakrobotSimulator(object):
                     if len(command) <= 1 or len(command) > 2:
                         raise KrakrobotException("Wrong command length")
 
-
-                    if command[1] > self.maximum_turning_speed:
-                        raise KrakrobotException("Turning exceedes the maximum turning allowed")
-
                     # Turn robot
                     robot = robot.turn(command[1])
 
@@ -194,10 +212,8 @@ class KrakrobotSimulator(object):
                     if len(command) <= 1 or len(command) > 2:
                         raise KrakrobotException("Wrong command length")
 
-
-                    if command[1] > self.maximum_speed:
-                        raise KrakrobotException("Turning exceedes the maximum turning allowed")
-
+                    if command[1] < 0:
+                        raise KrakrobotException("Not allowed negative distance")
                     # Move robot
                     robot_proposed = robot.move(command[1])
 
@@ -217,11 +233,11 @@ class KrakrobotSimulator(object):
                 self.frames.append(self.create_visualisation_descriptor(robot))
                 self.frames_count += 1
         except Exception, e:
-            logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.num_steps)+ " steps")
+            logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.time_elapsed)+ " time")
 
         # Simulation process finished
         self.finished = True
-        logger.info("Simulation ended after "+str(robot.num_steps)+ " steps with goal reached = "+str(self.check_goal(robot)))
+        logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
 

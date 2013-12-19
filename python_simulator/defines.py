@@ -3,6 +3,8 @@ TURN = "turn"
 SENSE_SONAR = "sense_sonar" # (sense_radar) -> ([alpha,dist],[alpha,dist]....)
 SENSE_GPS = "sense_gps" # (sense_gps) -> (x,y)
 SENSE_GPS_ACTIONS = 3
+
+
 SENSE_FIELD = "sense_field"
 SENSE_LIGHT_SENSOR = "sense_light_sensor"  # (sense_light_sensor) -> (field_type)   #TODO: add or erase it ? everytime robot knows the field?
 SQUARE_SIDE = 1.0
@@ -32,4 +34,9 @@ CONSTANT_MAP = {"direction":MAP_SPECIAL_DIRECTION, "east": DIRECTION_E, "northea
 
 # GUI
 QT_NO_OPENGL = False
+
+
+
+class KrakrobotException(Exception):
+    pass
 
