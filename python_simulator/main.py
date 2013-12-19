@@ -47,8 +47,8 @@ class KrakrobotSimulator(object):
 
     def __init__(self,  grid, init_position, steering_noise=0.1, sonar_noise = 0.1, distance_noise=0.03,
                  measurement_noise=0.3, time_limit = 50,
-                 speed = 1.0,
-                 turning_speed = pi/4.0,
+                 speed = 5.0,
+                 turning_speed = 4*pi,
                  execution_time_limit = 10.0,
                  simulation_dt = 0.1,
                  frame_dt = 1,
@@ -79,8 +79,10 @@ class KrakrobotSimulator(object):
         self.turning_speed = turning_speed
         self.simulation_dt = simulation_dt
         self.frame_dt = frame_dt
+
         self.sonar_time = 0.01
         self.gps_time = 1.0
+        self.light_sensor_time = 0.01
 
         self.tick_move = 0.01
         self.tick_rotate = 0.01
@@ -90,9 +92,9 @@ class KrakrobotSimulator(object):
         self.goal_threshold = 0.5 # When to declare goal reach
 
         self.sonar_noise = sonar_noise
-        self.distance_noise_coef    = distance_noise
+        self.distance_noise    = distance_noise
         self.measurement_noise = measurement_noise
-        self.steering_noise_coef    = steering_noise
+        self.steering_noise   = steering_noise
 
         #TODO: Move adequate actions from __init__() to reset()
         self.reset()
@@ -160,8 +162,8 @@ class KrakrobotSimulator(object):
         # Initialize robot object
         robot = Robot(self.speed, self.turning_speed, self.gps_time, self.sonar_time, self.tick_move, self.tick_rotate)
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
-        robot.set_noise(self.steering_noise_coef,
-                        self.distance_noise_coef,
+        robot.set_noise(self.steering_noise,
+                        self.distance_noise,
                         self.measurement_noise,
                         self.sonar_noise)
 
@@ -181,62 +183,102 @@ class KrakrobotSimulator(object):
         try:
             while not self.check_goal(robot) and not robot.time_elapsed >= self.time_limit:
                 #logger.info((robot.x, robot.y))
-                # Get command
-                command = None
-                try:
-                    command = list(robot_controller.act())
-                except Exception, e:
-                    logger.error("Robot controller failed with exception " + str(e))
-                    break
-                logger.info("Received command "+str(command))
-                logger.info("Robot timer "+str(robot.time_elapsed))
-                if not command or len(command) == 0:
-                    raise KrakrobotException("No command passed, or zero length command passed")
 
-                # Dispatch command
-                if command[0] == SENSE_GPS:
-                    robot_controller.on_sense_gps(robot.sense_gps())
-                elif command[0] == SENSE_SONAR:
-                    w = robot.sense_sonar(self.grid)
-                    logger.info("Sensed sonar : "+str(w))
-                    robot_controller.on_sense_sonar(w)
-                elif command[0] == SENSE_FIELD:
-                    w = robot.sense_field(self.grid)
-                    if w == MAP_WHITE or w == MAP_WALL: robot_controller.on_sense_field(w, 0)
-                    else: robot_controller.on_sense_field(w[0], w[1])
-                elif command[0] == TURN:
-                    if len(command) <= 1 or len(command) > 2:
-                        raise KrakrobotException("Wrong command length")
+                if frame_time_left > self.frame_dt:
+                    ### Save frame <=> last command took long ###
 
-                    # Turn robot
-                    robot = robot.turn(command[1])
+                    self.frames.append(self.create_visualisation_descriptor(robot))
+                    self.frames_count += 1
+                    frame_time_left -= self.frame_dt
 
-                elif command[0] == MOVE:
-                    if len(command) <= 1 or len(command) > 2:
-                        raise KrakrobotException("Wrong command length")
+                elif current_command is not None:
+                    ### Process current command ###
 
-                    if command[1] < 0:
-                        raise KrakrobotException("Not allowed negative distance")
-                    # Move robot
-                    robot_proposed = robot.move(command[1])
+                    if current_command[0] == TURN:
+                        logger.info(current_command)
 
-                    if not robot_proposed.check_collision(self.grid):
-                        collision_counter += 1
-                        self.collisions.append((robot_proposed.x, robot_proposed.y))
-                        logger.error("##Collision##")
-                        if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
-                            raise KrakrobotException\
-                                    ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
-                    else:
-                        print robot_proposed.x, robot_proposed.y
-                        robot = robot_proposed
-                        self.robot_path.append((robot.x, robot.y))
+                        robot = robot.turn(1)
+                        if current_command[1] > 1: current_command = [current_command[0], current_command[1] - 1]
+                        else: current_command = None
+                        frame_time_left += self.tick_rotate / self.turning_speed
 
-                # Save simulation frame descriptor for visualisation
-                self.frames.append(self.create_visualisation_descriptor(robot))
-                self.frames_count += 1
+
+                    elif current_command[0] == MOVE:
+                        robot_proposed = robot.move(current_command[1])
+
+
+
+                        if not robot_proposed.check_collision(self.grid):
+                            collision_counter += 1
+                            self.collisions.append((robot_proposed.x, robot_proposed.y))
+                            logger.error("##Collision##")
+                            if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
+                                raise KrakrobotException\
+                                        ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
+                        else:
+                            robot = robot_proposed
+                            self.robot_path.append((robot.x, robot.y))
+                            if current_command[1] > 1: current_command = [current_command[0], current_command[1] - 1]
+                            else: current_command = None
+                            frame_time_left += self.tick_move / self.speed
+
+                else:
+                    ### Get current command ###
+
+                    command = None
+                    try:
+                        command = list(robot_controller.act())
+                    except Exception, e:
+                        logger.error("Robot controller failed with exception " + str(e))
+                        break
+                    logger.info("Received command "+str(command))
+                    logger.info("Robot timer "+str(robot.time_elapsed))
+                    if not command or len(command) == 0:
+                        raise KrakrobotException("No command passed, or zero length command passed")
+
+                    # Dispatch command
+                    if command[0] == SENSE_GPS:
+                        robot_controller.on_sense_gps(robot.sense_gps())
+                        frame_time_left += self.gps_time
+                    elif command[0] == SENSE_SONAR:
+                        w = robot.sense_sonar(self.grid)
+                        logger.info("Sensed sonar : "+str(w))
+                        robot_controller.on_sense_sonar(w)
+                        frame_time_left += self.sonar_time
+                    elif command[0] == SENSE_FIELD:
+                        w = robot.sense_field(self.grid)
+                        if w == MAP_WHITE or w == MAP_WALL: robot_controller.on_sense_field(w, 0)
+                        else: robot_controller.on_sense_field(w[0], w[1])
+                        frame_time_left += self.light_sensor_time
+                    elif command[0] == TURN:
+                        if len(command) <= 1 or len(command) > 2:
+                            raise KrakrobotException("Wrong command length")
+                        current_command = command
+                        # Turn robot
+                        #robot = robot.turn(command[1])
+
+                    elif command[0] == MOVE:
+                        if len(command) <= 1 or len(command) > 2:
+                            raise KrakrobotException("Wrong command length")
+
+                        if command[1] < 0:
+                            raise KrakrobotException("Not allowed negative distance")
+                        # Move robot
+
+                        current_command = command
+
+
+
+
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.time_elapsed)+ " time")
+
+
+        while frame_time_left > self.frame_dt:
+            ### Save frame <=> last command took long ###
+            self.frames.append(self.create_visualisation_descriptor(robot))
+            self.frames_count += 1
+            frame_time_left -= self.frame_dt
 
         # Simulation process finished
         self.finished = True
