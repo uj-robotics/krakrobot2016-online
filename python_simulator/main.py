@@ -45,8 +45,8 @@ from robot import Robot
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self,  grid, init_position, steering_noise=0.1, sonar_noise = 0.1, distance_noise=0.03,
-                 measurement_noise=0.3, time_limit = 50,
+    def __init__(self,  grid, init_position, steering_noise=0.103, sonar_noise = 0.1, distance_noise=0.03,
+                 measurement_noise=0.2, time_limit = 50,
                  speed = 5.0,
                  turning_speed = 4*pi,
                  execution_time_limit = 10.0,

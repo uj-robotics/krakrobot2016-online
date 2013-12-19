@@ -88,7 +88,8 @@ class Robot:
         # make a new copy (TODO: use deepcopy)
         res = deepcopy(self)
 
-        distance = random.gauss(int(x)*self.tick_move, self.distance_noise*self.tick_move)
+        distance = max(0.0,random.gauss(int(x)*self.tick_move, self.distance_noise))
+
 
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
@@ -104,7 +105,7 @@ class Robot:
         # make a new copy (TODO: use deepcopy)
         res = deepcopy(self)
 
-        turn = random.gauss(int(x)*self.tick_rotate, self.steering_noise*self.tick_rotate)
+        turn = random.gauss(int(x)*self.tick_rotate, self.steering_noise)
         res.orientation = (res.orientation+turn)%(2*pi)
         res.time_elapsed += turn/self.speed_turn # speed is pi/time_unit
         return res
