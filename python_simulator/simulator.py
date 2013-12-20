@@ -2,14 +2,13 @@ from visualisation import RenderToSVG, Save
 from defines import *
 from robot_controller import *
 from robot import Robot
-from maze_gen import load_map
 from math import (
   pi, sqrt, hypot, sin, cos, tan, asin, acos, atan, atan2, radians, degrees,
   floor, ceil, exp
 )
 import numpy as np
 import random
-from utils import logger
+from utils import logger, load_map
 
 
 class KrakrobotSimulator(object):

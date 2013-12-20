@@ -22,7 +22,8 @@ APP_NAME = 'Krakrobot Simulator'
 APP_FULL_NAME = APP_NAME + ' ' + VERSION
 MSG_EMP = '-> '
 
-# TODO: add logger
+#TODO: add Java/C++ RobotController classes with TCP server attached
+
 
 
 from visualisation import RenderToSVG, Save
@@ -30,9 +31,6 @@ from defines import *
 
 from simulator import KrakrobotSimulator
 from robot_controller import OmitCollisions
-
-#TODO: add Java/C++ RobotController classes with TCP server attached
-
 
 
 
@@ -431,7 +429,7 @@ def main():
             [1, 1, 0, 1, MAP_GOAL, 1],
             [1, 0, 0, 1, 0, 1],
             [1, 1, 1, 1, 1, 1]]
-    simulator = KrakrobotSimulator("maps/1.map", (1, 1, 0))
+    simulator = KrakrobotSimulator("maps/2.map", (1, 1, 0))
 
     #simulator.run(OmitCollisions)
 

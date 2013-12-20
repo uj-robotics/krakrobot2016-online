@@ -13,6 +13,8 @@ SQUARE_SIDE = 1.0
 
 
 MAP_GOAL = 4 # coding MAP_GOAL
+MAP_START_POSITION = 3
+
 MAP_WALL = 1 # coding MAP_WALL
 MAP_WHITE = 0 # coding MAP_WHITE
 MAP_SPECIAL_DIRECTION = 2 # coding [MAP_SPECIAL_DIRECTION, DIRECTION]
@@ -34,6 +36,9 @@ CONSTANT_MAP = {"direction":MAP_SPECIAL_DIRECTION,
                 "southwest": DIRECTION_SW, "south": DIRECTION_S, "southeast": DIRECTION_SE,
                 "distance":MAP_SPECIAL_EUCLIDEAN_DISTANCE
                 }
+MAP_CODING = {"#":1, ".":0, "s":MAP_START_POSITION, "x":MAP_GOAL}
+REV_MAP_CODING = {v:k for k,v in MAP_CODING.items()}
+
 
 # GUI
 QT_NO_OPENGL = False
