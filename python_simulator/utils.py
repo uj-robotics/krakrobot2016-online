@@ -17,6 +17,11 @@ def load_map(file_path):
     lines = [l.strip('\n') for l in open(file_path, "r")]
     params = json.loads("{"+lines.pop(0)+"}")
     if "title" not in params: params["title"] = ""
+
+    # TODO: load all defaults here
+
+
+
     # Read map
     grid = [[0]*params["M"] for i in xrange(params["N"])]
 

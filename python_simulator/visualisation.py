@@ -318,6 +318,8 @@ def RenderFrameTemplate(Data):
       'stroke-linecap': 'butt',
     })
 
+    scale_color = 255.0/len(Map)
+
     arrow_colors = {MAP_SPECIAL_DIRECTION: '00F5F1', MAP_SPECIAL_OPTIMAL: 'F58F00'}
     for i in range(len(Map)):
       for j in range(len(Map[0])):
@@ -329,8 +331,13 @@ def RenderFrameTemplate(Data):
 
 
             if Map[i][j][0] == MAP_SPECIAL_EUCLIDEAN_DISTANCE:
-                Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="#056300"/>\n'
-                       %(i - 0.5, j - 0.5))
+                Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="rgb(%g,%g,%g)"/>\n'
+                       %(i - 0.5, j - 0.5,
+                    max(0, 255-int(scale_color*Map[i][j][1])),
+                       max(0, 255-int(scale_color*Map[i][j][1])),
+                        max(0, 255-int(scale_color*Map[i][j][1]))
+
+                ))
             else:
                 print "Drawing ", REV_CONSTANT_MAP[Map[i][j][0]]
 

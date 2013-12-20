@@ -430,21 +430,11 @@ class SimulatorGUI(object):
         sys.exit(self.qt_app.exec_())
 
 
-#NOTE: End of future extraction
-
 
 import sys
 def main():
 
-    grid = [[1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 1, 1, 1],
-            [1, 1, 0, 1, MAP_GOAL, 1],
-            [1, 0, 0, 1, 0, 1],
-            [1, 1, 1, 1, 1, 1]]
-    simulator = KrakrobotSimulator("maps/4.map", (1, 1, 0))
-
-    #simulator.run(OmitCollisions)
-
+    simulator = KrakrobotSimulator("maps/5.map", (1, 1, 0))
     gui = SimulatorGUI(sys.argv, simulator)
     gui.run()
 

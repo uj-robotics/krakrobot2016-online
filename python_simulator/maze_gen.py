@@ -324,8 +324,8 @@ def generate_simple_maze_test1():
 
 
 if __name__ == "__main__":
-    mm = MapMaze(20, 10)
+    mm = MapMaze(60, 60)
     print mm
-    generate_map(mm, "maps/4.map", "", count_direction=1, count_distance=1, count_optimal=1)
+    generate_map(mm, "maps/5.map", "", count_direction=10, count_distance=10, count_optimal=10)
     mm.bfs_maze(mm.goal, mm.start)
     #generate_simple_maze_test1()

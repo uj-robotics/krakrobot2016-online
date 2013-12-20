@@ -4,6 +4,7 @@
 from defines import *
 
 from robot import Robot
+from robot_controller import PythonTimedRobotController
 from math import (
   pi, sqrt, hypot, sin, cos, tan, asin, acos, atan, atan2, radians, degrees,
   floor, ceil, exp
@@ -12,6 +13,7 @@ from math import (
 from utils import logger, load_map
 from Queue import Queue
 import time
+import datetime
 
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
@@ -19,8 +21,9 @@ class KrakrobotSimulator(object):
     def __init__(self,  map, init_position = None, steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
                  measurement_noise=0.2, time_limit = 5000,
                  speed = 5.0,
-                 turning_speed = 4*pi,
-                 execution_time_limit = 10.0,
+                 turning_speed = 0.4*pi,
+                 execution_cpu_time_limit = 10.0,
+                 simulation_time_limit = 10.0,
                  simulation_dt = 0.001,
                  frame_dt = 0.1,
                  collision_threshold = 50
@@ -34,7 +37,7 @@ class KrakrobotSimulator(object):
             @param init_position - starting position of the Robot (can be moved to map class) [x,y,heading]
 
             @param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
-            @param execution_time_limit - limit in ms for whole robot execution (also with init)
+            @param simulation_time_limit - limit in ms for whole robot execution (also with init)
             @param collision_threshold - maximum number of collisions after which robot is destroyed
 
             @param frame_dt - save frame every dt
@@ -74,7 +77,8 @@ class KrakrobotSimulator(object):
         self.tick_move = 0.01
         self.tick_rotate = 0.07
 
-        self.execution_time_limit = execution_time_limit
+        self.simulation_time_limit = simulation_time_limit
+        self.execution_cpu_time_limit = execution_cpu_time_limit
 
         self.goal_threshold = 0.5 # When to declare goal reach
 
@@ -148,10 +152,14 @@ class KrakrobotSimulator(object):
                         self.sonar_noise)
 
         # Initialize robot controller object given by contestant
-        robot_controller = robot_controller_class()
+        robot_controller = PythonTimedRobotController(robot_controller_class())
         robot_controller.init(self.init_position, robot.steering_noise
-            ,robot.distance_noise, robot.measurement_noise, self.speed, self.turning_speed)
+            ,robot.distance_noise, robot.measurement_noise, self.speed, self.turning_speed,
+                              self.execution_cpu_time_limit
+                              )
 
+
+        maximum_timedelta = datetime.timedelta(seconds=self.execution_cpu_time_limit)
 
         self.robot_path.append((robot.x, robot.y))
         collision_counter = 0 # We have maximum collision allowed
@@ -162,7 +170,8 @@ class KrakrobotSimulator(object):
         current_command = None
         try:
             while not self.check_goal(robot) and not robot.time_elapsed >= self.time_limit:
-                #logger.info((robot.x, robot.y))
+                #logger.info(robot_controller.time_consumed)
+
                 time.sleep(self.simulation_dt)
                 if frame_time_left > self.frame_dt:
                     ### Save frame <=> last command took long ###
@@ -254,8 +263,8 @@ class KrakrobotSimulator(object):
 
                         current_command = command
 
-                    logger.info("Received command "+str(command))
-
+                    if maximum_timedelta <= robot_controller.time_consumed:
+                        raise KrakrobotException("Robot has exceeded CPU time limit")
 
 
         except Exception, e:

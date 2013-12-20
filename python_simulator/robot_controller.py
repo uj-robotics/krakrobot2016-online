@@ -4,7 +4,7 @@ import random
 class RobotController(object):
     """ You have to implement this class """
     def init(self, starting_position, steering_noise, distance_noise, speed, turning_speed,
-             maximum_turn):
+             maximum_turn, execution_cpu_time_limit):
         """ @param starting_position - (x,y) tuple representing current_position """
         raise NotImplementedError()
 
@@ -26,7 +26,7 @@ class RobotController(object):
 
 class ForwardTurningRobotController(RobotController):
     """ Exemplary robot controller """
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed):
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit):
         self.speed = speed
 
     def act(self):
@@ -47,7 +47,7 @@ class OmitCollisions(RobotController):
     STATE_FORWARD = 0
     STATE_LOOK_FOR_SPACE = 1
 
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed):
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit):
         self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
         self.speed = speed
         self.turn_speed = turning_speed
@@ -75,7 +75,7 @@ class OmitCollisions(RobotController):
 
 
     def on_sense_field(self, field_type, field_parameter):
-        print "Sensed field ",field_type, field_parameter
+        pass
 
 
 class OmitCollisionsCheckAccuracy(RobotController):
@@ -113,65 +113,44 @@ class OmitCollisionsCheckAccuracy(RobotController):
 
 from collections import defaultdict
 
-#class DFSBot(RobotController):
-#    """ Exemplary robot controller doing DFS - just for internal tests """
-#    STATE_FORWARD = 0
-#    STATE_LOOK_FOR_RIGHT_WALL = 1
-#
-#
-#
-#    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, maximum_speed = 0.1):
-#        self.map = defaultdict()
-#        self.phase = DFSBot.STATE_LOOK_FOR_RIGHT_WALL
-#        self.phase_variables = {}
-#        self.speed = maximum_speed
-#        self.right_wall_distance = 0.01
-#        self.command_queue = []
-#
-#    def act(self):
-#        if len(self.command_queue) == 0:
-#            if self.phase == DFSBot.STATE_LOOK_FOR_RIGHT_WALL:
-#                self.command_queue.append([MOVE, 0.1, 0.0])
-#                self.command_queue.append([SENSE_SONAR])
-#                self.phase_variables = {} #Reset current state
-#            else:
-#                self.command_queue.append([MOVE, 0.0, self.speed/2.0])
-#                self.command_queue.append([SENSE_SONAR])
-#                self.phase_variables = {} #Reset current state
-#
-#        return self.command_queue.pop()
-#
-#    def on_sense(self, sensor, reading):
-#        if reading < 0.2:
-#            self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-#        else:
-#            self.phase = OmitCollisions.STATE_FORWARD
-#
 
 
 #TODO: fill in this function
 def load_python_controller(file):
     pass
 
+import datetime
 #TODO: add timing
 #TODO: add C++ and Java interfaces (piping)
-class TimedRobotController(RobotController):
+class PythonTimedRobotController(RobotController):
     """ Wrapper class to manage time consumption (also for other language packages) """
-    def init(self, rc):
+    def __init__(self, rc):
         self.rc = rc
-        self.time_consumed = 0.0
+        self.time_consumed = datetime.timedelta(0)
+
+    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit):
+        x = datetime.datetime.now()
+        self.rc.init(starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit)
+        self.time_consumed += datetime.datetime.now() - x
 
     def act(self):
         """ Return next action """
-
+        x = datetime.datetime.now()
         ret = self.rc.act()
+        self.time_consumed += datetime.datetime.now() - x
+        return ret
 
     def on_sense_sonar(self, dist):
+        x = datetime.datetime.now()
         self.rc.on_sense_sonar(dist)
+        self.time_consumed += datetime.datetime.now() - x
 
     def on_sense_field(self, field_type, field_parameter):
+        x = datetime.datetime.now()
         self.rc.on_sense_field(field_type, field_parameter)
-
+        self.time_consumed += datetime.datetime.now() - x
     def on_sense_gps(self, x, y):
+        x = datetime.datetime.now()
         self.rc.on_sense_gps(x,y)
+        self.time_consumed += datetime.datetime.now() - x
 
