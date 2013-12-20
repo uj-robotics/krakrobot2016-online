@@ -1,0 +1,20 @@
+# My extension info file !
+# autor: sulphux
+
+# main:
+
+python
+apache2.2
+django
+
+# django modules:
+django-registration
+
+# apache modules:
+mod_wsgi
+
+# database 
+SQLite
+
+# sites: 
+https://www.digitalocean.com/community/articles/using-mod_wsgi-to-serve-applications-on-ubuntu-12-04
