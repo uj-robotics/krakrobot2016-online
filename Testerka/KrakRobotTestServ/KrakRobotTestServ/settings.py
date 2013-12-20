@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
-from django.conf.global_settings import TEMPLATE_DIRS
+from django.conf.global_settings import TEMPLATE_DIRS, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -88,12 +88,17 @@ STATIC_URL = '/static/'
 # registration settings
 
 ACCOUNT_ACTIVATION_DAYS = 2
-EMAIL_HOST = 'localhost'
-DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 LOGIN_REDIRECT_URL = '/'
+
+# mail server options
+# TODO: find sending mails method
+
+EMAIL_HOST = 'smtp.poczta.onet.pl'
+EMAIL_HOST_USER = 'joe.doe@vp.pl'
+EMAIL_HOST_PASSWORD = '23cichusoWE'
+DEFAULT_FROM_EMAIL = 'joe.doe@vp.pl'
 
 TEMPLATE_DIRS = {
     './Templates/',
     './Templates/registration',
-
 }
