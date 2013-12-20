@@ -313,8 +313,9 @@ def RenderFrameTemplate(Data):
     for i in range(len(Map)):
       for j in range(len(Map[0])):
         if Map[i][j] == 1:
-          Result += IT('<circle cx="%g" cy="%g" r="0.495"/>\n' % (i, j))
-          #Result += IT('<rect x="%g", y="%g" width="1" height="1" />\n' % (i, j))
+          #Result += IT('<circle cx="%g" cy="%g" r="0.495"/>\n' % (i, j))
+          Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="pink"/>\n'
+                       %(i - 0.5, j - 0.5))
 
     Result += SVGGroupEnd(IT)
 

@@ -86,6 +86,9 @@ class SimulationRenderThread(QtCore.QThread):
             time.sleep(0.1)
 
     def run_animation(self):
+        """
+        It manually triggers update. TODO: check if there is no better way of controlling update rate
+        """
         while not self.renderer_stop.is_set():
             self.parent.update_mutex.lock()
             self.parent.scene().update()
@@ -99,6 +102,8 @@ class SimulationRenderThread(QtCore.QThread):
 
         self.simulation_rendering_thread = Thread(target=self.run_rendering)
         self.simulation_rendering_thread.start()
+
+        time.sleep(0.5)
 
         self.animation_thread = Thread(target=self.run_animation)
         self.animation_thread.start()
