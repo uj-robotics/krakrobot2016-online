@@ -3,6 +3,9 @@
 
 # The SVG Plotting for Vegetables module can be found at
 # http://pastebin.com/6Aek3Exm
+
+from defines import *
+
 from math import (
   pi, sqrt, hypot, sin, cos, tan, asin, acos, atan, atan2, radians, degrees,
   floor, ceil, exp
@@ -158,19 +161,23 @@ def RenderAnimatedPart(Data):
 
 
     robot_sprite = ""
-    side = 0.2
+    side = 0.5
     IT = tIndentTracker('  ')
+
     robot_sprite += SVGGroup(IT, {'transform': 'rotate(%g %g %g)'%(
                                          (Data['ActualOrientation'] * 180 / pi) + 180.0,
         Data['ActualPosition'][0],  Data['ActualPosition'][1])
     })
-    robot_sprite += IT('<polygon points="%g,%g %g,%g %g,%g" style="fill:lime;stroke:purple;stroke-width:0.01" />'
+    #robot_sprite += SVGGroup(IT, {'transform': 'scale(2)'})
+    robot_sprite += IT('<polygon points="%g,%g %g,%g %g,%g" style="fill:lime;'
+                       ''
+                       'stroke:purple;stroke-width:0.06" />'
     %(Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] - side/2.0,
     Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] + side/2.0,
       Data['ActualPosition'][0] - side, Data['ActualPosition'][1]
     ))
     robot_sprite += SVGGroupEnd(IT)
-
+    #robot_sprite += SVGGroupEnd(IT)
     path = ""
 
     ActualPath = Field('ActualPath', None)
@@ -207,6 +214,7 @@ def RenderAnimatedPart(Data):
     return [robot_sprite, path]
 
 
+#TODO: allow for debug field for contestants
 def RenderFrameTemplate(Data):
 
   '''Return Data rendered to an SVG file in a string.
@@ -310,14 +318,43 @@ def RenderFrameTemplate(Data):
       'stroke-linecap': 'butt',
     })
 
+    arrow_colors = {MAP_SPECIAL_DIRECTION: '00F5F1', MAP_SPECIAL_OPTIMAL: 'F58F00'}
     for i in range(len(Map)):
       for j in range(len(Map[0])):
         if Map[i][j] == 1:
           #Result += IT('<circle cx="%g" cy="%g" r="0.495"/>\n' % (i, j))
-          Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="pink"/>\n'
+          Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="#B30000"/>\n'
                        %(i - 0.5, j - 0.5))
+        elif type(Map[i][j]) is list:
+
+
+            if Map[i][j][0] == MAP_SPECIAL_EUCLIDEAN_DISTANCE:
+                Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="#056300"/>\n'
+                       %(i - 0.5, j - 0.5))
+            else:
+                print "Drawing ", REV_CONSTANT_MAP[Map[i][j][0]]
+
+                Result += SVGGroup(IT, {'transform': 'translate(%g, %g)' % (i, j)})
+                Result += SVGGroup(IT, {'transform': 'scale(0.0005)'})
+                Result += SVGGroup(IT, {'transform': 'rotate(%g, %g, %g)' % (45*Map[i][j][1] -270, i-0.5, i-0.5)})
+
+                Result += IT('<polygon style="stroke:none; '
+                             'fill:#%s;" points="100,600 100,-200  '
+                             '500,200 500,-100  0,-600  -500,-100 -500,'
+                             '200 -100,-200 -100,600 "/>'%(arrow_colors[Map[i][j][0]],))
+                Result += SVGGroupEnd(IT)
+                Result += SVGGroupEnd(IT)
+                Result += SVGGroupEnd(IT)
+
+
+
+
+
+
 
     Result += SVGGroupEnd(IT)
+
+
 
   # Iniial position
 
@@ -449,9 +486,9 @@ def RenderFrameTemplate(Data):
   })
 
   Result += IT('<!-- Legend line labels-->')
-  Result += SVGText(IT, (19.5, 0.82), 'Planned')
-  Result += SVGText(IT, (22.6, 0.82), 'Estimated')
-  Result += SVGText(IT, (26.0, 0.82), 'Actual')
+  Result += SVGText(IT, (19.5, 0.82), 'Actual path')
+  #Result += SVGText(IT, (22.6, 0.82), 'Estimated')
+  #Result += SVGText(IT, (26.0, 0.82), 'Actual')
 
   Result += IT('<!-- Legend lines -->')
   Result += SVGGroup(IT, {
@@ -462,17 +499,17 @@ def RenderFrameTemplate(Data):
 
   Result += SVGPath(IT,
     [(Pt_Anchor, (18.5, 0.7)), (Pt_Anchor, (19.3, 0.7))],
-    {'stroke': '#0d0'}
-  )
-  Result += SVGPath(IT,
-    [(Pt_Anchor, (21.6, 0.7)), (Pt_Anchor, (22.4, 0.7))],
-    {'stroke': '#f09', 'stroke-dasharray': '0.075 0.15'}
-  )
-
-  Result += SVGPath(IT,
-    [(Pt_Anchor, (25.0, 0.7)), (Pt_Anchor, (25.8, 0.7))],
     {'stroke': '#40f'}
   )
+  #Result += SVGPath(IT,
+  #  [(Pt_Anchor, (21.6, 0.7)), (Pt_Anchor, (22.4, 0.7))],
+  #  {'stroke': '#f09', 'stroke-dasharray': '0.075 0.15'}
+  #)
+  #
+  #Result += SVGPath(IT,
+  #  [(Pt_Anchor, (25.0, 0.7)), (Pt_Anchor, (25.8, 0.7))],
+  #  {'stroke': '#40f'}
+  #)
 
   Result += SVGGroupEnd(IT)
 

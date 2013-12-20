@@ -441,7 +441,7 @@ def main():
             [1, 1, 0, 1, MAP_GOAL, 1],
             [1, 0, 0, 1, 0, 1],
             [1, 1, 1, 1, 1, 1]]
-    simulator = KrakrobotSimulator("maps/2.map", (1, 1, 0))
+    simulator = KrakrobotSimulator("maps/4.map", (1, 1, 0))
 
     #simulator.run(OmitCollisions)
 

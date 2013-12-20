@@ -46,6 +46,8 @@ def load_map(file_path):
             grid[int(x)][int(y)] = [MAP_SPECIAL_DIRECTION, CONSTANT_MAP[value]]
         elif type == MAP_SPECIAL_EUCLIDEAN_DISTANCE:
             grid[int(x)][int(y)] = [MAP_SPECIAL_EUCLIDEAN_DISTANCE, float(value)]
+        elif type == MAP_SPECIAL_OPTIMAL:
+            grid[int(x)][int(y)] = [MAP_SPECIAL_OPTIMAL, CONSTANT_MAP[value]]
         else:
             raise KrakrobotException("Not defined special map type")
 

@@ -16,7 +16,7 @@ import time
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self,  map, init_position, steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
+    def __init__(self,  map, init_position = None, steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
                  measurement_noise=0.2, time_limit = 5000,
                  speed = 5.0,
                  turning_speed = 4*pi,
@@ -54,7 +54,13 @@ class KrakrobotSimulator(object):
 
         self.collision_threshold = collision_threshold
 
-        self.init_position = tuple(init_position)
+        if init_position is not None:
+            self.init_position = tuple(init_position)
+        else:
+            for i in xrange(self.N):
+                for j in xrange(self.M):
+                    if self.grid[i][j] == MAP_START_POSITION:
+                        self.init_position = (i,j,0)
 
         self.speed = speed
         self.turning_speed = turning_speed
@@ -225,7 +231,7 @@ class KrakrobotSimulator(object):
                         frame_time_left += self.sonar_time
                     elif command[0] == SENSE_FIELD:
                         w = robot.sense_field(self.grid)
-                        if w == MAP_WHITE or w == MAP_WALL or w == MAP_GOAL:
+                        if type(w) is not list:
                             robot_controller.on_sense_field(w, 0)
                         else:
                             robot_controller.on_sense_field(w[0], w[1])
