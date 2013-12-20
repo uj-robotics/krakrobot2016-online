@@ -207,7 +207,6 @@ class Robot:
 
 
         self.time_elapsed += self.sonar_time
-        #logger.info("Senses "+str(x_min_col)+" "+str(y_min_col))
         return float(sqrt(min(x_min_col[2], y_min_col[2])))
 
 

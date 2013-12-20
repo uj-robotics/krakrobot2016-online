@@ -16,7 +16,7 @@ class RobotController(object):
         """ React to sensory data """
         raise NotImplementedError()
 
-    def on_sense_field(self, file_type, file_parameter):
+    def on_sense_field(self, field_type, field_parameter):
         """ React to sensory data """
         raise NotImplementedError()
 
@@ -62,16 +62,20 @@ class OmitCollisions(RobotController):
             else:
                 self.command_queue.append([MOVE, 1])
                 self.command_queue.append([SENSE_SONAR])
+                self.command_queue.append([SENSE_FIELD])
 
         return self.command_queue.pop(0)
 
     def on_sense_sonar(self, distance):
         self.last_distance = distance
-        logger.info(str(self.last_distance) +" last_distance updated ")
         if distance < 0.04:
             self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
         else:
             self.phase = OmitCollisions.STATE_FORWARD
+
+
+    def on_sense_field(self, field_type, field_parameter):
+        print "Sensed field ",field_type, field_parameter
 
 
 class OmitCollisionsCheckAccuracy(RobotController):
@@ -94,16 +98,18 @@ class OmitCollisionsCheckAccuracy(RobotController):
             else:
                 self.command_queue.append([MOVE, int(self.last_distance/0.01)])
                 self.command_queue.append([SENSE_SONAR])
+                self.command_queue.append([SENSE_FIELD])
 
         return self.command_queue.pop(0)
 
     def on_sense_sonar(self, distance):
         self.last_distance = distance
-        logger.info(str(self.last_distance) +" last_distance updated ")
+
         if distance < 0.04:
             self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
         else:
             self.phase = OmitCollisions.STATE_FORWARD
+
 
 from collections import defaultdict
 

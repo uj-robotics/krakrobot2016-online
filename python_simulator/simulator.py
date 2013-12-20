@@ -221,7 +221,6 @@ class KrakrobotSimulator(object):
                         frame_time_left += self.gps_time
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
-                        logger.info("Sensed sonar : "+str(w))
                         robot_controller.on_sense_sonar(w)
                         frame_time_left += self.sonar_time
                     elif command[0] == SENSE_FIELD:
@@ -249,6 +248,7 @@ class KrakrobotSimulator(object):
 
                         current_command = command
 
+                    logger.info("Received command "+str(command))
 
 
 

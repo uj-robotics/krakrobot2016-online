@@ -83,7 +83,6 @@ class SimulationRenderThread(QtCore.QThread):
             svg_data = PrepareFrame(self.frame_template, RenderAnimatedPart(sim_data))
             self.frames.append(svg_data)
             self.frame_count += 1
-            time.sleep(0.1)
 
     def run_animation(self):
         """
@@ -133,7 +132,7 @@ class SimulationRenderThread(QtCore.QThread):
                 self.parent.update_mutex.unlock()
 
             current_frame += 1
-            time.sleep(self.simulator.frame_dt)
+            time.sleep(self.simulator.frame_dt/10.0) #10x time
 
 
         #if svg_data:
