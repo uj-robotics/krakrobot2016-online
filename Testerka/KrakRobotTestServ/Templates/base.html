@@ -11,6 +11,8 @@
 <body>
     <div id="header">
         {% block header %}
+    <img src="/Resources/logo.png">
+
 	<a href="{% url "index" %}">{% trans "Home" %}</a> | 
 
 	{% if user.is_authenticated %}
