@@ -11,7 +11,9 @@
 <body>
     <div id="header">
         {% block header %}
-    <img src="/Resources/logo.png">
+    {% load staticfiles %}
+    <img src="{% static "img/logo.png" %}" alt="My image 001"/>
+    <img src="{% static "img/test.jpg" %}" alt="My image 002"/>
 
 	<a href="{% url "index" %}">{% trans "Home" %}</a> | 
 
