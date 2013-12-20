@@ -1,27 +1,23 @@
 """ Simulator which runs the simulation and renders SVG frames """
 
-from visualisation import RenderToSVG, Save
+
 from defines import *
-from robot_controller import *
+
 from robot import Robot
 from math import (
   pi, sqrt, hypot, sin, cos, tan, asin, acos, atan, atan2, radians, degrees,
   floor, ceil, exp
 )
-import numpy as np
-import random
+
 from utils import logger, load_map
-import time
-
 from Queue import Queue
-
-from visualisation import RenderToSVG, fill_visualisation_descriptor
+import time
 
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
     def __init__(self,  map, init_position, steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
-                 measurement_noise=0.2, time_limit = 50,
+                 measurement_noise=0.2, time_limit = 500,
                  speed = 5.0,
                  turning_speed = 4*pi,
                  execution_time_limit = 10.0,
@@ -164,8 +160,12 @@ class KrakrobotSimulator(object):
 
                 if frame_time_left > self.frame_dt:
                     ### Save frame <=> last command took long ###
-
+                    if len(self.robot_path) == 0 or\
+                    robot.x != self.robot_path[-1][0] or robot.y != self.robot_path[-1][1]:
+                        self.robot_path.append((robot.x, robot.y))
                     self.sim_frames.put(self._create_sim_data(robot))
+
+
 
                     frame_time_left -= self.frame_dt
 
@@ -196,7 +196,7 @@ class KrakrobotSimulator(object):
                                         ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
                         else:
                             robot = robot_proposed
-                            self.robot_path.append((robot.x, robot.y))
+
                             if current_command[1] > 1: current_command = [current_command[0], current_command[1] - 1]
                             else: current_command = None
                             frame_time_left += self.tick_move / self.speed
@@ -210,8 +210,8 @@ class KrakrobotSimulator(object):
                     except Exception, e:
                         logger.error("Robot controller failed with exception " + str(e))
                         break
-                    logger.info("Received command "+str(command))
-                    logger.info("Robot timer "+str(robot.time_elapsed))
+                    #logger.info("Received command "+str(command))
+                    #logger.info("Robot timer "+str(robot.time_elapsed))
                     if not command or len(command) == 0:
                         raise KrakrobotException("No command passed, or zero length command passed")
 

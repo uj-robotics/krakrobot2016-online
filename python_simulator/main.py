@@ -26,7 +26,8 @@ MSG_EMP = '-> '
 
 
 
-from visualisation import RenderToSVG, Save, fill_visualisation_descriptor
+from visualisation import PrepareFrame, RenderAnimatedPart, RenderFrameTemplate, \
+    Save, fill_visualisation_descriptor
 from defines import *
 
 from simulator import KrakrobotSimulator
@@ -57,6 +58,8 @@ class SimulationRenderThread(QtCore.QThread):
         self.parent = parent
         self.frames = [] # frame buffer
         self.renderer_stop = Event()
+        self.frame_template = ""
+        self.frame_count = 0
 
 
     def run_simulation(self):
@@ -72,9 +75,22 @@ class SimulationRenderThread(QtCore.QThread):
             # note: will hang here
             sim_data = self.simulator.get_next_frame()
             fill_visualisation_descriptor(sim_data)
-            svg_data = RenderToSVG(sim_data)
-            self.frames.append(svg_data)
 
+            if self.frame_template == "":
+                print "Rendering frame template"
+                self.frame_template = RenderFrameTemplate(sim_data)
+
+            svg_data = PrepareFrame(self.frame_template, RenderAnimatedPart(sim_data))
+            self.frames.append(svg_data)
+            self.frame_count += 1
+            time.sleep(0.1)
+
+    def run_animation(self):
+        while not self.renderer_stop.is_set():
+            self.parent.update_mutex.lock()
+            self.parent.scene().update()
+            self.parent.update_mutex.unlock()
+            time.sleep(0.03)
 
     def run(self):
         """SVG rendering"""
@@ -84,6 +100,10 @@ class SimulationRenderThread(QtCore.QThread):
         self.simulation_rendering_thread = Thread(target=self.run_rendering)
         self.simulation_rendering_thread.start()
 
+        self.animation_thread = Thread(target=self.run_animation)
+        self.animation_thread.start()
+
+
 
         i = 0
         current_frame = 0
@@ -91,35 +111,26 @@ class SimulationRenderThread(QtCore.QThread):
         time_elapsed = datetime.timedelta(0)
         time_elapsed_update = datetime.timedelta(0)
 
-        time.sleep(1)
 
         while True:
             # Wait for current frame
-            while current_frame+1 > len(self.frames):
+            while current_frame+1 > self.frame_count:
                 time.sleep(0.01)
 
-
-
-            print "Rendering SVG..."
-            start = datetime.datetime.now()
-
-            time_elapsed += datetime.datetime.now() - start
-
-            start = datetime.datetime.now()
-
-            print "update"
             if current_frame == 0:
                 self.parent.update_mutex.lock()
                 self.parent.setup_scene(self.frames[current_frame])
+                self.parent.update_mutex.unlock()
             else:
                 self.parent.update_mutex.lock()
+                #It is important that this code does not work at all, it only sets current frame!
                 self.parent.update_data(self.frames[current_frame])
+                self.parent.update_mutex.unlock()
 
             current_frame += 1
-
-            time_elapsed_update += datetime.datetime.now() - start
-            print "Rendered , time elapsed for RenderTOSVG", time_elapsed, " update ",time_elapsed_update
+            #10 FPS
             time.sleep(0.1)
+
 
         #if svg_data:
         #    OutputFileName = 'output.svg'
@@ -159,7 +170,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.setTransformationAnchor(self.AnchorUnderMouse)
         self.setDragMode(self.ScrollHandDrag)
         self.setCacheMode(self.CacheBackground)
-        self.setViewportUpdateMode(self.FullViewportUpdate)
+        self.setViewportUpdateMode(self.NoViewportUpdate)
 
 
     def run_simulation(self):
@@ -185,15 +196,11 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         scene.addItem(self.svg_item)
 
         scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-        self.update_mutex.unlock()
-        print "setted up"
 
 
     def update_data(self, svg_data):
         self.svg_data = svg_data
 
-        self.update_mutex.unlock()
-        print "updated"
 
     #def update(self, svg_data):
 
@@ -227,6 +234,8 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         if type(event != QtGui.QPaintEvent):
             pass
 
+
+
         # Load new graphics
         if self.svg_data:
             self.xml_stream_reader = QtCore.QXmlStreamReader(self.svg_data)
@@ -242,6 +251,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
             scene.addItem(self.svg_item)
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+
 
         if (self.renderer == 'Image'):
             if self.image.size() != self.viewport().size():

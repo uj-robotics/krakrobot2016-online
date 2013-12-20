@@ -142,7 +142,72 @@ def SparkSymbolDef(IT, ID, NumPoints=8):
 
 
 
-def RenderToSVG(Data):
+def PrepareFrame(frame_template, animated_part):
+    return frame_template.format(*animated_part)
+
+
+def RenderAnimatedPart(Data):
+    """ Renders list of strings that will be injected to frame """
+
+    #-----------------------------------------------------------------------------
+
+    def Field(Name, Default):
+        return Data[Name] if Name in Data else Default
+
+    #-----------------------------------------------------------------------------
+
+
+    robot_sprite = ""
+    side = 0.2
+    IT = tIndentTracker('  ')
+    robot_sprite += SVGGroup(IT, {'transform': 'rotate(%g %g %g)'%(
+                                         (Data['ActualOrientation'] * 180 / pi) + 180.0,
+        Data['ActualPosition'][0],  Data['ActualPosition'][1])
+    })
+    robot_sprite += IT('<polygon points="%g,%g %g,%g %g,%g" style="fill:lime;stroke:purple;stroke-width:0.01" />'
+    %(Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] - side/2.0,
+    Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] + side/2.0,
+      Data['ActualPosition'][0] - side, Data['ActualPosition'][1]
+    ))
+    robot_sprite += SVGGroupEnd(IT)
+
+    path = ""
+
+    ActualPath = Field('ActualPath', None)
+    if ActualPath is not None:
+      path += IT('<!-- Actual path -->')
+      path += SVGPath(IT,
+        ShapeFromVertices(ActualPath, 1),
+        {'stroke': '#40f', 'stroke-width': '0.02'}
+      )
+
+
+    # ??
+    # Paths in rainbow colours
+    Paths = Field('Paths', None)
+    if Paths is not None and len(Paths) > 0:
+
+      NumPaths = len(Paths)
+
+      path += IT('<!-- Paths in rainbow colours -->')
+      for PathIx, Path in enumerate(Paths):
+        if NumPaths >= 2:
+          Progress = float(PathIx) / float(NumPaths - 1)
+        else:
+          Progress = 1.0
+        Opacity = 1.0 if Progress in [0.0, 1.0] else 0.60 + 0.00 * Progress
+        ColourStr = ProgressColourStr(Progress, Opacity)
+        path += IT('<!-- Path %d, (%.1f%%) -->' % (PathIx, 100.0 * Progress))
+        path += SVGPath(IT, Path, {"stroke": ColourStr})
+
+    # End of plot
+
+    path += SVGGroupEnd(IT)
+
+    return [robot_sprite, path]
+
+
+def RenderFrameTemplate(Data):
 
   '''Return Data rendered to an SVG file in a string.
 
@@ -272,17 +337,21 @@ def RenderToSVG(Data):
 
 
   # Robot
-  side = 0.2
-  Result += SVGGroup(IT, {'transform': 'rotate(%g %g %g)'%(
-                                       (Data['ActualOrientation'] * 180 / pi) + 180.0,
-      Data['ActualPosition'][0],  Data['ActualPosition'][1])
-  })
-  Result += IT('<polygon points="%g,%g %g,%g %g,%g" style="fill:lime;stroke:purple;stroke-width:0.01" />'
-  %(Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] - side/2.0,
-  Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] + side/2.0,
-    Data['ActualPosition'][0] - side, Data['ActualPosition'][1]
-  ))
-  Result += SVGGroupEnd(IT)
+  Result += "{0}"
+
+  #side = 0.2
+  #Result += SVGGroup(IT, {'transform': 'rotate(%g %g %g)'%(
+  #                                     (Data['ActualOrientation'] * 180 / pi) + 180.0,
+  #    Data['ActualPosition'][0],  Data['ActualPosition'][1])
+  #})
+  #Result += IT('<polygon points="%g,%g %g,%g %g,%g" style="fill:lime;stroke:purple;stroke-width:0.01" />'
+  #%(Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] - side/2.0,
+  #Data['ActualPosition'][0] + side/2.0, Data['ActualPosition'][1] + side/2.0,
+  #  Data['ActualPosition'][0] - side, Data['ActualPosition'][1]
+  #))
+  #Result += SVGGroupEnd(IT)
+
+
 
   # Goal position
   GoalPos = Field('GoalPos', None)
@@ -323,37 +392,38 @@ def RenderToSVG(Data):
     Result += SVGGroupEnd(IT)
 
   # Actual path
-
-  ActualPath = Field('ActualPath', None)
-  if ActualPath is not None:
-    Result += IT('<!-- Actual path -->')
-    Result += SVGPath(IT,
-      ShapeFromVertices(ActualPath, 1),
-      {'stroke': '#40f', 'stroke-width': '0.02'}
-    )
-
-
-  # ??
-  # Paths in rainbow colours
-  Paths = Field('Paths', None)
-  if Paths is not None and len(Paths) > 0:
-
-    NumPaths = len(Paths)
-
-    Result += IT('<!-- Paths in rainbow colours -->')
-    for PathIx, Path in enumerate(Paths):
-      if NumPaths >= 2:
-        Progress = float(PathIx) / float(NumPaths - 1)
-      else:
-        Progress = 1.0
-      Opacity = 1.0 if Progress in [0.0, 1.0] else 0.60 + 0.00 * Progress
-      ColourStr = ProgressColourStr(Progress, Opacity)
-      Result += IT('<!-- Path %d, (%.1f%%) -->' % (PathIx, 100.0 * Progress))
-      Result += SVGPath(IT, Path, {"stroke": ColourStr})
-
-  # End of plot
-
-  Result += SVGGroupEnd(IT)
+  Result += "{1}"
+  #
+  #ActualPath = Field('ActualPath', None)
+  #if ActualPath is not None:
+  #  Result += IT('<!-- Actual path -->')
+  #  Result += SVGPath(IT,
+  #    ShapeFromVertices(ActualPath, 1),
+  #    {'stroke': '#40f', 'stroke-width': '0.02'}
+  #  )
+  #
+  #
+  ## ??
+  ## Paths in rainbow colours
+  #Paths = Field('Paths', None)
+  #if Paths is not None and len(Paths) > 0:
+  #
+  #  NumPaths = len(Paths)
+  #
+  #  Result += IT('<!-- Paths in rainbow colours -->')
+  #  for PathIx, Path in enumerate(Paths):
+  #    if NumPaths >= 2:
+  #      Progress = float(PathIx) / float(NumPaths - 1)
+  #    else:
+  #      Progress = 1.0
+  #    Opacity = 1.0 if Progress in [0.0, 1.0] else 0.60 + 0.00 * Progress
+  #    ColourStr = ProgressColourStr(Progress, Opacity)
+  #    Result += IT('<!-- Path %d, (%.1f%%) -->' % (PathIx, 100.0 * Progress))
+  #    Result += SVGPath(IT, Path, {"stroke": ColourStr})
+  #
+  ## End of plot
+  #
+  #Result += SVGGroupEnd(IT)
 
   # Title and legend
 
