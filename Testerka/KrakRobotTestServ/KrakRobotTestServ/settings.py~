@@ -22,9 +22,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = 'b+@p@fts@vg%05wqaoga-2i-bc_^i%82h8q@=6iipkfex=q0#s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = False
 
 ALLOWED_HOSTS = ['localhost']
 
@@ -82,15 +82,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
-STATIC_ROOT = '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ'
+STATIC_ROOT = '/media/'
 STATIC_URL = '/media/'
 
+"""
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "media"),
-    './media/','./static/','./Templates/',
-    '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/media/',
+    './media/','./static/Resources/'
 )
-
+"""
 # registration settings
 
 ACCOUNT_ACTIVATION_DAYS = 2
@@ -107,8 +107,4 @@ DEFAULT_FROM_EMAIL = 'joe.doe@vp.pl'
 TEMPLATE_DIRS = {
     './Templates/',
     './Templates/registration',
-    '../Templates/',
-    '../Templates/registration',
-    '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/Templates/',
-    '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/Templates/registration',
 }
