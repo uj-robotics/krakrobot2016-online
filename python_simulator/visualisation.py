@@ -339,8 +339,6 @@ def RenderFrameTemplate(Data):
 
                 ))
             else:
-                print "Drawing ", REV_CONSTANT_MAP[Map[i][j][0]]
-
                 Result += SVGGroup(IT, {'transform': 'translate(%g, %g)' % (i, j)})
                 Result += SVGGroup(IT, {'transform': 'scale(0.0005)'})
                 Result += SVGGroup(IT, {'transform': 'rotate(%g, %g, %g)' % (45*Map[i][j][1] -270, i-0.5, i-0.5)})

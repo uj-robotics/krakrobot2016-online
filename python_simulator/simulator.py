@@ -53,7 +53,6 @@ class KrakrobotSimulator(object):
             self.grid = map
             self.map_title = ""
 
-        print self.grid
 
         self.collision_threshold = collision_threshold
 
@@ -280,6 +279,10 @@ class KrakrobotSimulator(object):
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
+        # Return simulation results
+        return {"time_elapsed": robot.time_elapsed, "goal_achieved": self.check_goal(robot),
+                "time_consumed_robot": robot_controller.time_consumed
+                }
 
 
     def _create_sim_data(self, robot):
