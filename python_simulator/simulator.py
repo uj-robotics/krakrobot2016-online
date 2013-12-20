@@ -138,6 +138,7 @@ class KrakrobotSimulator(object):
         """ Reset state of the KrakrobotSimulator """
         self.robot_path = []
         self.collisions = []
+
         self.goal_achieved = False
         self.robot_timer = 0.0
         self.sim_frames = Queue(100000)
@@ -293,7 +294,7 @@ class KrakrobotSimulator(object):
 
         while frame_time_left > self.frame_dt and self.visualisation:
             ### Save frame <=> last command took long ###
-            self.frames.append(self.create_visualisation_descriptor(robot))
+            self.sim_frames.put(self._create_sim_data(robot))
             self.frames_count += 1
             frame_time_left -= self.frame_dt
 
