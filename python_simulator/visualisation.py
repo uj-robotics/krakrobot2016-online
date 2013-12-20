@@ -51,7 +51,31 @@ from vegesvgplot import (
   SVGGroup, SVGGroupEnd, SVGGrid
 
 )
-
+#TODO: move it from here
+def fill_visualisation_descriptor(Data):
+    Map = Data['Map']
+    Data['Title'] = 'Krakrobot Eliminacje, przejazd..'
+    Grid = {
+    'CanvasMinima': (0.5, 1.5),
+    'CanvasMaxima': (27.5, 18.5),
+    'RangeMinima': (0, 0),
+    'RangeMaxima': (len(Map), len(Map[0])),
+    'YIsUp': False,
+    'Transpose': True,
+    'SquareAlignment': 'Centre',
+    'DrawGrid': True,
+    'DrawUnitAxes': False,
+    'GridLineAttributes': {
+      'stroke-width': '0.02', 'stroke': 'rgba(0, 192, 255, 0.5)'
+    },
+    'GeneralAttributes': {
+      'stroke-width': '0.05', 'stroke': 'red'
+    }
+    }
+    Paths = []
+    Data['Grid'] = Grid
+    Data['Paths'] = Paths
+    Data['Map'] = Map
 def GreekCross(Centre, ArmLength):
 
 

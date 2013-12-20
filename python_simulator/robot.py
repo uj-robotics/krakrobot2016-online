@@ -65,7 +65,6 @@ class Robot:
         @note: Cannot be called by contestant
         @returns: True if no collisions
         """
-        print "Checking collisions ",self.x, " ",self.y," ", self.orientation
         # Box based (sharp edges):
         # TODO: add slack here !!
         for i in xrange(len(grid)):
@@ -143,7 +142,7 @@ class Robot:
                                                                                       np.float128(1e100)]
 
         x, y = np.float128(self.x + SQUARE_SIDE/2.0), np.float128((self.y + SQUARE_SIDE/2.0))
-        logger.info(("robot:",x," ",y," ",self.orientation))
+        #logger.info(("robot:",x," ",y," ",self.orientation))
         x_disc, y_disc = int(x), int(y)
 
         orient_x = np.float128(np.cos(np.float128(self.orientation)))
@@ -151,8 +150,8 @@ class Robot:
         a = np.float128(np.tan(np.float128(self.orientation)))
         b = np.float128(y - a*x)
 
-        logger.info(("A=", a," B=", b))
-        logger.info((orient_x, orient_y))
+        #logger.info(("A=", a," B=", b))
+        #logger.info((orient_x, orient_y))
         # Find collisions with x walls
         for i in xrange(0, len(grid)):
 
@@ -167,7 +166,7 @@ class Robot:
             diff_x, diff_y = np.float128(cross_x - x), np.float128(cross_y-y)
 
             if orient_x*diff_x + orient_y*diff_y > 0:
-                logger.info((cross_x, cross_y))
+                #logger.info((cross_x, cross_y))
                 if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < x_min_col[2]:
                     x_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]
                     found = True
@@ -197,7 +196,7 @@ class Robot:
 
 
         self.time_elapsed += self.sonar_time
-        logger.info("Senses "+str(x_min_col)+" "+str(y_min_col))
+        #logger.info("Senses "+str(x_min_col)+" "+str(y_min_col))
         return float(sqrt(min(x_min_col[2], y_min_col[2])))
 
 

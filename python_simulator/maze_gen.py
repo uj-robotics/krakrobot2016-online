@@ -296,6 +296,6 @@ def generate_map(map_maze, file_name, title = "", K = 0):
 
 
 if __name__ == "__main__":
-    mm = MapMaze(30,30)
+    mm = MapMaze(10,10)
     print mm
-    generate_map(mm, "maps/2.map", "", 0)
+    generate_map(mm, "maps/3.map", "", 0)

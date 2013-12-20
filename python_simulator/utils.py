@@ -4,7 +4,7 @@ import logging
 from defines import *
 import json
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
 formatter = logging.Formatter('%(funcName)s - %(asctime)s - %(levelname)s - %(message)s')

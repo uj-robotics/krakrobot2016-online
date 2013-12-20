@@ -26,7 +26,7 @@ MSG_EMP = '-> '
 
 
 
-from visualisation import RenderToSVG, Save
+from visualisation import RenderToSVG, Save, fill_visualisation_descriptor
 from defines import *
 
 from simulator import KrakrobotSimulator
@@ -34,31 +34,10 @@ from robot_controller import OmitCollisions
 
 
 
-#TODO: move it from here
-def fill_visualisation_descriptor(Data):
-    Map = Data['Map']
-    Data['Title'] = 'Krakrobot Eliminacje, przejazd..'
-    Grid = {
-    'CanvasMinima': (0.5, 1.5),
-    'CanvasMaxima': (27.5, 18.5),
-    'RangeMinima': (0, 0),
-    'RangeMaxima': (len(Map), len(Map[0])),
-    'YIsUp': False,
-    'Transpose': True,
-    'SquareAlignment': 'Centre',
-    'DrawGrid': True,
-    'DrawUnitAxes': False,
-    'GridLineAttributes': {
-      'stroke-width': '0.02', 'stroke': 'rgba(0, 192, 255, 0.5)'
-    },
-    'GeneralAttributes': {
-      'stroke-width': '0.05', 'stroke': 'red'
-    }
-    }
-    Paths = []
-    Data['Grid'] = Grid
-    Data['Paths'] = Paths
-    Data['Map'] = Map
+#multithreading queue for rendering job
+from Queue import Queue
+
+
 
 
 #TODO: Extract this code to GUI module
@@ -67,6 +46,8 @@ from threading import Thread
 import datetime
 
 from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
+from threading import Event
+
 
 class SimulationRenderThread(QtCore.QThread):
 
@@ -74,13 +55,25 @@ class SimulationRenderThread(QtCore.QThread):
         super(SimulationRenderThread, self).__init__()
         self.simulator = simulator
         self.parent = parent
+        self.frames = [] # frame buffer
+        self.renderer_stop = Event()
 
 
     def run_simulation(self):
         """Running KrakrobotSimulator simulation"""
         self.simulator.reset()
         self.simulator.run(OmitCollisions)
-        self.exec_()
+        self.exec_() #?
+
+
+    def run_rendering(self):
+        """ Job rendering frames to stack """
+        while not self.renderer_stop.is_set():
+            # note: will hang here
+            sim_data = self.simulator.get_next_frame()
+            fill_visualisation_descriptor(sim_data)
+            svg_data = RenderToSVG(sim_data)
+            self.frames.append(svg_data)
 
 
     def run(self):
@@ -88,51 +81,53 @@ class SimulationRenderThread(QtCore.QThread):
         self.simulation_process_thread = Thread(target=self.run_simulation)
         self.simulation_process_thread.start()
 
+        self.simulation_rendering_thread = Thread(target=self.run_rendering)
+        self.simulation_rendering_thread.start()
+
+
         i = 0
-        rendered_frames = 0
+        current_frame = 0
         svg_data = None
         time_elapsed = datetime.timedelta(0)
         time_elapsed_update = datetime.timedelta(0)
 
-        while (not self.simulator.finished) or (self.simulator.get_frames_count() > rendered_frames):
-            while self.simulator.get_frames_count() <= rendered_frames:
+        time.sleep(1)
+
+        while True:
+            # Wait for current frame
+            while current_frame+1 > len(self.frames):
                 time.sleep(0.01)
 
-            print "Frames to render ",len(self.simulator.frames), " rendered so far ", rendered_frames+1
 
-            time.sleep(0.01)
-
-            print "self.simulator.get_frames_count() = ", self.simulator.get_frames_count()
-            print "Rendering", rendered_frames, " frame"
-            self.sim_data = self.simulator.get_visualisation_descriptor(rendered_frames)
-            fill_visualisation_descriptor(self.sim_data)
 
             print "Rendering SVG..."
             start = datetime.datetime.now()
-            svg_data = RenderToSVG(self.sim_data)
+
             time_elapsed += datetime.datetime.now() - start
 
             start = datetime.datetime.now()
 
             print "update"
-            if rendered_frames == 0:
+            if current_frame == 0:
                 self.parent.update_mutex.lock()
-                self.parent.setup_scene(svg_data)
+                self.parent.setup_scene(self.frames[current_frame])
             else:
                 self.parent.update_mutex.lock()
-                self.parent.update_data(svg_data)
-            rendered_frames += 1
+                self.parent.update_data(self.frames[current_frame])
+
+            current_frame += 1
 
             time_elapsed_update += datetime.datetime.now() - start
             print "Rendered , time elapsed for RenderTOSVG", time_elapsed, " update ",time_elapsed_update
+            time.sleep(0.1)
 
+        #if svg_data:
+        #    OutputFileName = 'output.svg'
+        #    print 'Saving SVG to "' + OutputFileName + '"...'
+        #    Save(svg_data.encode('utf_8'), OutputFileName)
+        #    print 'Saved.'
 
-        if svg_data:
-            OutputFileName = 'output.svg'
-            print 'Saving SVG to "' + OutputFileName + '"...'
-            Save(svg_data.encode('utf_8'), OutputFileName)
-            print 'Saved.'
-
+        self.renderer_stop.set()
         self.quit()
 
 

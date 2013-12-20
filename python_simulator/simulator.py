@@ -1,3 +1,5 @@
+""" Simulator which runs the simulation and renders SVG frames """
+
 from visualisation import RenderToSVG, Save
 from defines import *
 from robot_controller import *
@@ -9,7 +11,11 @@ from math import (
 import numpy as np
 import random
 from utils import logger, load_map
+import time
 
+from Queue import Queue
+
+from visualisation import RenderToSVG, fill_visualisation_descriptor
 
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
@@ -90,36 +96,30 @@ class KrakrobotSimulator(object):
                     self.goal = (i,j)
 
 
-    def create_visualisation_descriptor(self, robot):
-        """
-            @returns Descriptor that is sufficient to visualize current frame
-        """
-        data = {}
-        data['GoalThreshold'] = self.goal_threshold
-        data['Sparks'] = []# ommiting errors list(self.collisions)
-        data['ActualPath'] = list(self.robot_path)
-        data['ActualPosition'] = [robot.x, robot.y]
-        data['ActualOrientation'] = robot.orientation
-        data['Map'] = self.grid
-        data['StartPos'] = self.init_position
-        data['GoalPos'] = self.goal
-        data['GoalAchieved'] = self.goal_achieved
-        return data
 
 
-    def get_visualisation_descriptor(self, i):
+
+    def get_next_frame(self):
         """
-            @returns i-th frame descriptor
+            @returns next frame of simulation data
+
+            @note the queue is thread-safe and it works like consumer-producer
+            those frames should be consumed by rendering thread
         """
-        return self.frames[i]
+        #if len(self.sim_frames) == 0: return None
+
+        return self.sim_frames.get()
+
+
 
     def check_goal(self, robot):
         """ Checks if goal is within threshold distance"""
         dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
         return dist < self.goal_threshold
 
-    def get_frames_count(self):
-        return self.frames_count
+
+
+
 
     #TODO: test
     def reset(self):
@@ -128,10 +128,8 @@ class KrakrobotSimulator(object):
         self.collisions = []
         self.goal_achieved = False
         self.robot_timer = 0.0
-        self.frames = []
-        self.frames_count = 0
+        self.sim_frames = Queue(1000)
         self.finished = False
-
 
 
 
@@ -167,8 +165,8 @@ class KrakrobotSimulator(object):
                 if frame_time_left > self.frame_dt:
                     ### Save frame <=> last command took long ###
 
-                    self.frames.append(self.create_visualisation_descriptor(robot))
-                    self.frames_count += 1
+                    self.sim_frames.put(self._create_sim_data(robot))
+
                     frame_time_left -= self.frame_dt
 
                 elif current_command is not None:
@@ -270,5 +268,21 @@ class KrakrobotSimulator(object):
         self.goal_achieved = self.check_goal(robot)
 
 
+
+    def _create_sim_data(self, robot):
+        """
+            @returns Descriptor that is sufficient to visualize current frame
+        """
+        data = {}
+        data['GoalThreshold'] = self.goal_threshold
+        data['Sparks'] = []# ommiting errors list(self.collisions)
+        data['ActualPath'] = list(self.robot_path)
+        data['ActualPosition'] = [robot.x, robot.y]
+        data['ActualOrientation'] = robot.orientation
+        data['Map'] = self.grid
+        data['StartPos'] = self.init_position
+        data['GoalPos'] = self.goal
+        data['GoalAchieved'] = self.goal_achieved
+        return data
 
 
