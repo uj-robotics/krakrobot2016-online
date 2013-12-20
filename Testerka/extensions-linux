@@ -17,4 +17,6 @@ mod_wsgi
 SQLite
 
 # sites: 
+
+# django + mod_wsgi + apache integration with Ubuntu 12.04
 https://www.digitalocean.com/community/articles/using-mod_wsgi-to-serve-applications-on-ubuntu-12-04
