@@ -18,7 +18,8 @@ import datetime
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self,  map, init_position = None, steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
+    def __init__(self,  map, robot_controller_class, init_position = None,
+                 steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
                  measurement_noise=0.2, time_limit = 5000,
                  speed = 5.0,
                  turning_speed = 0.4*pi,
@@ -26,7 +27,9 @@ class KrakrobotSimulator(object):
                  simulation_time_limit = 10.0,
                  simulation_dt = 0.001,
                  frame_dt = 0.1,
-                 collision_threshold = 50
+                 collision_threshold = 50,
+                 iteration_write_frequency = 1000,
+                 visualisation = True
                  ):
         """
             Initialize KrakrobotSimulator object
@@ -41,7 +44,7 @@ class KrakrobotSimulator(object):
             @param collision_threshold - maximum number of collisions after which robot is destroyed
 
             @param frame_dt - save frame every dt
-
+            @param robot - RobotController class that will be simulated in run procedure
 
         """
 
@@ -53,6 +56,10 @@ class KrakrobotSimulator(object):
             self.grid = map
             self.map_title = ""
 
+        self.N = len(self.grid)
+        self.M = len(self.grid[0])
+
+        self.iteration_write_frequency = iteration_write_frequency
 
         self.collision_threshold = collision_threshold
 
@@ -68,6 +75,10 @@ class KrakrobotSimulator(object):
         self.turning_speed = turning_speed
         self.simulation_dt = simulation_dt
         self.frame_dt = frame_dt
+        self.robot_controller = robot_controller_class()
+
+
+        self.visualisation = visualisation
 
         self.sonar_time = 0.01
         self.gps_time = 1.0
@@ -90,8 +101,6 @@ class KrakrobotSimulator(object):
         self.time_limit = time_limit
 
 
-        self.N = len(self.grid)
-        self.M = len(self.grid[0])
 
         for i in xrange(self.N):
             for j in xrange(self.M):
@@ -131,12 +140,12 @@ class KrakrobotSimulator(object):
         self.collisions = []
         self.goal_achieved = False
         self.robot_timer = 0.0
-        self.sim_frames = Queue(1000)
+        self.sim_frames = Queue(100000)
         self.finished = False
 
 
 
-    def run(self, robot_controller_class):
+    def run(self):
         """ Runs simulations by quering the robot """
         self.reset()
 
@@ -148,8 +157,9 @@ class KrakrobotSimulator(object):
                         self.measurement_noise,
                         self.sonar_noise)
 
+
         # Initialize robot controller object given by contestant
-        robot_controller = PythonTimedRobotController(robot_controller_class())
+        robot_controller = PythonTimedRobotController(self.robot_controller)
         robot_controller.init(self.init_position, robot.steering_noise
             ,robot.distance_noise, robot.measurement_noise, self.speed, self.turning_speed,
                               self.execution_cpu_time_limit
@@ -165,12 +175,20 @@ class KrakrobotSimulator(object):
         frame_time_left = self.simulation_dt
         frame_count = 0
         current_command = None
+        iteration = 0
         try:
             while not self.check_goal(robot) and not robot.time_elapsed >= self.time_limit:
                 #logger.info(robot_controller.time_consumed)
 
+                if iteration % self.iteration_write_frequency == 0:
+                    logger.info("Iteration {0}, produced {1} frames".format(iteration,
+                                            frame_count))
+                    logger.info(current_command)
+
+                iteration += 1
+
                 time.sleep(self.simulation_dt)
-                if frame_time_left > self.frame_dt:
+                if frame_time_left > self.frame_dt and self.visualisation:
                     ### Save frame <=> last command took long ###
                     if len(self.robot_path) == 0 or\
                     robot.x != self.robot_path[-1][0] or robot.y != self.robot_path[-1][1]:
@@ -178,8 +196,9 @@ class KrakrobotSimulator(object):
                     self.sim_frames.put(self._create_sim_data(robot))
 
 
-
+                    frame_count += 1
                     frame_time_left -= self.frame_dt
+
 
                 elif current_command is not None:
                     ### Process current command ###
@@ -267,21 +286,22 @@ class KrakrobotSimulator(object):
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.time_elapsed)+ " time")
 
-
-        while frame_time_left > self.frame_dt:
-            ### Save frame <=> last command took long ###
-            self.frames.append(self.create_visualisation_descriptor(robot))
-            self.frames_count += 1
-            frame_time_left -= self.frame_dt
-
         # Simulation process finished
         self.finished = True
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
+        while frame_time_left > self.frame_dt and self.visualisation:
+            ### Save frame <=> last command took long ###
+            self.frames.append(self.create_visualisation_descriptor(robot))
+            self.frames_count += 1
+            frame_time_left -= self.frame_dt
+
+        logger.info("Exiting")
+
         # Return simulation results
         return {"time_elapsed": robot.time_elapsed, "goal_achieved": self.check_goal(robot),
-                "time_consumed_robot": robot_controller.time_consumed
+                "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000
                 }
 
 
