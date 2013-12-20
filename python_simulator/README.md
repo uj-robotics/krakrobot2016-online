@@ -2,15 +2,22 @@ Krakrobot2014 Online Eliminations
 #######################################
 
 Welcome to the technical specification for Krakrobot2014 online eliminations problem.
-For description of the task please refer to the Problems page in tournament's homepage www.krakrobot.pl
+For description of the task please refer to the Problems page on the tournament's homepage www.krakrobot.pl
 
 
 
+
+Installation
+---------------------
+<TODO:fill in>
 
 
 Simulator
 ---------------------------------
 To complete this task it is vital to understand how the simulator works.
+To see running options of the simulator type
+
+    python main.py -h
 
 
 RobotController
@@ -22,7 +29,7 @@ RobotController
 
 Hints and resources
 -------------------------
-This section is very important. We strongly encourage you to get familliar with
+This section is very important. We strongly encourage you to get familiar with the
 resources that we link in here, as they are tremendously helpful in solving this task
 
 

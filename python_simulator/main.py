@@ -431,12 +431,40 @@ class SimulatorGUI(object):
 
 
 
+
+
+# Command Tool
+
+from optparse import OptionParser
+def create_parser():
+    """ Configure options and return parser object """
+    parser = OptionParser()
+    parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
+                      help="If simulation will run without visualisation")
+    parser.add_option("-m", "--map", dest="map", default="maps/5.map",
+                      help="Map that will be run after hitting Start Simulation button, or if in "
+                           "console mode after running the program")
+
+    #parser.add_option("-v", "--verbose",default=True, type="int", dest="verbose", help="If set prints simulation steps")
+    #parser.add_option( "--agent_1", type="string",default="UCTAgent", dest="agent1", help="""Set agent1 to "UCTAgent","UCTAgentTran", "UCTAgentTranCut", "RandomAgent", "GreedyAgent" """)
+    #parser.add_option( "--agent_2", type="string", default="GreedyAgent", dest="agent2", help="""Set agent2 to "UCTAgent", "UCTAgentTran", "UCTAgentTranCut",  "RandomAgent", "GreedyAgent" """)
+    #parser.add_option("-t", "--time_per_move",default=3, type="int", dest="time_per_move", help="Set time per move, default is 2s")
+    #parser.add_option("-n", "--number_of_simulations", default=10, type="int", dest="num_sim", help="Sets number of simulations, default is 10")
+    return parser
+
+
 import sys
 def main():
+    parser = create_parser()
+    (options, args) = parser.parse_args()
+    print options, args
+
 
     simulator = KrakrobotSimulator("maps/5.map", (1, 1, 0))
-    gui = SimulatorGUI(sys.argv, simulator)
-    gui.run()
+
+    if not options.command_line:
+        gui = SimulatorGUI(sys.argv, simulator)
+        gui.run()
 
 
 if __name__ == '__main__':
