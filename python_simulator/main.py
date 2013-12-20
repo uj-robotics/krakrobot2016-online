@@ -80,7 +80,7 @@ class SimulationRenderThread(QtCore.QThread):
                 print "Rendering frame template"
                 self.frame_template = RenderFrameTemplate(sim_data)
 
-            svg_data = PrepareFrame(self.frame_template, RenderAnimatedPart(sim_data))
+            svg_data = RenderAnimatedPart(sim_data)
             self.frames.append(svg_data)
             self.frame_count += 1
 
@@ -123,12 +123,12 @@ class SimulationRenderThread(QtCore.QThread):
 
             if current_frame == 0:
                 self.parent.update_mutex.lock()
-                self.parent.setup_scene(self.frames[current_frame])
+                self.parent.setup_scene(PrepareFrame(self.frame_template,self.frames[current_frame]))
                 self.parent.update_mutex.unlock()
             else:
                 self.parent.update_mutex.lock()
                 #It is important that this code does not work at all, it only sets current frame!
-                self.parent.update_data(self.frames[current_frame])
+                self.parent.update_data(PrepareFrame(self.frame_template, self.frames[current_frame]))
                 self.parent.update_mutex.unlock()
 
             current_frame += 1

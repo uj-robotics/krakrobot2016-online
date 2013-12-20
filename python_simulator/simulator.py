@@ -86,8 +86,6 @@ class KrakrobotSimulator(object):
         self.distance_noise    = distance_noise
         self.measurement_noise = measurement_noise
         self.steering_noise   = steering_noise
-
-        #TODO: Move adequate actions from __init__() to reset()
         self.reset()
 
         self.time_limit = time_limit
