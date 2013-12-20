@@ -108,6 +108,7 @@ class MapMaze:
         self.start = [start_x, start_y]
         self.grid[goal_x][goal_y] = MAP_GOAL
         self.grid[start_x][start_y] = MAP_START_POSITION
+        self.bfs_maze(self.goal, self.start)
 
     #-----------------------------------------------------------------------------
 
@@ -191,70 +192,33 @@ class MapMaze:
 
     #------------------------------------------------------------------------------
 
-    # solve the maze by filling it with numbers(algorithm name?)
-    def _solve_maze_aux(self, r, c, n):
-        maze = self.maze
-        numtable = self.numtable
-        numtable[r][c] = n
+    def bfs_maze(self, goal, start):
+        """ Run BFS over the graph """
 
-        # check if the end has been reached
-        if (r, c) != (self.endrow, self.endcol):
-            directions = self._get_dirs(r, c)
+        print goal, start
+        source = tuple(goal)
+        goal = tuple(start)
+        Q = [source]
+        parent = {source: None}
+        dist = {source: 0}
+        N,M = len(self.grid), len(self.grid[0])
 
-            # recursive calls only if there is no wall between cells and
-            # targel cell is not marked (=-1)
-            for d in directions:
-                if d == UP and not maze[r - 1][c][BOTTOMWALL] and numtable[r - 1][c] == -1:
-                    self._solve_maze_aux(r - 1, c, n + 1)
-                elif d == DOWN and not maze[r][c][BOTTOMWALL] and numtable[r + 1][c] == -1:
-                    self._solve_maze_aux(r + 1, c, n + 1)
-                elif d == RIGHT and not maze[r][c][RIGHTWALL] and numtable[r][c + 1] == -1:
-                    self._solve_maze_aux(r, c + 1, n + 1)
-                elif d == LEFT and not maze[r][c - 1][RIGHTWALL] and numtable[r][c - 1] == -1:
-                    self._solve_maze_aux(r, c - 1, n + 1)
+        while len(Q):
+            u = Q.pop(0)
+            for dir in [(0,1), (0,-1), (1,0), (-1,0)]:
+                v = (u[0]+dir[0], u[1]+dir[1])
+                if N > u[0] >= 0 and M > u[1] >= 0 and self.grid[v[0]][v[1]] != 1 and v not in dist:
+                    parent[v] = u
+                    dist[v] = dist[u] + 1
+                    Q.append(v)
 
-    #------------------------------------------------------------------------------
+        print dist
+        print dist[source]
+        print dist[goal]
 
-    # get the solution path
-    def _get_solution_path(self):
-        actrow = self.endrow
-        actcol = self.endcol
-        startrow = self.startrow
-        startcol = self.startcol
-        path = []
-        numtable = self.numtable
-        path = self.solutionpath
+        self.dist = dist
+        self.parent = parent
 
-        while (actrow, actcol) != (startrow, startcol):
-            path.append((actrow, actcol))
-            directions = self._get_dirs(actrow, actcol)
-            for d in directions:
-                if d == UP:
-                    if numtable[actrow][actcol] - 1 == numtable[actrow - 1][actcol]:
-                        actrow -= 1
-                        break
-                elif d == DOWN:
-                    if numtable[actrow][actcol] - 1 == numtable[actrow + 1][actcol]:
-                        actrow += 1
-                        break
-                elif d == LEFT:
-                    if numtable[actrow][actcol] - 1 == numtable[actrow][actcol - 1]:
-                        actcol -= 1
-                        break
-                elif d == RIGHT:
-                    if numtable[actrow][actcol] - 1 == numtable[actrow][actcol + 1]:
-                        actcol += 1
-                        break
-
-        path.append((actrow, actcol))
-        path.reverse()
-
-    #------------------------------------------------------------------------------
-
-    # solve the maze
-    def solve_maze(self):
-        self._solve_maze_aux(self.startrow, self.startcol, 0)
-        self._get_solution_path()
 
 
 
@@ -272,30 +236,96 @@ def create_parser():
 
 
 import json
-def generate_map(map_maze, file_name, title = "", K = 0):
+def generate_map(map_maze, file_name, title = "",
+                 count_direction = 0, count_distance = 0, count_optimal =0
+
+                 ):
     """
         Generate map and save to file_name based on
         generated maze
+
+        @param count_direction How many direction hints to cast
+        @param count_distance How many distance hints to cast
+        @param count_optimal How many optimal turn hists to cast
+
     """
     lines = []
     grid = map_maze.grid
-    params = {"N": len(grid), "M":len(grid[0]), "title":title, "K":K}
+    params = {"N": len(grid), "M":len(grid[0]), "title":title, "K": count_direction+count_distance+count_optimal}
 
     print json.dumps(params)[1:-1]
     lines.append(json.dumps(params)[1:-1])
 
     for r in xrange(params["N"]):
-        lines.append("".join([REV_MAP_CODING[grid[r][c]] for c in xrange(params["M"])]))
+        lines.append("".join([
+            REV_MAP_CODING.get(grid[r][c],".") for c in xrange(params["M"])]))
 
     goal_position = map_maze.goal
     start_position = map_maze.start
 
+    print "\n".join(lines)
+
+
+    N, M = len(grid), len(grid[0])
+
+    def get_free(grid):
+        try_x, try_y = random.randrange(N), random.randrange(M)
+        while grid[try_x][try_y] != 0:
+            try_x, try_y = random.randrange(N), random.randrange(N)
+        return try_x, try_y
+
+    from math import cos, sin,pi,sqrt
+    import numpy as np
+    d = [[cos((2*i*pi)/8), sin((2*i*pi)/8.0)] for i in xrange(8)]
+
+
+
+    # Generating map doesnt have to be fast..
+    for i in xrange(count_direction):
+        x, y = get_free(grid)
+        v_x, v_y = goal_position[0] - x, goal_position[1] - y
+        print "Casting direction hint in ",x," ",y," vector ",(v_x, v_y)
+        value = REV_CONSTANT_MAP[np.argmax([v_x*d[i][0]+v_y*d[i][1] for i in xrange(8)])]
+
+        lines.append(REV_CONSTANT_MAP[MAP_SPECIAL_DIRECTION] +" "+ str(x) +" "+str(y)+" "+str(value) )
+        #i know it is ugly, imagine string formatting here
+        print "Hint encoded ",lines[-1]
+
+    for i in xrange(count_distance):
+        x, y = get_free(grid)
+        v_x, v_y = goal_position[0] - x, goal_position[1] - y
+        print "Casting distance hint in ",x," ",y," vector ",(v_x, v_y)
+        value = sqrt(v_x**2+v_y**2)
+        lines.append(REV_CONSTANT_MAP[MAP_SPECIAL_EUCLIDEAN_DISTANCE] +" "+ str(x) +" "+str(y)+" "+str(value) )
+        print "Hint encoded ",lines[-1]
+
+    delta_to_dir = {(0,1):"east", (0,-1):"west", (1,0):"south", (-1,0):"north"}
+
+    for i in xrange(count_optimal):
+        x, y = get_free(grid)
+        p_x, p_y = map_maze.parent[(x,y)]
+        value = delta_to_dir[(p_x-x, p_y-y)]
+        lines.append(REV_CONSTANT_MAP[MAP_SPECIAL_OPTIMAL] +" "+ str(x) +" "+str(y)+" "+str(value) )
+        print "Hint encoded ",lines[-1]
 
     f = open(file_name, "w")
     f.write("\n".join(lines))
 
 
-if __name__ == "__main__":
-    mm = MapMaze(10,10)
+
+
+
+
+def generate_simple_maze_test1():
+    mm = MapMaze(40, 40)
     print mm
-    generate_map(mm, "maps/3.map", "", 0)
+    generate_map(mm, "maps/4.map", "", 0, 0, 0)
+    mm.bfs_maze(mm.goal, mm.start)
+
+
+if __name__ == "__main__":
+    mm = MapMaze(8, 8)
+    print mm
+    generate_map(mm, "maps/4.map", "", count_direction=1, count_distance=1, count_optimal=1)
+    mm.bfs_maze(mm.goal, mm.start)
+    #generate_simple_maze_test1()

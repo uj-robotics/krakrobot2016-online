@@ -1,0 +1,17 @@
+"K": 7, "title": "", "M": 9, "N": 9
+#########
+#......s#
+#.#######
+#.#.....#
+#.#.###.#
+#.#...#.#
+#.#####x#
+#.......#
+#########
+optimal_path 1 3 west
+optimal_path 3 6 east
+optimal_path 3 6 east
+optimal_path 6 1 south
+optimal_path 6 1 south
+optimal_path 7 2 east
+optimal_path 4 1 south
