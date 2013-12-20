@@ -17,12 +17,12 @@ class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
     def __init__(self,  map, init_position, steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
-                 measurement_noise=0.2, time_limit = 500,
+                 measurement_noise=0.2, time_limit = 5000,
                  speed = 5.0,
                  turning_speed = 4*pi,
                  execution_time_limit = 10.0,
-                 simulation_dt = 0.1,
-                 frame_dt = 0.3,
+                 simulation_dt = 0.001,
+                 frame_dt = 0.1,
                  collision_threshold = 50
                  ):
         """
@@ -157,7 +157,7 @@ class KrakrobotSimulator(object):
         try:
             while not self.check_goal(robot) and not robot.time_elapsed >= self.time_limit:
                 #logger.info((robot.x, robot.y))
-
+                time.sleep(self.simulation_dt)
                 if frame_time_left > self.frame_dt:
                     ### Save frame <=> last command took long ###
                     if len(self.robot_path) == 0 or\

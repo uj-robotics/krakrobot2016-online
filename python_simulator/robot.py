@@ -65,15 +65,26 @@ class Robot:
         @note: Cannot be called by contestant
         @returns: True if no collisions
         """
-        # Box based (sharp edges):
-        # TODO: add slack here !!
-        for i in xrange(len(grid)):
-            for j in xrange(len(grid[0])):
-                # not sure about chained operators..
-                if grid[i][j] == 1 \
-                    and (float(i+1) - SQUARE_SIDE/2.0) > self.x > (float(i) - SQUARE_SIDE/2.0)\
-                    and (float(j+1) - SQUARE_SIDE/2.0) > self.y > (float(j) - SQUARE_SIDE/2.0):
-                    return False
+
+        x_disc, y_disc = int(self.x +0.5), int(self.y + 0.5)
+
+        dist_x_border = min(abs(self.x - x_disc), abs(self.x - (x_disc+1)))
+        dist_y_border = min(abs(self.y - y_disc), abs(self.y - (y_disc+1)))
+        dist_border = min(dist_x_border, dist_y_border)
+
+        if grid[x_disc][y_disc] == 1:
+            return False
+
+        #
+        ## Box based (sharp edges):
+        ## TODO: add slack here !!
+        #for i in xrange(len(grid)):
+        #    for j in xrange(len(grid[0])):
+        #        # not sure about chained operators..
+        #        if grid[i][j] == 1 \
+        #            and (float(i+1) - SQUARE_SIDE/2.0) > self.x > (float(i) - SQUARE_SIDE/2.0)\
+        #            and (float(j+1) - SQUARE_SIDE/2.0) > self.y > (float(j) - SQUARE_SIDE/2.0):
+        #            return False
 
         return True
 

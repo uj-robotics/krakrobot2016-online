@@ -93,7 +93,7 @@ class SimulationRenderThread(QtCore.QThread):
             self.parent.update_mutex.lock()
             self.parent.scene().update()
             self.parent.update_mutex.unlock()
-            time.sleep(0.03)
+            time.sleep(0.001)
 
     def run(self):
         """SVG rendering"""
@@ -133,8 +133,7 @@ class SimulationRenderThread(QtCore.QThread):
                 self.parent.update_mutex.unlock()
 
             current_frame += 1
-            #10 FPS
-            time.sleep(0.1)
+            time.sleep(self.simulator.frame_dt)
 
 
         #if svg_data:
@@ -244,14 +243,18 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         # Load new graphics
         if self.svg_data:
             self.xml_stream_reader = QtCore.QXmlStreamReader(self.svg_data)
-            self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
+            self.svg_renderer.load(self.xml_stream_reader)# = QtSvg.QSvgRenderer(self.xml_stream_reader)
             self.svg_item = QtSvg.QGraphicsSvgItem()
+
+
+
+
+            scene = self.scene()
+            #scene.removeItem(self.svg_item)
             self.svg_item.setSharedRenderer(self.svg_renderer)
             self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
             self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
             self.svg_item.setZValue(0)
-
-            scene = self.scene()
             scene.items()[0].hide()
             scene.addItem(self.svg_item)
 
