@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
-from django.conf.global_settings import TEMPLATE_DIRS, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+from django.conf.global_settings import TEMPLATE_DIRS, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, STATIC_URL
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -22,11 +22,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = 'b+@p@fts@vg%05wqaoga-2i-bc_^i%82h8q@=6iipkfex=q0#s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -82,9 +82,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_ROOT = '/media/'
+STATIC_URL = '/media/'
 
-
+"""
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "media"),
+    './media/','./static/Resources/'
+)
+"""
 # registration settings
 
 ACCOUNT_ACTIVATION_DAYS = 2
