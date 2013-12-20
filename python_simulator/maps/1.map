@@ -1,8 +1,9 @@
-"N":10, "M":20, "K":4, "title":"Basic stuff"
-011111111
+"N":6, "M":9, "K":2, "title":"Basic stuff"
+111111111
 100000001
 100010001
+101110111
+101110411
 111111111
-111111111
-111111111
-2 5 "direction" "left"
+direction 1 1 southeast
+distance 3 2 4.32

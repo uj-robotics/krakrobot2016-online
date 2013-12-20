@@ -36,6 +36,7 @@ from visualisation import RenderToSVG, Save
 from defines import *
 from robot_controller import *
 from robot import Robot
+from maze_gen import load_map
 
 
 #TODO: add Java/C++ RobotController classes with TCP server attached
@@ -45,7 +46,7 @@ from robot import Robot
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self,  grid, init_position, steering_noise=0.103, sonar_noise = 0.1, distance_noise=0.03,
+    def __init__(self,  map, init_position, steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
                  measurement_noise=0.2, time_limit = 50,
                  speed = 5.0,
                  turning_speed = 4*pi,
@@ -59,7 +60,7 @@ class KrakrobotSimulator(object):
             @param steering_noise - variance of steering in move 
             @param distance_noise - variance of distance in move
             @param measurement_noise - variance of measurement (GPS??) 
-            @param grid - 0/1 matrix representing the maze
+            @param map - map for the robot simulator representing the maze or file to map
             @param init_position - starting position of the Robot (can be moved to map class) [x,y,heading]
 
             @param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
@@ -70,6 +71,16 @@ class KrakrobotSimulator(object):
 
 
         """
+
+        if type(map) is str:
+            grid, metadata  = load_map(map)
+            self.map_title = metadata["title"]
+            self.grid = grid
+        else:
+            self.grid = map
+            self.map_title = ""
+
+        print self.grid
 
         self.collision_threshold = collision_threshold
 
@@ -85,7 +96,7 @@ class KrakrobotSimulator(object):
         self.light_sensor_time = 0.01
 
         self.tick_move = 0.01
-        self.tick_rotate = 0.01
+        self.tick_rotate = 0.07
 
         self.execution_time_limit = execution_time_limit
 
@@ -101,14 +112,15 @@ class KrakrobotSimulator(object):
 
         self.time_limit = time_limit
 
-        self.grid = grid
 
         self.N = len(self.grid)
         self.M = len(self.grid[0])
+
         for i in xrange(self.N):
             for j in xrange(self.M):
                 if self.grid[i][j] == MAP_GOAL:
                     self.goal = (i,j)
+
 
     def create_visualisation_descriptor(self, robot):
         """
@@ -116,7 +128,7 @@ class KrakrobotSimulator(object):
         """
         data = {}
         data['GoalThreshold'] = self.goal_threshold
-        data['Sparks'] = list(self.collisions)
+        data['Sparks'] = []# ommiting errors list(self.collisions)
         data['ActualPath'] = list(self.robot_path)
         data['ActualPosition'] = [robot.x, robot.y]
         data['ActualOrientation'] = robot.orientation
@@ -196,9 +208,11 @@ class KrakrobotSimulator(object):
 
                     if current_command[0] == TURN:
 
-                        robot = robot.turn(1)
+                        robot = robot.turn(1) if current_command[1] > 0 else robot.turn(-1)
                         if current_command[1] > 1: current_command = [current_command[0], current_command[1] - 1]
+                        elif current_command[1] < 1: current_command = [current_command[0], current_command[1] + 1]
                         else: current_command = None
+
                         frame_time_left += self.tick_rotate / self.turning_speed
 
 
@@ -246,8 +260,11 @@ class KrakrobotSimulator(object):
                         frame_time_left += self.sonar_time
                     elif command[0] == SENSE_FIELD:
                         w = robot.sense_field(self.grid)
-                        if w == MAP_WHITE or w == MAP_WALL: robot_controller.on_sense_field(w, 0)
-                        else: robot_controller.on_sense_field(w[0], w[1])
+                        if w == MAP_WHITE or w == MAP_WALL or w == MAP_GOAL:
+                            robot_controller.on_sense_field(w, 0)
+                        else:
+                            robot_controller.on_sense_field(w[0], w[1])
+
                         frame_time_left += self.light_sensor_time
                     elif command[0] == TURN:
                         if len(command) <= 1 or len(command) > 2:
@@ -285,12 +302,6 @@ class KrakrobotSimulator(object):
         self.goal_achieved = self.check_goal(robot)
 
 
-
-#   grid = [[0, 1, 0, 0, 0, 0, 0, 0, 0 , 0 ,0 ,0],
-#           [0, 1, 0, 1, 1, 0, 0, 0, 0 , 0 ,0, 0],
-#           [0, 1, 0, 1, 0, 0, 0, 0 ,0,0,0,0],
-#           [0, 0, 0, 1, 0, 1, 0 ,0, 0,0,0,0],
-#           [0, 1, 0, 1, 0, 0,0,0,0,0,0,0]]
 
 
 
@@ -689,7 +700,7 @@ def main():
             [1, 1, 0, 1, MAP_GOAL, 1],
             [1, 0, 0, 1, 0, 1],
             [1, 1, 1, 1, 1, 1]]
-    simulator = KrakrobotSimulator(grid, (1, 1, 0))
+    simulator = KrakrobotSimulator("maps/1.map", (1, 1, 0))
 
     #simulator.run(OmitCollisions)
 

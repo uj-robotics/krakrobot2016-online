@@ -28,8 +28,11 @@ MAP_SPECIAL_EUCLIDEAN_DISTANCE = 3 # coding [MAP_SPECIAL_EUCLIDEAN_DISTANCE, DIS
 #What field next?
 #Map coding:
 
-CONSTANT_MAP = {"direction":MAP_SPECIAL_DIRECTION, "east": DIRECTION_E, "northeast": DIRECTION_NE, "north": DIRECTION_N,
-                "northwest":DIRECTION_NW, "west": DIRECTION_W, "southwest": DIRECTION_SW, "south": DIRECTION_S, "southeast": DIRECTION_SE
+CONSTANT_MAP = {"direction":MAP_SPECIAL_DIRECTION,
+                "east": DIRECTION_E, "northeast": DIRECTION_NE, "north": DIRECTION_N,
+                "northwest":DIRECTION_NW, "west": DIRECTION_W,
+                "southwest": DIRECTION_SW, "south": DIRECTION_S, "southeast": DIRECTION_SE,
+                "distance":MAP_SPECIAL_EUCLIDEAN_DISTANCE
                 }
 
 # GUI
