@@ -65,7 +65,7 @@ class SimulationRenderThread(QtCore.QThread):
     def run_simulation(self):
         """Running KrakrobotSimulator simulation"""
         self.simulator.reset()
-        self.simulator.run(OmitCollisions)
+        self.simulator.run()
         self.exec_() #?
 
 
@@ -444,6 +444,8 @@ def create_parser():
     parser.add_option("-m", "--map", dest="map", default="maps/5.map",
                       help="Map that will be run after hitting Start Simulation button, or if in "
                            "console mode after running the program")
+    parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
+                      help="Robot that will be compiled and run")
 
     #parser.add_option("-v", "--verbose",default=True, type="int", dest="verbose", help="If set prints simulation steps")
     #parser.add_option( "--agent_1", type="string",default="UCTAgent", dest="agent1", help="""Set agent1 to "UCTAgent","UCTAgentTran", "UCTAgentTranCut", "RandomAgent", "GreedyAgent" """)
