@@ -108,6 +108,7 @@ class SimulationAnimationThread(QtCore.QThread):
         self.renderer_stop = Event()
         self.frame_template = ""
         self.frame_count = 0
+        self.reset()
 
 
     def reset(self):
@@ -133,7 +134,7 @@ class SimulationAnimationThread(QtCore.QThread):
 
         while True:
             # Wait for current frame
-            while self.current_frame > self.frame_count:
+            while self.current_frame >= self.frame_count:
                 if self.simulator.finished:
                     self.paused = False
                     break
