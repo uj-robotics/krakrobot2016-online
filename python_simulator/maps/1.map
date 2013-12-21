@@ -1,9 +1,9 @@
-"N":6, "M":9, "K":2, "title":"Basic stuff"
-#########
-#s......#
-#...#...#
-#.###.###
-#.###.x##
-#########
-direction 1 1 southeast
-distance 3 2 4.32
+"K": 3, "title": "", "M": 5, "N": 5
+#####
+#..x#
+###.#
+#s..#
+#####
+direction 3 2 northeast
+distance 1 1 2.0
+optimal_path 1 2 east
