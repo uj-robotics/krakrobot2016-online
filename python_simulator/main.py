@@ -54,23 +54,36 @@ class SimulationRenderThread(QtCore.QThread):
 
     def __init__(self, simulator, parent):
         super(SimulationRenderThread, self).__init__()
-        self.simulator = simulator
         self.parent = parent
+        self.reset(simulator)
+
+
+    def reset(self, simulator):
+        self.simulator = simulator
         self.frames = [] # frame buffer
+        self.terminated = False
         self.renderer_stop = Event()
         self.frame_template = ""
         self.frame_count = 0
+        self.current_frame = 0
+        self.frame_rate = 100
+        self.starting = True
+        self.paused = False
+        self.sim_paused = False
 
 
     def run_simulation(self):
         """Running KrakrobotSimulator simulation"""
         self.simulator.reset()
         self.simulator.run()
-        self.exec_() #?
+        #self.exec_() #?
 
 
     def run_rendering(self):
         """ Job rendering frames to stack """
+        # Simulation paused from GUI
+        while self.sim_paused:
+            time.sleep(1)
         while not self.renderer_stop.is_set():
             # NOTE: will hang here
             sim_data = self.simulator.get_next_frame()
@@ -89,11 +102,19 @@ class SimulationRenderThread(QtCore.QThread):
         """
         It manually triggers update. TODO: check if there is no better way of controlling update rate
         """
+        # Simulation paused from GUI
+        while self.sim_paused:
+            time.sleep(1)
         while not self.renderer_stop.is_set():
             self.parent.update_mutex.lock()
             self.parent.scene().update()
             self.parent.update_mutex.unlock()
             time.sleep(0.001)
+
+
+    def simulation_pause(self):
+        """Simulation paused from GUI"""
+        self.sim_paused = True
 
 
     def run(self):
@@ -109,11 +130,6 @@ class SimulationRenderThread(QtCore.QThread):
         self.animation_thread = Thread(target=self.run_animation)
         self.animation_thread.start()
 
-        i = 0
-        self.current_frame = 0
-        self.frame_rate = 100
-        self.starting = True
-        self.paused = False
         svg_data = None
         time_elapsed = datetime.timedelta(0)
         time_elapsed_update = datetime.timedelta(0)
@@ -123,6 +139,10 @@ class SimulationRenderThread(QtCore.QThread):
             # Wait for current frame
             while self.current_frame+1 > self.frame_count:
                 time.sleep(0.01)
+
+            # Simulation paused from GUI
+            while self.sim_paused:
+                time.sleep(1)
 
             if self.starting:
                 self.parent.update_mutex.lock()
@@ -270,8 +290,12 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         event.accept()
 
 
+    def pause_simulation(self):
+        self.simulation_render_thread.simulation_pause()
+
+
     def _simulation_finished(self):
-        self._simulation_finished()
+        self.parent._simulation_finished()
 
 
     def _set_renderer(self, renderer):
@@ -313,9 +337,15 @@ class MainWindow(QtGui.QMainWindow):
         main_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self.start_sim_action = main_toolbar.addAction(
             QtGui.QIcon.fromTheme('system-run'),
-            'Start Simulation'
+            'Start simulation'
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
+
+        self.stop_sim_action = main_toolbar.addAction(
+            QtGui.QIcon.fromTheme('process-stop'),
+            'Pause'
+        )
+        self.stop_sim_action.triggered.connect(self._pause_simulation)
 
         simulation_layout = QtGui.QVBoxLayout()
         self.simulation_view = SimulationGraphicsView(simulator, self)
@@ -533,10 +563,18 @@ class MainWindow(QtGui.QMainWindow):
         self.simulation_view.run_simulation()
 
 
+    def _pause_simulation(self):
+        self.status_bar_message(MSG_EMP+'Simulation paused.')
+        for action in self.conflicting_with_sim:
+            action.setEnabled(True)
+        self.simulation_view.pause_simulation()
+
+
     def _simulation_finished(self):
         self.status_bar_message(MSG_EMP+'Simulation has finished!')
         for action in self.conflicting_with_sim:
             action.setEnabled(True)
+        self.currently_simulating = False
 
 
     def _send_to_robot(self):
