@@ -109,7 +109,10 @@ class SimulationRenderThread(QtCore.QThread):
 
 
         i = 0
-        current_frame = 0
+        self.current_frame = 0
+        self.frame_rate = 100
+        self.starting = True
+        self.paused = False
         svg_data = None
         time_elapsed = datetime.timedelta(0)
         time_elapsed_update = datetime.timedelta(0)
@@ -117,21 +120,28 @@ class SimulationRenderThread(QtCore.QThread):
 
         while True:
             # Wait for current frame
-            while current_frame+1 > self.frame_count:
+            while self.current_frame+1 > self.frame_count:
                 time.sleep(0.01)
 
-            if current_frame == 0:
+            if self.current_frame == 0:
                 self.parent.update_mutex.lock()
-                self.parent.setup_scene(PrepareFrame(self.frame_template,self.frames[current_frame]))
+                self.parent.setup_scene(PrepareFrame(self.frame_template,self.frames[self.current_frame]))
                 self.parent.update_mutex.unlock()
             else:
                 self.parent.update_mutex.lock()
                 #It is important that this code does not work at all, it only sets current frame!
-                self.parent.update_data(PrepareFrame(self.frame_template, self.frames[current_frame]))
+                #self.parent.update_data(PrepareFrame(self.frame_template, self.frames[current_frame]))
+                self.parent.update_data(
+                    PrepareFrame(self.frame_template, self.frames[self.current_frame]),
+                    self.current_frame,
+                    self.frame_count
+                )
                 self.parent.update_mutex.unlock()
 
-            current_frame += 1
-            time.sleep(self.simulator.frame_dt/10.0) #10x time
+            if not self.paused:
+                self.current_frame += 1
+
+            time.sleep(self.simulator.frame_dt/self.frame_rate) #10x time
 
 
         #if svg_data:
@@ -199,12 +209,10 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
 
-    def update_data(self, svg_data):
+    #def update_data(self, svg_data):
+    def update_data(self, svg_data, current_frame, frame_count):
         self.svg_data = svg_data
-
-
-    #def update(self, svg_data):
-
+        self.parent.update_data(current_frame, frame_count)
 
 
     def open_file(self, qfile):
@@ -533,7 +541,7 @@ def create_parser():
     parser = OptionParser()
     parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
                       help="If simulation will run without visualisation")
-    parser.add_option("-m", "--map", dest="map", default="maps/5.map",
+    parser.add_option("-m", "--map", dest="map", default="maps/3.map",
                       help="Map that will be run after hitting Start Simulation button, or if in "
                            "console mode after running the program")
     parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
