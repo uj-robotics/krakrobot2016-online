@@ -24,92 +24,40 @@ class RobotController(object):
         """ React to sensory data """
         raise NotImplementedError()
 
-class ForwardTurningRobotController(RobotController):
-    """ Exemplary robot controller """
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit):
-        self.speed = speed
-
-    def act(self):
-        return MOVE, 0.0, self.speed
 
 
-    def on_sense_sonar(self, dist):
-        pass
-
-    def on_sense_field(self, file_type, file_parameter):
-        pass
-
-    def on_sense_gps(self, x, y):
-        pass
-
-class OmitCollisions(RobotController):
-    """ Exemplary robot controller omitting collisions """
-    STATE_FORWARD = 0
-    STATE_LOOK_FOR_SPACE = 1
-
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit):
-        self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-        self.speed = speed
-        self.turn_speed = turning_speed
-        self.command_queue = []
-        self.last_distance = 0.0
-
-    def act(self):
-        if len(self.command_queue) == 0:
-            if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
-                self.command_queue.append([TURN, random.randint(-1, 1)* 10])
-                self.command_queue.append([SENSE_SONAR])
-            else:
-                self.command_queue.append([MOVE, 1])
-                self.command_queue.append([SENSE_SONAR])
-                self.command_queue.append([SENSE_FIELD])
-
-        return self.command_queue.pop(0)
-
-    def on_sense_sonar(self, distance):
-        self.last_distance = distance
-        if distance < 0.04:
-            self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-        else:
-            self.phase = OmitCollisions.STATE_FORWARD
-
-
-    def on_sense_field(self, field_type, field_parameter):
-        pass
-
-
-class OmitCollisionsCheckAccuracy(RobotController):
-    """ Exemplary robot controller omitting collisions """
-    STATE_FORWARD = 0
-    STATE_LOOK_FOR_SPACE = 1
-
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed):
-        self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-        self.speed = speed
-        self.turn_speed = turning_speed
-        self.command_queue = []
-        self.last_distance = 0.0
-
-    def act(self):
-        if len(self.command_queue) == 0:
-            if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
-                self.command_queue.append([TURN, random.randint(-1, 1)* 50])
-                self.command_queue.append([SENSE_SONAR])
-            else:
-                self.command_queue.append([MOVE, int(self.last_distance/0.01)])
-                self.command_queue.append([SENSE_SONAR])
-                self.command_queue.append([SENSE_FIELD])
-
-        return self.command_queue.pop(0)
-
-    def on_sense_sonar(self, distance):
-        self.last_distance = distance
-
-        if distance < 0.04:
-            self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-        else:
-            self.phase = OmitCollisions.STATE_FORWARD
-
+#class OmitCollisionsCheckAccuracy(RobotController):
+#    """ Exemplary robot controller omitting collisions """
+#    STATE_FORWARD = 0
+#    STATE_LOOK_FOR_SPACE = 1
+#
+#    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed):
+#        self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
+#        self.speed = speed
+#        self.turn_speed = turning_speed
+#        self.command_queue = []
+#        self.last_distance = 0.0
+#
+#    def act(self):
+#        if len(self.command_queue) == 0:
+#            if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
+#                self.command_queue.append([TURN, random.randint(-1, 1)* 50])
+#                self.command_queue.append([SENSE_SONAR])
+#            else:
+#                self.command_queue.append([MOVE, int(self.last_distance/0.01)])
+#                self.command_queue.append([SENSE_SONAR])
+#                self.command_queue.append([SENSE_FIELD])
+#
+#        return self.command_queue.pop(0)
+#
+#    def on_sense_sonar(self, distance):
+#        self.last_distance = distance
+#
+#        if distance < 0.04:
+#            self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
+#        else:
+#            self.phase = OmitCollisions.STATE_FORWARD
+#
 
 from collections import defaultdict
 
@@ -120,8 +68,7 @@ def load_python_controller(file):
     pass
 
 import datetime
-#TODO: add timing
-#TODO: add C++ and Java interfaces (piping)
+
 class PythonTimedRobotController(RobotController):
     """ Wrapper class to manage time consumption (also for other language packages) """
     def __init__(self, rc):
@@ -154,3 +101,24 @@ class PythonTimedRobotController(RobotController):
         self.rc.on_sense_gps(x,y)
         self.time_consumed += datetime.datetime.now() - x
 
+
+
+
+def importCode(file_name, name, add_to_sys_modules=0):
+    import sys,imp
+    return imp.load_source(name, file_name)
+
+
+
+def compile_robot(file_name, module_name = "contestant_module"):
+    """ Compiles robot from given file and returns class object """
+    mod =  importCode(file_name, module_name)
+    compiled_class = None
+    for symbol in dir(mod):
+        if hasattr(getattr(mod, symbol), "act") and getattr(mod, symbol).__name__ != "RobotController":
+            compiled_class = getattr(mod, symbol)
+    print compiled_class
+    globals()[compiled_class.__name__] = compiled_class
+    if compiled_class is None:
+        raise KrakrobotException("Not found class with act() function named different than RobotController in provided .py")
+    return compiled_class, mod
