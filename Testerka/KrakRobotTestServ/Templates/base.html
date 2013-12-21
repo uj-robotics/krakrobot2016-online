@@ -47,6 +47,8 @@
         <ul>
             <li><a href="{% url "index" %}">{% trans "Home" %}</a></li>
             {% if user.is_authenticated %}
+            <li><a href="{% url "your_codes" %}">{% trans "Your codes" %}</a></li>
+            <li><a href="{% url "rank" %}">{% trans "Rank" %}</a></li>
             <li><a href="{% url "auth_logout" %}">{% trans "Log out" %}</a></li>
             {% else %}
             <li><a href="{% url "auth_login" %}">{% trans "Log in" %}</a></li>
