@@ -74,7 +74,7 @@ class SimulationRenderThread(QtCore.QThread):
 
     def run_simulation(self):
         """Running KrakrobotSimulator simulation"""
-        self.simulator.reset()
+        #self.simulator.reset()
         self.simulator.run()
         #self.exec_() #?
 
@@ -127,8 +127,8 @@ class SimulationRenderThread(QtCore.QThread):
 
         time.sleep(0.5)
 
-        self.animation_thread = Thread(target=self.run_animation)
-        self.animation_thread.start()
+        #self.animation_thread = Thread(target=self.run_animation)
+        #self.animation_thread.start()
 
         svg_data = None
         time_elapsed = datetime.timedelta(0)
@@ -263,6 +263,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
             #scene.items()[0].hide()
             #scene.addItem(self.svg_item)
 
+            scene.update()
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
 
