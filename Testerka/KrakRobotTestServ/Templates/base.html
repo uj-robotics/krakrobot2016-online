@@ -1,50 +1,79 @@
 {% load i18n %}
 {% load staticfiles %}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <head>
-    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900" rel="stylesheet" />
+    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900" rel="stylesheet"/>
     <link href="{% static "css/style.css" %}" rel="stylesheet" type="text/css" media="all" />
-    <link href="{% static "css/fonts.css" %}" rel="stylesheet" type="text/css" media="all" />
-
+    <!-- <link href="{% static "css/fonts.css" %}" rel="stylesheet" type="text/css" media="all" />
+    -->
     <title>{% block title %}User test{% endblock %}</title>
 </head>
 
 <body>
-    <div id="header">
-        {% block header %}
+<div id="left_container">
+    {% block left_container %}
+    <img src="{% static "img/logo.png" %}" alt="Krakrobot Logo" width="192" height="37" id="logo"/>
+    <div id="rci_right_column">
+        {% block rci_right_column %}
+        {% if user.is_authenticated %}
+        <div id="left_text">
+            {% block left_text_if_logged %}
+            <h3>{% trans "Logged in" %} : {{ user.username }}</h3>
+            {% endblock %}
+        </div>
+        <ul>
+            <li><a href="{% url "auth_logout" %}">{% trans "Log out" %}</a></li>
+            <li><a href="{% url "auth_password_change" %}">{% trans "Change password" %}</a></li>
+        </ul>
+            {% else %}
+        <div id="left_text">
+            {% block left_text_if_not_logged %}
+            <h3>{% trans "You are not logged in." %}</h3>
+            {% endblock %}
+        </div>
+            {% endif %}
 
-    <img src="{% static "img/logo.png" %}" alt="My image 001"/><br />
-    <hr />
-    <div id="menu">
-    {% block menu %}
-	    <a href="{% url "index" %}">{% trans "Home" %}</a> |
-
-	    {% if user.is_authenticated %}
-	    {% trans "Logged in" %}: {{ user.username }}
-	    (<a href="{% url "auth_logout" %}">{% trans "Log out" %}</a> |
-	    <a href="{% url "auth_password_change" %}">{% trans "Change password" %}</a>)
-	    {% else %}
-	    <a href="{% url "auth_login" %}">{% trans "Log in" %}</a> |
-        <a href="{% url "registration_register" %}">{% trans "Register" %}</a>
-	    {% endif %}
-	    <hr />
-    {% endblock %}
-    </div>
-    {% endblock %}
-    </div>
-
-    <div id="content">
-        {% block content %}{% endblock %}
-    </div>
-
-    <div id="footer">
-        {% block footer %}
-        <hr />
         {% endblock %}
     </div>
+    {% endblock %}
+</div>
+<div id="right_container_outer">
+    {% block right_container_outer %}
+    <div id="nav" class="navbar">
+        {% block menu %}
+        <ul>
+            <li><a href="{% url "index" %}">{% trans "Home" %}</a></li>
+            {% if user.is_authenticated %}
+            <li><a href="{% url "auth_logout" %}">{% trans "Log out" %}</a></li>
+            {% else %}
+            <li><a href="{% url "auth_login" %}">{% trans "Log in" %}</a></li>
+            <li><a href="{% url "registration_register" %}">{% trans "Register" %}</a></li>
+            {% endif %}
+        </ul>
+        {% endblock %}
+    </div>
+    <div id="navbar_fade">{% block navbar_fade %}{% endblock %}</div>
+    <div id="right_container_inner" class="clearfix">
+        {% block right_container_inner %}
+        <div id="rci_left_column">
+            {% block rci_left_column %}
+            <div id="content">
+                {% block content %}{% endblock %}
+            </div>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </div>
+    <div id="footer">
+        {% block footer %}
+        Copyright &#169; 2013 - Koło robotyki Uniwersytetu Jagiellońskiego.
+        {% endblock %}
+    </div>
+    {% endblock %}
+</div>
 </body>
 
 </html>
