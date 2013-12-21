@@ -20,7 +20,7 @@ class KrakrobotSimulator(object):
 
     def __init__(self,  map, robot_controller_class, init_position = None,
                  steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
-                 measurement_noise=0.2, time_limit = 5000,
+                 measurement_noise=0.2, time_limit = 50,
                  speed = 5.0,
                  turning_speed = 0.4*pi,
                  execution_cpu_time_limit = 10.0,
@@ -177,8 +177,9 @@ class KrakrobotSimulator(object):
         frame_count = 0
         current_command = None
         iteration = 0
+        communicated_finished = False
         try:
-            while not self.check_goal(robot) and not robot.time_elapsed >= self.time_limit:
+            while not communicated_finished and not robot.time_elapsed >= self.time_limit:
                 #logger.info(robot_controller.time_consumed)
 
                 if iteration % self.iteration_write_frequency == 0:
@@ -279,6 +280,8 @@ class KrakrobotSimulator(object):
                         # Move robot
 
                         current_command = command
+                    elif command[0] == FINISH:
+                        communicated_finished = True
 
                     if maximum_timedelta <= robot_controller.time_consumed:
                         raise KrakrobotException("Robot has exceeded CPU time limit")
@@ -289,7 +292,7 @@ class KrakrobotSimulator(object):
 
         # Simulation process finished
         self.finished = True
-        logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(self.check_goal(robot)))
+        logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(communicated_finished and self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
         while frame_time_left > self.frame_dt and self.visualisation:
@@ -301,7 +304,7 @@ class KrakrobotSimulator(object):
         logger.info("Exiting")
 
         # Return simulation results
-        return {"time_elapsed": robot.time_elapsed, "goal_achieved": self.check_goal(robot),
+        return {"time_elapsed": robot.time_elapsed, "goal_achieved": communicated_finished and self.check_goal(robot),
                 "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000
                 }
 
