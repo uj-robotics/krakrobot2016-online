@@ -38,7 +38,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'registration'
+    'registration',
+    'KrakRobotTestServ.uploader',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -62,6 +63,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
     }
 }
 
@@ -82,13 +87,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
-STATIC_ROOT = '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ'
-STATIC_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "media"),
+    os.path.join(BASE_DIR, "static"),
     './media/','./static/','./Templates/',
     '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/media/',
+    '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/static/',
 )
 
 # registration settings
@@ -107,8 +117,18 @@ DEFAULT_FROM_EMAIL = 'joe.doe@vp.pl'
 TEMPLATE_DIRS = {
     './Templates/',
     './Templates/registration',
+    './Templates/coding',
     '../Templates/',
     '../Templates/registration',
+    '../Templates/coding',
     '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/Templates/',
     '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/Templates/registration',
+    '/home/sulphux/KrakrobotEliminacje/Testerka/KrakRobotTestServ/Templates/coding',
 }
+
+# List of callables that know how to import templates from various sources.
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+#     'django.template.loaders.eggs.Loader',
+)
