@@ -1,0 +1,255 @@
+html, body {
+	height:100%;
+}
+
+body {
+	font-family:Verdana, Arial, Helvetica, sans-serif;
+	font-size:.8em; 
+	color:#000000;
+	margin:0 0 0 0;
+	padding:0 0 0 0;
+	background:#97AEC0 url(img/body_bg_blue.jpg) repeat-y;
+	text-align:center;
+}
+
+#left_container {
+	position: absolute;
+	left:0;
+	top:0;
+	width:15em;
+	height:100%;
+	margin:0 0 0 0;
+	padding:0 0 0 0;
+}
+
+#left_quote {
+	position:relative;
+	left:0;
+	width:9.65em;
+	margin:0 0 0 5px;
+	padding:.1em 5% .5em 5%;
+	font-size:1.3em;
+	font-style:italic;
+	color:#EAEEE0;
+	text-align:left;
+	border:#CCCCCC solid 1px;
+	background:#225378;
+}
+
+#left_text {
+	position:relative;
+	margin:0 0 0 0;
+	padding:1em 5% 1em 5%;
+	font-family:Tahoma, arial;
+	font-size:0.9em;
+	width:14em;
+	color:#FFF;
+	text-align:left;
+}
+
+#right_container_outer {
+	position:absolute;
+	left:16.3em;
+	top:1em;
+	width:42em;
+	height:100%;
+	margin:0 0 0 0;
+	padding:0 0 0 0;
+	background:#97AEC0 url(img/navbar_fade.jpg) top repeat-x;
+}
+
+.navbar {
+	position:relative;
+	left:0;
+	top:0;
+	width:42.3em;
+	height:2em;
+	margin:0 0 0 0;
+	padding:0 0 10px 0;
+	background:#97AEC0;
+}
+
+#navbar_fade {
+	position:relative;
+	left:0;
+	top:0;
+	width:42em;
+	height:3em;
+	margin:0 0 0 0;
+	padding:0 0 0 0;
+	background:#ABBECC url(img/navbar_fade_blue.jpg) top repeat-x;
+	border-left:1px solid #4F7692;
+	border-right:1px solid #4F7692;
+}
+
+#right_container_inner {
+	position:relative;
+	left:0;
+	top:0;
+	width:42em;
+	margin:0 0 0 0;
+	padding:0 0 .2em 0;
+	background:#ABBECC;
+	border-left:1px solid #4F7692;
+	border-right:1px solid #4F7692;
+}
+
+#rci_left_column {
+	position:relative;
+	margin:-1em 0 0 .2em;
+	padding:0 1em 0 1em;
+	background:transparent;
+	font-size:.9em;
+	color:#000000;
+	text-align:left;
+}
+
+#rci_right_column {
+	position:relative;
+	clear:both;
+	margin:0 1em 0 0;
+	padding:0 0 0 20px;
+	font-size:.8em;
+	color:#4F5936;
+	text-align:left;
+}
+
+#rci_right_column ul {
+	margin:.9em 0 0 1.4em !important;
+	margin:.9em 0 0 1.6em;
+	padding:0 0 0 0;
+	list-style-type:circle;
+}
+
+#rci_right_column li {
+	margin:0 0 .3em 0;
+	padding:0 0 0 0;
+}
+
+#rci_right_column a {
+	color:#D7E4EE;
+	font-size:11px;
+	font-weight:bold;
+	text-decoration:none;
+}
+#rci_right_column a:hover {
+	text-decoration:underline;
+}
+
+#footer {
+	position:relative;
+	width:48.9em;
+	height:2.5em;
+	margin:0 0 0 0;
+	padding:.3em .5em 0 0;
+
+	border-top:1px solid #4F7692;
+	font-size:.85em;
+	font-family:Tahoma, arial;
+	color:#000000;
+	text-align:right;
+}
+
+#nav ul{
+	padding:0 0 0 0;
+	margin: 0 0 0 0;
+	white-space: nowrap;
+	font-size:1em;
+	color:#000000;
+	width:100%;
+	list-style:none;
+}
+
+#nav ul li{
+	display:inline;
+	list-style:none;
+}
+
+#nav ul li a{
+	padding: .4em 1em .46em 1em;
+	color:#225378;
+	font-weight:bold;
+	text-decoration:none;
+	float: left;
+	background:#ABBECC;
+	border-left:1px solid #4F7692;
+	border-top:1px solid #4F7692;
+	border-right:1px solid #4F7692;
+	border-bottom:1px solid #4F7692;
+}
+
+#nav ul li a:hover{
+	color:#FFF;
+	background:#7292AB;
+}
+
+h2 {
+	font-family:Tahoma, arial;
+	margin:0 0 -.3em 0;
+	font-size:1.9em;
+	color:#FFF;
+}
+
+h3 {
+	font-family:Tahoma, arial;
+	margin:0 0 -.8em;
+	padding:0 0 0 0;
+	font-size:1em;
+	color:#FFF;
+}
+
+#left_text h3 {
+	font-family:Tahoma, arial;
+	margin:0 0 -.7em;
+	padding:0 0 0 0;
+	font-size:1.2em;
+	color:#FFF;
+}
+
+.small {
+	font-family:"Courier New", Courier, mono;
+	font-size:.85em;
+	text-transform:uppercase;
+}
+
+#right_container_inner a {
+	color:#547699;
+	text-decoration:underline;
+}
+
+#right_container_inner a:hover {
+	color:#ffffff;
+	text-decoration:none;
+}
+
+#logo {
+	margin:.5em 0 0 0;
+	width:15em;
+	height:14em;
+}
+
+img {
+	border:none;
+}
+
+blockquote {
+	margin:.3em .6em .7em .6em;
+	padding:.05em .5em .05em .5em;
+	background:#97ACBB;
+	border:1px solid #4F7692;
+	font-family:Tahoma, arial;
+	color:#2C4150;
+}
+
+.clearfix:after {
+	content: "."; 
+	display: block; 
+	height: 0; 
+	clear: both; 
+	visibility: hidden;
+}
+
+.clearfix {display: inline-table;}
+
+* html .clearfix {height: 1%;}
+.clearfix {display: block;}

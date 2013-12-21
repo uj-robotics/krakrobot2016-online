@@ -65,7 +65,7 @@ class SimulationRenderThread(QtCore.QThread):
     def run_simulation(self):
         """Running KrakrobotSimulator simulation"""
         self.simulator.reset()
-        self.simulator.run(OmitCollisions)
+        self.simulator.run()
         self.exec_() #?
 
 
@@ -603,6 +603,8 @@ def create_parser():
                       help="Map that will be run after hitting Start Simulation button, or if in "
                            "console mode after running the program")
 
+
+
     #parser.add_option("-v", "--verbose",default=True, type="int", dest="verbose", help="If set prints simulation steps")
     #parser.add_option( "--agent_1", type="string",default="UCTAgent", dest="agent1", help="""Set agent1 to "UCTAgent","UCTAgentTran", "UCTAgentTranCut", "RandomAgent", "GreedyAgent" """)
     #parser.add_option( "--agent_2", type="string", default="GreedyAgent", dest="agent2", help="""Set agent2 to "UCTAgent", "UCTAgentTran", "UCTAgentTranCut",  "RandomAgent", "GreedyAgent" """)
@@ -618,11 +620,16 @@ def main():
     print options, args
 
 
-    simulator = KrakrobotSimulator("maps/5.map", (1, 1, 0))
+
+    simulator_params = {"visualisation": not options.command_line}
 
     if not options.command_line:
+        simulator = KrakrobotSimulator(options.map, OmitCollisions, **simulator_params)
         gui = SimulatorGUI(sys.argv, simulator)
         gui.run()
+    else:
+        simulator = KrakrobotSimulator(options.map, OmitCollisions, simulation_dt=0.0, **simulator_params)
+        print "Simulation has finished. Results: {0}".format(simulator.run())
 
 
 if __name__ == '__main__':
