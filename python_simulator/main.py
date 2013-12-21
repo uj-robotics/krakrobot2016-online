@@ -31,7 +31,7 @@ from visualisation import PrepareFrame, RenderAnimatedPart, RenderFrameTemplate,
 from defines import *
 
 from simulator import KrakrobotSimulator
-from robot_controller import OmitCollisions
+
 
 
 
@@ -48,6 +48,9 @@ import datetime
 
 from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 from threading import Event
+from robot_controller import compile_robot
+
+
 
 
 class SimulationRenderThread(QtCore.QThread):
@@ -119,6 +122,9 @@ class SimulationRenderThread(QtCore.QThread):
 
     def run(self):
         """SVG rendering"""
+
+        self.simulation_process_thread = QtCore.QThread()
+
         self.simulation_process_thread = Thread(target=self.run_simulation)
         self.simulation_process_thread.start()
 
@@ -127,8 +133,8 @@ class SimulationRenderThread(QtCore.QThread):
 
         time.sleep(0.5)
 
-        #self.animation_thread = Thread(target=self.run_animation)
-        #self.animation_thread.start()
+        self.animation_thread = Thread(target=self.run_animation)
+        self.animation_thread.start()
 
         svg_data = None
         time_elapsed = datetime.timedelta(0)
@@ -641,7 +647,8 @@ def create_parser():
     parser.add_option("-m", "--map", dest="map", default="maps/5.map",
                       help="Map that will be run after hitting Start Simulation button, or if in "
                            "console mode after running the program")
-
+    parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
+                      help="Robot that will be compiled and run")
 
 
     #parser.add_option("-v", "--verbose",default=True, type="int", dest="verbose", help="If set prints simulation steps")
@@ -653,21 +660,32 @@ def create_parser():
 
 
 import sys
+
+
+
+
 def main():
     parser = create_parser()
     (options, args) = parser.parse_args()
     print options, args
 
+    import imp
 
 
-    simulator_params = {"visualisation": not options.command_line}
+    simulator_params = {"visualisation": not options.command_line
+        ,"robot_controller_class": compile_robot(options.robot)[0]
+    }
+
+
+    #simulator_params["robot_controller_class"] =OmitCollisionsLocal
+
 
     if not options.command_line:
-        simulator = KrakrobotSimulator(options.map, OmitCollisions, **simulator_params)
+        simulator = KrakrobotSimulator(options.map, **simulator_params)
         gui = SimulatorGUI(sys.argv, simulator)
         gui.run()
     else:
-        simulator = KrakrobotSimulator(options.map, OmitCollisions, simulation_dt=0.0, **simulator_params)
+        simulator = KrakrobotSimulator(options.map, simulation_dt=0.0, **simulator_params)
         print "Simulation has finished. Results: {0}".format(simulator.run())
 
 

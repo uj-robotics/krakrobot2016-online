@@ -4,11 +4,28 @@ Krakrobot2014 Online Eliminations
 Welcome to the technical specification for Krakrobot2014 online eliminations problem.
 For description of the task please refer to the Problems page on the tournament's homepage www.krakrobot.pl
 
+In this package you will find the simulator, exemplary maps in maps directory and
+exemplary robots in examples directory. 
+
 
 Installation
 ---------------------
 <TODO:fill in>
 
+Map
+---------------------
+Map is a discretized maze with several field types, i.e:
+
+* Empty field (field_type = 0)
+* Wall (field_type = 1)
+* Goal (field_type = 4)
+* Start position (field_type = 3)
+* Hint direction (field_type = 11, field_value in 0...7 indicating in sequence direction S, SE, E, NE, N, NW, N, SW)
+* Hint optimal path direction (field_type = 10, field_value in 0....7 indicating in sequence directions as above, however
+note that the only possible values are S(0), E(2), N(4), W(6) )
+* Hint distance (field_type = 9, field_value is a floor of actual distance to the goal)
+
+(TODO: add picture)
 
 Simulator
 ---------------------------------
@@ -19,11 +36,11 @@ To complete this task it is vital to understand how the simulator works.
 There are two ways to run KrakrobotSimulat. As a command tool, or in a windowed mode.
 Using GUI you can replay and run simulations of your robot. To run GUI simply type
 
-    python main.py
+``python main.py``
 
 To run command tool see running options for details.
 
-    python main.py -h
+ ``python main.py -h``
 
 
 Both in command and windowed mode you can control parameters such as
@@ -79,20 +96,37 @@ is close to the boundary of a field the results might be hard to predict.
 RobotController
 ---------------------------------
 
-You task is to implement RobotController interface.
+You task is to implement RobotController interface. The code should
+be written in Python.
 
+To see RobotController class and exemplary implementations please see *robot_controller.py* file.
 
-1. Initialization
+The RobotController class should implement
 
+* **act()** - this is the basic function. It is called always after executing last command.
+In act you should return a list. For constants see *defines.py*
 
+	*  Moving : ["move", number_of_ticks]
+	*  Turning : ["turn", number_of_ticks]
+	*  Sense GPS: ["sense_gps"]
+	*  Sense sonar: ["sense_sonar"]
+	*  Sense field: ["sense_field"]
 
-2.
+* **on_sense_gps(x,y)** - reponds to (x,y) measurement (no return)
+
+* **on_sense_sonar(distance)** - responds to (distance) measurement (no return)
+
+* **on_sense_field(field_type, field_value)** - responds to (field_type, field_value) measurement (no return)
+
 
 
 Hints and resources
 -------------------------
 This section is very important. We strongly encourage you to get familiar with the
-resources that we link in here, as they are tremendously helpful in solving this task
+resources that we link in here, as they are tremendously helpful in solving this task.
+
+We are aware that you might be not familliar with python, however we believe that this
+is a great tool for robotics and it is worth learning.
 
 
 
