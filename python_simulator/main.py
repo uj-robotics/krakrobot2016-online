@@ -655,6 +655,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _pause_simulation(self):
+        self.simulation_finished()
         if self.board_animation.simulation_thread:
             self.board_animation.simulation_thread.terminate()
 
