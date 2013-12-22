@@ -6,7 +6,7 @@ SENSE_GPS = "sense_gps" # (sense_gps) -> (x,y)
 FINISH = "finish"
 SENSE_FIELD = "sense_field"
 SENSE_LIGHT_SENSOR = "sense_light_sensor"  # (sense_light_sensor) -> (field_type)   #TODO: add or erase it ? everytime robot knows the field?
-
+WRITE_CONSOLE = "write_console"
 
 
 ### Contest constants ###

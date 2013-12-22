@@ -283,7 +283,7 @@ def generate_map(N,M, file_name, title = "",
     def get_free(grid):
         try_x, try_y = random.randrange(N), random.randrange(M)
         while grid[try_x][try_y] != 0:
-            try_x, try_y = random.randrange(N), random.randrange(N)
+            try_x, try_y = random.randrange(N), random.randrange(M)
         return try_x, try_y
 
     from math import cos, sin,pi,sqrt
@@ -331,15 +331,18 @@ def generate_map(N,M, file_name, title = "",
 
 
 def generate_simple_maze_test1():
-    generate_map(40,40, "maps/4.map", "", 0, 0, 0)
+    generate_map(40,40, "maps/4.map", "", 0, 0, 0, prunning_prob=0.0)
 
 
 def generate_city_map_test2():
     generate_map(40,40, "maps/2.map", "", 4, 4, 4, prunning_prob=0.7)
 
+def gen_map():
+    generate_map(28,20, "maps/28_20_p50.map", "", 2, 0, 5, prunning_prob=0.5)
+
 
 if __name__ == "__main__":
-    generate_city_map_test2()
+    gen_map()
     #mm = MapMaze(4, 4)
     #print mm
     #generate_map(mm, "maps/1.map", "", count_direction=1, count_distance=1, count_optimal=1)
