@@ -38,7 +38,7 @@ The best teams (number of advancing teams will be disclosed in January) will adv
 14. Jury has right to change the rules of this qualifications task at any time, however each modification will be sent to all
 registered contestants and annouced on the official page www.krakrobot.pl. Also jury has right to provide minor modifications
 to the simulator, however all changes will not affect solutions correctness and will be mailed to all registered contestants as well.
-15. Final submission date is 12 feb 2014, 24:00 GMT. Submissions will open around mid January (the date will be emailed and announced on the contest page).
+15. Final submission date is 12 Feb 2014, 24:00 GMT. Submissions will open around mid January (the date will be emailed and announced on the contest page).
 
 
 Installation
@@ -58,9 +58,8 @@ Map is a discretized grid with several field types, i.e:
 note that the only possible values are S(0), E(2), N(4), W(6) )
 * Hint distance (field_type = 9, field_value is a floor of actual distance to the goal)
 
-We have provide you, for your convenience, with map generator utility. To use please refer to map_gen.py file and
-exemplary code in this file as well. Generation of the maps can be highly parametrized, please refer
-to documentation in the code. Note however that maps for the final evaluation might be generated differently (that is using different generator, or designed by hand).
+We have bundled with the simulator map generator utility. To use it please refer to map_gen.py file  Generation of the maps can be highly parametrized, please refer
+to the documentation in the code. Note however that maps for the final evaluation might be generated differently (that is using different generator, or designed by hand).
 
 
 ![Example map](pics/1.png)
@@ -112,10 +111,9 @@ If by moving Robot collides with wall it doesn't move (but time for movement is 
 Robot can issue commands with multiple ticks, for instance [MOVE, 10], but such a move will be
 discretized into 10 separate 1-tick moves.
 
-On start of the simulation Simulator calls **init** on provided RobotController instance and
-provides RobotController with constants for this run (i.e. moving speed, turning speed,
-noise of move, noise of turn, noise of GPS, noise of sonar, CPU execution time limit,
-sonar speed, GPS speed
+On the start of the simulation Simulator calls **init** on provided RobotController instance and
+provides RobotController with constants for this run (i.e. moving speed, turning speed, gps measurement speed,
+noise of move, noise of turn, noise of GPS, noise of sonar, CPU execution time limit
 ).
 
 All constants lie within bounds specified in the Constants Bounds section.
@@ -206,7 +204,7 @@ contest page. The final evaluation will take place some time after 12.02.2014 an
 
 Hints and resources
 -------------------------
-This section is very important. We strongly encourage you to get familiar with the
+We strongly encourage you to get familiar with the
 resources that we link in here, as they are tremendously helpful in solving this task.
 
 We are aware that you might be not familliar with python, however we believe that this
@@ -214,7 +212,7 @@ is a great tool for robotics and it is worth learning.
 
 To learn python we recommend this tutorial : www.learnpython.org/
 
-We also recommend taking this course : https://www.udacity.com/course/cs373 , this is fairly simple and short
+We also recommend taking this course : https://www.udacity.com/course/cs373 , this is a fairly simple and short
 course that will provide you with many techniques that will be essential for successful competition.
 
 
