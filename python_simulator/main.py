@@ -320,8 +320,8 @@ class MainWindow(QtGui.QMainWindow):
         steering_noise_label = QtGui.QLabel('steering_noise: ')
         main_toolbar.addWidget(steering_noise_label)
         self.steering_noise_edit = QtGui.QTextEdit()
-        self.steering_noise_edit.setMaximumWidth(text_edit_width)
-        self.steering_noise_edit.setMaximumHeight(text_edit_height)
+        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
         main_toolbar.addWidget(self.steering_noise_edit)
 
         simulation_layout = QtGui.QVBoxLayout(self)
