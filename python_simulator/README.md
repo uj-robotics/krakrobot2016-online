@@ -162,7 +162,7 @@ The RobotController class should implement
 execution_cpu_time_limit) - initialization function. Specifications of the arguments:
 	* starting_position : tuple [x,y,angle], where x and y are accurate positions of the robot (we assume
 upper-left corner is (0,0) and x runs vertically, whereas y runs horizontally) and angle which is an angle in radians
-with respect to X axis (TODO: add picture)
+with respect to X axis 
 	* steering_noise : sigma of gaussian noise applied to turning motion
 	* distance_noise : sigma of gaussian noise applied to forward motion
 	* sonar_noise : sigma of gaussian noise applied to sonar
@@ -171,6 +171,8 @@ with respect to X axis (TODO: add picture)
 	* turning_speed: turning speed in radians/simulation_second of the robot
 	* gps_delay : amount of simulation time units to run gps measurement
 	* execution_cpu_time_limit: total real running time that can be consumed by the robot in seconds
+
+![Example map](pics/2.png)
 
 * **act()** - this is the basic function. It is called always after executing last command.
 In act you should return a list. For constants see *defines.py*
