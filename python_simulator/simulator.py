@@ -324,6 +324,10 @@ class KrakrobotSimulator(object):
                 }
 
 
+    def get_logs(self):
+        return ['KrakrobotSimulator']
+
+
     def _create_sim_data(self, robot):
         """
             @returns Descriptor that is sufficient to visualize current frame
