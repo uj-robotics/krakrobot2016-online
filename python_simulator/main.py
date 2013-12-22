@@ -1,58 +1,60 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#-------------------------------------------------------------------------------
-# Visualising the Segmented-CTE maze-solving in CS373 Unit6-6
-#
-# Source : https://www.udacity.com/wiki/CS373%20Visualizing%20Maze%20Driving
-#
-# Custom modules:
-#   vegesvgplot.py        http://pastebin.com/6Aek3Exm
-#-------------------------------------------------------------------------------
 
-# General idea: run simulation with fixed speed attribute. Accept solution only
-# if number of collisions was zero, or no two consecutive collisions happened
-#
-#
-# Links:
-# http://forums.udacity.com/questions/1021963/particle-filter-challenge-implement-hallway-robot-with-sonar
+""" Krakrobot Python Simulator
 
+    Krakrobot 2013 Qualifications simulator main.
+
+"""
+
+__authors__ = u'Konrad Talik, Stanisław Jastrzębski'
+__license__ = u'The MIT License (MIT), http://mitlicense.org/'
+
+"""
+Copyright (c) 2013 Jagielonnian University Robotics Interest Group,
+http://www.robotics.ii.uj.edu.pl/
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
 
 VERSION = '0.0.1a'
 APP_NAME = 'Krakrobot Simulator'
 APP_FULL_NAME = APP_NAME + ' ' + VERSION
 MSG_EMP = '-> '
 
-#TODO: add Java/C++ RobotController classes with TCP server attached
+from optparse import OptionParser
+from Queue import Queue
+import time
+from threading import Thread
+from threading import Event
+import datetime
 
+from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 
-
+from simulator import KrakrobotSimulator
+from robot_controller import compile_robot
 from visualisation import PrepareFrame, RenderAnimatedPart, RenderFrameTemplate, \
     Save, fill_visualisation_descriptor
 from defines import *
 
-from simulator import KrakrobotSimulator
-
-
-
-#multithreading queue for rendering job
-from Queue import Queue
-
-
-
-
-#TODO: Extract this code to GUI module
-import time
-from threading import Thread
-import datetime
-
-from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
-from threading import Event
-from robot_controller import compile_robot
-
 graphicsmutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
-from optparse import OptionParser
 def create_parser():
     """ Configure options and return parser object """
     parser = OptionParser()

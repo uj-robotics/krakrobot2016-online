@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+
 """ Simulator which runs the simulation and renders SVG frames """
 
+__author__ = u'Stanisław Jastrzębski'
 
 from defines import *
 
