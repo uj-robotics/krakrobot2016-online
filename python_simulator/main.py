@@ -63,7 +63,7 @@ class SimulationThread(QtCore.QThread):
         """Running KrakrobotSimulator simulation"""
         self.simulator.reset()
         self.simulator.run()
-        self.exec_() #?
+        self.exec_()
 
 
 class KrakrobotBoardAnimation(QtGui.QGraphicsView):
@@ -76,6 +76,9 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     current_frame = 0
     frame_count = 0
     simulator = None
+    animation_started = False
+    animation_paused = False
+    refresh_rate = 10
 
     def __init__(self, parent):
         super(KrakrobotBoardAnimation, self).__init__(parent)
@@ -87,8 +90,6 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.frames_timer.timeout.connect(self.frames_update)
         self.animation_timer = QtCore.QTimer(self)
         self.animation_timer.timeout.connect(self.animation_update)
-        self.is_started = False
-        self.is_paused = False
         self.setScene(QtGui.QGraphicsScene(self))
         self.setTransformationAnchor(self.AnchorUnderMouse)
         self.setDragMode(self.ScrollHandDrag)
@@ -120,10 +121,10 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
     def start(self, simulator):
 
-        if self.is_paused:
+        if self.animation_paused:
             return
 
-        self.is_started = True
+        self.animation_started = True
 
         self.simulation_thread = SimulationThread()
         self.simulator = simulator
@@ -134,25 +135,25 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.status_bar_message.emit('Simulation started...')
 
         self.frames_timer.start(1)
-        self.animation_timer.start(10)
+        self.animation_timer.start(self.refresh_rate)
 
 
-    def pause(self):
+    def pause_animation(self):
 
-        if not self.is_started:
+        if not self.animation_started:
             return
 
-        self.is_paused = not self.is_paused
+        self.animation_paused = not self.animation_paused
 
-        if self.is_paused:
-            self.timer.stop()
+        if self.animation_paused:
+            self.animation_timer.stop()
             self.status_bar_message.emit('Animation paused.')
 
         else:
-            self.timer.start(self.speed, self)
+            self.animation_timer.start(self.refresh_rate)
             self.status_bar_message.emit('Animation played...')
 
-        self.update()
+        #self.update()
 
 
     def frames_update(self):
@@ -182,21 +183,19 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             svg_data = PrepareFrame(self.frame_template,self.frames[self.current_frame])
             self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
             self.svg_renderer.load(self.xml_stream_reader)
-            #self.svg_item = QtSvg.QGraphicsSvgItem()
 
             scene = self.scene()
-            #scene.removeItem(self.svg_item)
             self.svg_item.setSharedRenderer(self.svg_renderer)
             self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
             self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
             self.svg_item.setZValue(0)
-            #scene.items()[0].hide()
-            #scene.items()[0].show()
-            #scene.addItem(self.svg_item)
             scene.update()
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
             self.current_frame += self.animation_speed
+
+            #GUI update
+
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -207,7 +206,6 @@ class MainWindow(QtGui.QMainWindow):
         self._init_ui(simulator)
         self.simulator = simulator
         self.update_slider = True
-        self.animation_paused = False
         self.currently_simulating = False
 
 
@@ -233,8 +231,8 @@ class MainWindow(QtGui.QMainWindow):
         playback_layout = QtGui.QHBoxLayout()
         #playback_layout.addStrut(1)
         playback_toolbar = QtGui.QToolBar()
-        self.speed_box = QtGui.QDoubleSpinBox(self)
-        self.speed_box.setRange(2,100)
+        self.speed_box = QtGui.QSpinBox(self)
+        self.speed_box.setRange(1,100)
         self.speed_box.setValue(10)
         self.speed_box.setToolTip('Change animation speed')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
@@ -364,7 +362,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _speed_value_changed(self):
-        self.simulation_view.simulation_render_thread.frame_rate = \
+        self.board_animation.animation_speed = \
             self.speed_box.value()
 
 
@@ -377,10 +375,9 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _send_scroll_bar_value(self):
-        """Send scroll bar value to simulation and render threads"""
+        """Send scroll bar value to simulation and render thread"""
         frame_change_mutex.lock()
-        self.simulation_view.simulation_render_thread.current_frame = \
-            self.scroll_bar.value()
+        self.board_animation.current_frame = self.scroll_bar.value()
         frame_change_mutex.unlock()
 
 
@@ -392,13 +389,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def _play_progress_animation(self):
         """Play progress (replay record) animation"""
-        self.simulation_view.simulation_render_thread.paused = False
-        self.animation_paused = False
+        if self.board_animation.animation_paused:
+            self.board_animation.pause_animation()
 
 
     def _pause_progress_animation(self):
-        self.simulation_view.simulation_render_thread.paused = True
-        self.animation_paused = True
+        self.board_animation.pause_animation()
 
 
     def _skip_forward(self):
