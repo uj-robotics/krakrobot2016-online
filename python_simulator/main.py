@@ -52,6 +52,84 @@ from robot_controller import compile_robot
 graphics_update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
+from optparse import OptionParser
+def create_parser():
+
+    """
+                     steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
+                 measurement_noise=0.2, time_limit = 50,
+                 speed = 5.0,
+                 turning_speed = 0.4*pi,
+                 execution_cpu_time_limit = 10.0,
+                 simulation_time_limit = 10.0,
+                 simulation_dt = 0.001,
+                 frame_dt = 0.1,
+                 collision_threshold = 50,
+                 iteration_write_frequency = 1000,
+                 visualisation = True
+                 """
+
+    """ Configure options and return parser object """
+    parser = OptionParser()
+    parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
+                      help="If simulation will run without visualisation")
+    parser.add_option("-m", "--map", dest="map", default="maps/3.map",
+                      help="Map that will be run after hitting Start Simulation button, or if in "
+                           "console mode after running the program")
+    parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
+                      help="Robot that will be compiled and run")
+    parser.add_option("--steering_noise", dest="steering_noise", default=0.01, type="float",
+                      help="Sigma of gaussian noise applied to turning motion")
+    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.1,type="float",
+                      help="Sigma of gaussian noise applied to sensed distance by sonar")
+    parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,type="float",
+                      help="Sigma of gaussian noise applied to the sensed GPS position")
+
+    parser.add_option("--gps_delay", dest="gps_delay", default=2.0,type="float",
+                      help="Time consumption (in simulation time units) of GPS")
+
+    parser.add_option("--distance_noise", dest="distance_noise", default=0.001,type="float",
+                      help="Sigma of gaussian noise applied to forward motion")
+
+    parser.add_option("--speed", dest="speed", default=5.0,type="float",
+                      help="Speed of the robot (i.e. units/simulation second)")
+    parser.add_option("--turning_speed", dest="turning_speed", default=1.0,type="float",
+                      help="Turning speed of the robot (i.e. rad/simulation second)")
+
+
+    parser.add_option("--execution_cpu_time_limit", dest="execution_cpu_time_limit", default=10.0,type="float",
+                      help="Execution CPU time limit")
+    parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10000.0,type="float",
+                      help="Simulation time limit (in virtual time units)")
+
+    parser.add_option("--frame_dt", dest="frame_dt", default=0.1,type="float",
+                      help="How often (in simulation time units) to produce a frame")
+
+    parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,type="int",
+                      help="How often (number of ticks of simulator) to report simulation status")
+    return parser
+
+
+parser = create_parser()
+(options, args) = parser.parse_args()
+print options, args
+
+
+simulator_params = {"visualisation": not options.command_line,
+                    "speed": options.speed,
+                    "distance_noise": options.distance_noise,
+                    "steering_noise": options.steering_noise,
+                    "sonar_noise": options.sonar_noise,
+                    "measurement_noise": options.measurement_noise,
+                    "turning_speed":options.turning_speed,
+                    "execution_cpu_time_limit": options.execution_cpu_time_limit,
+                    "simulation_time_limit":options.simulation_time_limit,
+                    "frame_dt":options.frame_dt,
+                    "iteration_write_frequency":options.iteration_write_frequency,
+                    "gps_delay":options.gps_delay,
+                    "robot_controller_class": compile_robot(options.robot)[0],
+                    "map": options.map
+}
 
 class SimulationThread(QtCore.QThread):
     """KrakrobotSimulator threading"""
@@ -320,13 +398,13 @@ class MainWindow(QtGui.QMainWindow):
         robot_menu = QtGui.QMenu('&Robot', self)
         self.open_source_action = robot_menu.addAction('&Open source code file...')
         self.open_source_action.triggered.connect(self.open_source)
-        self.menuBar().addMenu(robot_menu)
+        #self.menuBar().addMenu(robot_menu)
 
         widgets_menu = QtGui.QMenu('&Widgets', self)
         self.code_tool_action = widgets_menu.addAction(
             self.code_dock_widget.toggleViewAction()
         )
-        self.menuBar().addMenu(widgets_menu)
+        #self.menuBar().addMenu(widgets_menu)
 
         #settings_menu = QtGui.QMenu('&Settings', self)
         #self.menuBar().addMenu(settings_menu)
@@ -370,7 +448,7 @@ class MainWindow(QtGui.QMainWindow):
         file_name = QtGui.QFileDialog.getOpenFileName(
             self, 'Load map from file...', '.', 'Krakrobot maps (*.map)'
         )
-        data = self._read_file_data(file_name)
+        simulator_params['map'] = file_name
 
 
     def open_source(self):
@@ -489,96 +567,22 @@ class SimulatorGUI(object):
 
 # Command Tool
 
-from optparse import OptionParser
-def create_parser():
-
-
-    """
-                     steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
-                 measurement_noise=0.2, time_limit = 50,
-                 speed = 5.0,
-                 turning_speed = 0.4*pi,
-                 execution_cpu_time_limit = 10.0,
-                 simulation_time_limit = 10.0,
-                 simulation_dt = 0.001,
-                 frame_dt = 0.1,
-                 collision_threshold = 50,
-                 iteration_write_frequency = 1000,
-                 visualisation = True
-                 """
-
-    """ Configure options and return parser object """
-    parser = OptionParser()
-    parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
-                      help="If simulation will run without visualisation")
-    parser.add_option("-m", "--map", dest="map", default="maps/3.map",
-                      help="Map that will be run after hitting Start Simulation button, or if in "
-                           "console mode after running the program")
-    parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
-                      help="Robot that will be compiled and run")
-    parser.add_option("--steering_noise", action='store', type='float', dest="steering_noise", default=0.01,
-                      help="Sigma of gaussian noise applied to turning motion")
-    parser.add_option("--sonar_noise", action='store', type='float', dest="sonar_noise", default=0.1,
-                      help="Sigma of gaussian noise applied to sensed distance by sonar")
-    parser.add_option("--gps_noise", action='store', type='float', dest="measurement_noise", default=0.1,
-                      help="Sigma of gaussian noise applied to the sensed GPS position")
-
-
-    parser.add_option("--distance_noise", action='store', type='float', dest="distance_noise", default=0.001,
-                      help="Sigma of gaussian noise applied to forward motion")
-
-    parser.add_option("--speed", action='store', type='float', dest="speed", default=5.0,
-                      help="Speed of the robot (i.e. units/simulation second)")
-    parser.add_option("--turning_speed", action='store', type='float', dest="turning_speed", default=0.4*3.14,
-                      help="Turning speed of the robot (i.e. rad/simulation second)")
-
-
-    parser.add_option("--execution_cpu_time_limit", action='store', type='float', dest="execution_cpu_time_limit", default=10.0,
-                      help="Execution CPU time limit")
-    parser.add_option("--simulation_time_limit", action='store', type='float', dest="simulation_time_limit", default=10.0,
-                      help="Simulation time limit (in virtual time units)")
-
-    parser.add_option("--frame_dt", dest="frame_dt", action='store', type='float', default=0.1,
-                      help="How often (in simulation time units) to produce a frame")
-
-    parser.add_option("--iteration_write_frequency", action='store', type='int', dest="iteration_write_frequency", default=1000,
-                      help="How often (number of ticks of simulator) to report simulation status")
-    return parser
-
-
 import sys
 def main():
-    parser = create_parser()
-    (options, args) = parser.parse_args()
-    print options, args
-
     import imp
  
  
-    simulator_params = {"visualisation": not options.command_line,
-                        "speed": options.speed,
-                        "distance_noise": options.distance_noise,
-                        "steering_noise": options.steering_noise,
-                        "sonar_noise": options.sonar_noise,
-                        "measurement_noise": options.measurement_noise,
-                        "turning_speed":options.turning_speed,
-                        "execution_cpu_time_limit": options.execution_cpu_time_limit,
-                        "simulation_time_limit":options.simulation_time_limit,
-                        "frame_dt":options.frame_dt,
-                        "iteration_write_frequency":options.iteration_write_frequency
-        ,"robot_controller_class": compile_robot(options.robot)[0]
-    }
  
  
     #simulator_params["robot_controller_class"] =OmitCollisionsLocal
  
  
     if not options.command_line:
-        simulator = KrakrobotSimulator(options.map, **simulator_params)
+        simulator = KrakrobotSimulator(**simulator_params)
         gui = SimulatorGUI(sys.argv, simulator)
         gui.run()
     else:
-        simulator = KrakrobotSimulator(options.map, simulation_dt=0.0, **simulator_params)
+        simulator = KrakrobotSimulator(simulation_dt=0.0, **simulator_params)
         print "Simulation has finished. Results: {0}".format(simulator.run())
 
 

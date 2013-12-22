@@ -135,12 +135,12 @@ class Robot:
         """
         Returns distance to wall using 128bit precision floats
         """
-        tolerance_a = np.float128(1e-5)
-        max_a = np.float128(1e4)
+        tolerance_a = np.float64(1e-5)
+        max_a = np.float64(1e4)
         found = False
 
         def is_hit(x, y):
-            tolerance_xy = np.float128(1e-4) # will check nearby
+            tolerance_xy = np.float64(1e-4) # will check nearby
             exact_hit = grid[int(x)][int(y)] == 1
             hit_right = int(x) < (len(grid)-1) and grid[int(x)+1][int(y)] == 1 and (x - int(x)) > (SQUARE_SIDE-tolerance_xy)
             hit_left = int(x) > 0 and grid[int(x)-1][int(y)] == 1 and (x - int(x)) < tolerance_xy
@@ -149,17 +149,17 @@ class Robot:
             return exact_hit or hit_right or hit_left or hit_top or hit_bottom
 
 
-        x_min_col, y_min_col = [np.float128(0), np.float128(0), np.float128(1e100)], [np.float128(0), np.float128(0),
-                                                                                      np.float128(1e100)]
+        x_min_col, y_min_col = [np.float64(0), np.float64(0), np.float64(1e100)], [np.float64(0), np.float64(0),
+                                                                                      np.float64(1e100)]
 
-        x, y = np.float128(self.x + SQUARE_SIDE/2.0), np.float128((self.y + SQUARE_SIDE/2.0))
+        x, y = np.float64(self.x + SQUARE_SIDE/2.0), np.float64((self.y + SQUARE_SIDE/2.0))
         #logger.info(("robot:",x," ",y," ",self.orientation))
         x_disc, y_disc = int(x), int(y)
 
-        orient_x = np.float128(np.cos(np.float128(self.orientation)))
-        orient_y = np.float128(np.sin(np.float128(self.orientation)))
-        a = np.float128(np.tan(np.float128(self.orientation)))
-        b = np.float128(y - a*x)
+        orient_x = np.float64(np.cos(np.float64(self.orientation)))
+        orient_y = np.float64(np.sin(np.float64(self.orientation)))
+        a = np.float64(np.tan(np.float64(self.orientation)))
+        b = np.float64(y - a*x)
 
         #logger.info(("A=", a," B=", b))
         #logger.info((orient_x, orient_y))
@@ -167,14 +167,14 @@ class Robot:
         for i in xrange(0, len(grid)):
 
             if a > max_a:
-                cross_x, cross_y = np.float128(float(i)+1e-10), np.float128(self.y)
+                cross_x, cross_y = np.float64(float(i)+1e-10), np.float64(self.y)
             else:
-                cross_x, cross_y = np.float128(float(i)+1e-10), np.float128(a*(float(i)+1e-10) + b)
+                cross_x, cross_y = np.float64(float(i)+1e-10), np.float64(a*(float(i)+1e-10) + b)
 
             if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
                 continue
 
-            diff_x, diff_y = np.float128(cross_x - x), np.float128(cross_y-y)
+            diff_x, diff_y = np.float64(cross_x - x), np.float64(cross_y-y)
 
             if orient_x*diff_x + orient_y*diff_y > 0:
                 #logger.info((cross_x, cross_y))
@@ -186,17 +186,17 @@ class Robot:
         for i in xrange(0, len(grid[0])):
             # Check if line is almost parallel to the axis
             if abs(a) > tolerance_a:
-                cross_x, cross_y = np.float128((float(i)+np.float128(1e-10) - b)/a), \
-                                   np.float128(float(i)+1e-10)
+                cross_x, cross_y = np.float64((float(i)+np.float64(1e-10) - b)/a), \
+                                   np.float64(float(i)+1e-10)
             else:
-                cross_x, cross_y = np.float128(self.x), np.float128(float(i)+1e-10)
+                cross_x, cross_y = np.float64(self.x), np.float64(float(i)+1e-10)
 
 
             if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
                 continue
 
 
-            diff_x, diff_y = np.float128(cross_x - x), np.float128(cross_y - y)
+            diff_x, diff_y = np.float64(cross_x - x), np.float64(cross_y - y)
             if orient_x*diff_x + orient_y*diff_y > 0:
                 if is_hit(cross_x, cross_y) and (diff_x**2 + diff_y**2) < y_min_col[2]:
                     y_min_col = [cross_x, cross_y, (diff_x**2 + diff_y**2)]

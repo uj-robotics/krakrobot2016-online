@@ -27,6 +27,7 @@ class KrakrobotSimulator(object):
                  simulation_time_limit = 10.0,
                  simulation_dt = 0.0001,
                  frame_dt = 0.1,
+                 gps_delay=2.0,
                  collision_threshold = 50,
                  iteration_write_frequency = 1000,
                  visualisation = True
@@ -82,7 +83,7 @@ class KrakrobotSimulator(object):
         self.visualisation = visualisation
 
         self.sonar_time = SONAR_TIME
-        self.gps_time = GPS_TIME
+        self.gps_delay = gps_delay
         self.light_sensor_time  =  FIELD_TIME
 
         self.tick_move = TICK_MOVE
@@ -160,7 +161,7 @@ class KrakrobotSimulator(object):
         self.reset()
 
         # Initialize robot object
-        robot = Robot(self.speed, self.turning_speed, self.gps_time, self.sonar_time, self.tick_move, self.tick_rotate)
+        robot = Robot(self.speed, self.turning_speed, self.gps_delay, self.sonar_time, self.tick_move, self.tick_rotate)
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(self.steering_noise,
                         self.distance_noise,
@@ -171,7 +172,7 @@ class KrakrobotSimulator(object):
         # Initialize robot controller object given by contestant
         robot_controller = PythonTimedRobotController(self.robot_controller)
         robot_controller.init(self.init_position, robot.steering_noise
-            ,robot.distance_noise, robot.sonar_noise, robot.measurement_noise, self.speed, self.turning_speed,
+            ,robot.distance_noise, robot.sonar_noise, robot.measurement_noise, self.speed, self.turning_speed,self.gps_delay,
                               self.execution_cpu_time_limit
                               )
 
@@ -263,7 +264,7 @@ class KrakrobotSimulator(object):
                     # Dispatch command
                     if command[0] == SENSE_GPS:
                         robot_controller.on_sense_gps(robot.sense_gps())
-                        frame_time_left += self.gps_time
+                        frame_time_left += self.gps_delay
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
                         robot_controller.on_sense_sonar(int(w))
