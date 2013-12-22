@@ -66,261 +66,11 @@ class SimulationThread(QtCore.QThread):
         self.exec_() #?
 
 
-class RenderingThread(QtCore.QThread):
-
-    def set_parent(self, parent):
-        self.parent = parent
-
-    def run(self):
-        """ Job rendering frames to stack """
-        while not self.parent.renderer_stop.is_set():
-            # note: will hang here
-            sim_data = self.parent.simulator.get_next_frame()
-            fill_visualisation_descriptor(sim_data)
-
-            if self.parent.frame_template == "":
-                self.parent.frame_template = RenderFrameTemplate(sim_data)
-
-            svg_data = RenderAnimatedPart(sim_data)
-            self.parent.frames.append(svg_data)
-            self.parent.frame_count += 1
-        self.exec_() #?
-
-
-class AnimationUpdateThread(QtCore.QThread):
-
-    def set_parent(self, parent):
-        self.parent = parent
-
-    def run(self):
-        while not self.parent.renderer_stop.is_set():
-            graphics_update_mutex.lock()
-            self.parent.parent.scene().update()
-            graphics_update_mutex.unlock()
-            time.sleep(0.001)
-        self.exec_() #?
-
-
-class SimulationRenderThread(QtCore.QThread):
-
-    def __init__(self, simulator, parent):
-        super(SimulationRenderThread, self).__init__()
-        self.simulator = simulator
-        self.parent = parent
-        self.frames = [] # frame buffer
-        self.renderer_stop = Event()
-        self.frame_template = ""
-        self.frame_count = 0
-
-
-    def run(self):
-        """SVG rendering"""
-        #self.simulation_process_thread = Thread(target=self.run_simulation)
-        self.simulation_process_thread = SimulationThread()
-        self.simulation_process_thread.set_parent(self)
-        self.simulation_process_thread.start()
-
-        #self.simulation_rendering_thread = Thread(target=self.run_rendering)
-        self.simulation_rendering_thread = RenderingThread()
-        self.simulation_rendering_thread.set_parent(self)
-        self.simulation_rendering_thread.start()
-
-        time.sleep(0.5)
-
-        #self.animation_thread = Thread(target=self.run_animation)
-        self.animation_thread = AnimationUpdateThread()
-        self.animation_thread.set_parent(self)
-        self.animation_thread.start()
-
-
-
-        i = 0
-        frame_change_mutex.lock()
-        self.current_frame = 0
-        frame_change_mutex.unlock()
-        self.frame_rate = 100
-        self.starting = True
-        self.paused = False
-        svg_data = None
-        time_elapsed = datetime.timedelta(0)
-        time_elapsed_update = datetime.timedelta(0)
-
-
-        while True:
-            # Wait for current frame
-            # Store dynamic variable
-            frame_change_mutex.lock()
-            current_frame = self.current_frame
-            frame_change_mutex.unlock()
-
-            while current_frame+1 > self.frame_count:
-                time.sleep(0.01)
-
-            if self.starting:
-                graphics_update_mutex.lock()
-                self.parent.setup_scene(PrepareFrame(self.frame_template,self.frames[current_frame]))
-                graphics_update_mutex.unlock()
-                self.starting = False
-            else:
-                graphics_update_mutex.lock()
-                #It is important that this code does not work at all, it only sets current frame!
-                #self.parent.update_data(PrepareFrame(self.frame_template, self.frames[current_frame]))
-                self.parent.update_data(
-                    PrepareFrame(self.frame_template, self.frames[current_frame]),
-                    current_frame,
-                    self.frame_count
-                )
-                graphics_update_mutex.unlock()
-
-            if not self.paused:
-                frame_change_mutex.lock()
-                self.current_frame += 1
-                frame_change_mutex.unlock()
-
-            time.sleep(self.simulator.frame_dt/self.frame_rate) #10x time
-
-
-        #if svg_data:
-        #    OutputFileName = 'output.svg'
-        #    print 'Saving SVG to "' + OutputFileName + '"...'
-        #    Save(svg_data.encode('utf_8'), OutputFileName)
-        #    print 'Saved.'
-
-        self.renderer_stop.set()
-        self.quit()
-
-
-import copy
-
-
-class SimulationGraphicsView(QtGui.QGraphicsView):
-    """QGraphicsView viewing SVG rendered from QSvgRenderer with QXmlStreamReader"""
-
-    def __init__(self, simulator, parent):
-        super(SimulationGraphicsView, self).__init__(parent)
-        self.parent = parent
-        self.simulation_render_thread = SimulationRenderThread(simulator, self)
-        self.simulation_render_thread.finished.connect(self._animation_finished)
-        self.svg_data = None
-        self._init_ui()
-
-
-    def _init_ui(self):
-        self.image = QtGui.QImage()
-        self.svg_item = QtSvg.QGraphicsSvgItem()
-        self.bg_item = QtGui.QGraphicsRectItem()
-        self.outline_item = QtGui.QGraphicsRectItem()
-
-        # Settings #
-        self.setScene(QtGui.QGraphicsScene(self))
-        self.setTransformationAnchor(self.AnchorUnderMouse)
-        self.setDragMode(self.ScrollHandDrag)
-        self.setCacheMode(self.CacheBackground)
-        self.setViewportUpdateMode(self.NoViewportUpdate)
-
-
-    def run_simulation(self):
-        self.simulation_render_thread.start()
-
-
-    def message(self, message):
-        self.parent.status_bar_message(message)
-
-
-    def setup_scene(self, svg_data):
-
-        # Load new graphics
-        self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
-        self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
-        self.svg_item = QtSvg.QGraphicsSvgItem()#str(time.ctime()))
-        self.svg_item.setSharedRenderer(self.svg_renderer)
-        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.DeviceCoordinateCache)
-        self.svg_item.setZValue(0)
-
-        scene = self.scene()
-        scene.addItem(self.svg_item)
-
-        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-
-
-    #def update_data(self, svg_data):
-    def update_data(self, svg_data, current_frame, frame_count):
-        self.svg_data = svg_data
-        self.parent.update_data(current_frame, frame_count)
-
-
-    def open_file(self, qfile):
-
-        if not qfile.exists():
-            return -1;
-
-        scene = self.scene()
-
-        # Clean graphics
-        scene.clear()
-        self.resetTransform()
-
-        # Load new graphics
-        self.svg_item = QtSvg.QGraphicsSvgItem(qfile.fileName())
-        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
-        self.svg_item.setZValue(0)
-
-        scene.addItem(self.svg_item)
-
-        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-
-
-    def paintEvent(self, event):
-
-        if type(event != QtGui.QPaintEvent):
-            pass
-
-
-
-        # Load new graphics
-        if self.svg_data:
-            qpainter = QtGui.QPainter(self)
-
-            self.xml_stream_reader = QtCore.QXmlStreamReader(self.svg_data)
-            self.svg_renderer.load(self.xml_stream_reader)# = QtSvg.QSvgRenderer(self.xml_stream_reader)
-            self.svg_item = QtSvg.QGraphicsSvgItem()
-
-            #self.svg_renderer.render(qpainter, self.svg_renderer.viewBoxF())
-            self.svg_item.pain(qpainter)
-
-
-
-            #scene = self.scene()
-            #self.svg_item.setSharedRenderer(self.svg_renderer)
-            #self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-            #self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
-            #self.svg_item.setZValue(0)
-            #scene.items()[0].hide()
-            #scene.items()[0].show()
-            #scene.addItem(self.svg_item)
-
-            #scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-
-            #QtGui.QGraphicsView.paintEvent(self, event)
-
-
-    def wheelEvent(self, event):
-        factor = pow(1.2, event.delta()/240.0)
-        self.scale(factor, factor)
-        event.accept()
-
-
-    def _animation_finished(self):
-        self.message(MSG_EMP+'Animation has finished!')
-
-
 class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     """KrakrobotSimulator board animation painting widget"""
 
     status_bar_message = QtCore.pyqtSignal(str)
-    animation_speed = 300
+    animation_speed = 1
     frame_template = ''
     frames = []
     current_frame = 0
@@ -333,8 +83,8 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
 
     def init_ui(self):
-        self.timer = QtCore.QBasicTimer()
-        #self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update)
         self.is_started = False
         self.is_paused = False
         self.setScene(QtGui.QGraphicsScene(self))
@@ -345,21 +95,22 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
     def clear_board(self):
 
+        scene = self.scene()
+        scene.clear()
+        self.resetTransform()
+
         self.xml_stream_reader = QtCore.QXmlStreamReader()
         if self.frame_template:
-            print "jest"
             self.xml_stream_reader = QtCore.QXmlStreamReader(self.frame_template)
 
         self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
         self.svg_item = QtSvg.QGraphicsSvgItem()#str(time.ctime()))
         self.svg_item.setSharedRenderer(self.svg_renderer)
         self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-        self.svg_item.setCacheMode(QtGui.QGraphicsItem.DeviceCoordinateCache)
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
         self.svg_item.setZValue(0)
 
-        scene = self.scene()
         scene.addItem(self.svg_item)
-        scene.update()
 
         scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
@@ -380,7 +131,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
         self.status_bar_message.emit('Simulation started...')
 
-        self.timer.start(self.animation_speed, self)
+        self.timer.start(self.animation_speed)
 
 
     def pause(self):
@@ -401,34 +152,13 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.update()
 
 
-    def paintEvent(self, event):
+    def update(self):
 
-
-        if len(self.frames) > 0:
-
-            svg_data = PrepareFrame(self.frame_template,self.frames[self.current_frame])
-            self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
-            self.svg_renderer.load(self.xml_stream_reader)# = QtSvg.QSvgRenderer(self.xml_stream_reader)
-            self.svg_item = QtSvg.QGraphicsSvgItem()
-
-            scene = self.scene()
-            #scene.removeItem(self.svg_item)
-            self.svg_item.setSharedRenderer(self.svg_renderer)
-            self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-            self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
-            self.svg_item.setZValue(0)
-            scene.items()[0].hide()
-            scene.addItem(self.svg_item)
-            scene.update()
-
-            scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-
-
-    def timerEvent(self, event):
-
-        if event.timerId() == self.timer.timerId() and self.simulator:
+        if self.simulator:
 
             sim_data = self.simulator.get_next_frame()
+            if not sim_data:
+                return
             fill_visualisation_descriptor(sim_data)
 
             if self.frame_template == '':
@@ -438,6 +168,27 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             svg_data = RenderAnimatedPart(sim_data)
             self.frames.append(svg_data)
             self.frame_count += 1
+
+            svg_data = PrepareFrame(self.frame_template,self.frames[self.current_frame])
+            self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
+            self.svg_renderer.load(self.xml_stream_reader)
+            #self.svg_item = QtSvg.QGraphicsSvgItem()
+
+            scene = self.scene()
+            #scene.removeItem(self.svg_item)
+            self.svg_item.setSharedRenderer(self.svg_renderer)
+            self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+            self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
+            self.svg_item.setZValue(0)
+            #scene.items()[0].hide()
+            #scene.items()[0].show()
+            #scene.addItem(self.svg_item)
+            scene.update()
+
+            scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+            self.current_frame += 1
+
+            self.timer.setInterval(self.simulator.frame_dt/10) #10x time
 
 
 
