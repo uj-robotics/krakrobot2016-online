@@ -83,8 +83,10 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
 
     def init_ui(self):
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update)
+        self.frames_timer = QtCore.QTimer(self)
+        self.frames_timer.timeout.connect(self.frames_update)
+        self.animation_timer = QtCore.QTimer(self)
+        self.animation_timer.timeout.connect(self.animation_update)
         self.is_started = False
         self.is_paused = False
         self.setScene(QtGui.QGraphicsScene(self))
@@ -131,7 +133,8 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
         self.status_bar_message.emit('Simulation started...')
 
-        self.timer.start(self.animation_speed)
+        self.frames_timer.start(1)
+        self.animation_timer.start(10)
 
 
     def pause(self):
@@ -152,7 +155,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.update()
 
 
-    def update(self):
+    def frames_update(self):
 
         if self.simulator:
 
@@ -169,6 +172,10 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             self.frames.append(svg_data)
             self.frame_count += 1
 
+
+    def animation_update(self):
+
+        if len(self.frames) > 0:
             svg_data = PrepareFrame(self.frame_template,self.frames[self.current_frame])
             self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
             self.svg_renderer.load(self.xml_stream_reader)
@@ -187,9 +194,6 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
             self.current_frame += 1
-
-            self.timer.setInterval(self.simulator.frame_dt/10) #10x time
-
 
 
 class MainWindow(QtGui.QMainWindow):
