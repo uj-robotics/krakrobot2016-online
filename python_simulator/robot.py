@@ -207,7 +207,7 @@ class Robot:
 
 
         self.time_elapsed += self.sonar_time
-        return float(sqrt(min(x_min_col[2], y_min_col[2])))
+        return random.gauss(float(sqrt(min(x_min_col[2], y_min_col[2]))), self.sonar_noise)
 
 
 

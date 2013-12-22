@@ -3,8 +3,8 @@ from utils import *
 import random
 class RobotController(object):
     """ You have to implement this class """
-    def init(self, starting_position, steering_noise, distance_noise, speed, turning_speed,
-             maximum_turn, execution_cpu_time_limit):
+    def init(starting_position, steering_noise, distance_noise, sonar_noise,
+                     measurement_noise, speed, turning_speed, execution_cpu_time_limit):
         """ @param starting_position - (x,y) tuple representing current_position """
         raise NotImplementedError()
 
@@ -75,9 +75,11 @@ class PythonTimedRobotController(RobotController):
         self.rc = rc
         self.time_consumed = datetime.timedelta(0)
 
-    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit):
+    def init(self, starting_position, steering_noise, distance_noise, sonar_noise,
+             measurement_noise, speed, turning_speed, execution_cpu_time_limit):
         x = datetime.datetime.now()
-        self.rc.init(starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed, execution_cpu_time_limit)
+        self.rc.init(starting_position, steering_noise, distance_noise, sonar_noise,
+                     measurement_noise, speed, turning_speed, execution_cpu_time_limit)
         self.time_consumed += datetime.datetime.now() - x
 
     def act(self):
