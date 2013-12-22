@@ -186,10 +186,11 @@ class SimulationRenderThread(QtCore.QThread):
             while current_frame+1 > self.frame_count:
                 time.sleep(0.01)
 
-            if current_frame == 0:
+            if self.starting:
                 graphics_update_mutex.lock()
                 self.parent.setup_scene(PrepareFrame(self.frame_template,self.frames[current_frame]))
                 graphics_update_mutex.unlock()
+                self.starting = False
             else:
                 graphics_update_mutex.lock()
                 #It is important that this code does not work at all, it only sets current frame!
