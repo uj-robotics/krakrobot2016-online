@@ -53,6 +53,7 @@ class SimulationRenderThread(QtCore.QThread):
 
     def __init__(self, simulator, parent):
         super(SimulationRenderThread, self).__init__()
+        self.frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
         self.simulator = simulator
         self.parent = parent
         self.frames = [] # frame buffer
@@ -109,7 +110,9 @@ class SimulationRenderThread(QtCore.QThread):
 
 
         i = 0
+        self.frame_change_mutex.lock()
         self.current_frame = 0
+        self.frame_change_mutex.unlock()
         self.frame_rate = 100
         self.starting = True
         self.paused = False
@@ -139,7 +142,9 @@ class SimulationRenderThread(QtCore.QThread):
                 self.parent.update_mutex.unlock()
 
             if not self.paused:
+                self.frame_change_mutex.lock()
                 self.current_frame += 1
+                self.frame_change_mutex.unlock()
 
             time.sleep(self.simulator.frame_dt/self.frame_rate) #10x time
 
@@ -197,7 +202,7 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         # Load new graphics
         self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
         self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
-        self.svg_item = QtSvg.QGraphicsSvgItem(str(time.ctime()))
+        self.svg_item = QtSvg.QGraphicsSvgItem()#str(time.ctime()))
         self.svg_item.setSharedRenderer(self.svg_renderer)
         self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
         self.svg_item.setCacheMode(QtGui.QGraphicsItem.DeviceCoordinateCache)
@@ -451,8 +456,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def _send_scroll_bar_value(self):
         """Send scroll bar value to simulation and render threads"""
+        self.simulation_view.simulation_render_thread.frame_change_mutex.lock()
         self.simulation_view.simulation_render_thread.current_frame = \
             self.scroll_bar.value()
+        self.simulation_view.simulation_render_thread.frame_change_mutex.unlock()
 
 
     def _send_slider_value_and_continue_updates(self):
@@ -478,7 +485,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _skip_backward(self):
-        self.scroll_bar.setValue(0)
+        self.scroll_bar.setValue(self.scroll_bar.minimum())
         self._send_scroll_bar_value()
 
 

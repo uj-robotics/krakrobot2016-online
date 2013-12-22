@@ -215,7 +215,7 @@ def RenderAnimatedPart(Data):
 
 
 #TODO: allow for debug field for contestants
-def RenderFrameTemplate(Data):
+def RenderFrameTemplate(Data, draw_dynamic_elements=True):
 
   '''Return Data rendered to an SVG file in a string.
 
@@ -380,7 +380,8 @@ def RenderFrameTemplate(Data):
 
 
   # Robot
-  Result += "{0}"
+  if draw_dynamic_elements:
+    Result += "{0}"
 
   #side = 0.2
   #Result += SVGGroup(IT, {'transform': 'rotate(%g %g %g)'%(
@@ -435,7 +436,8 @@ def RenderFrameTemplate(Data):
     Result += SVGGroupEnd(IT)
 
   # Actual path
-  Result += "{1}"
+  if draw_dynamic_elements:
+    Result += "{1}"
   #
   #ActualPath = Field('ActualPath', None)
   #if ActualPath is not None:
