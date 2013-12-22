@@ -220,7 +220,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
         self.status_bar_message.emit('Simulation started...')
 
-        self.frames_timer.start(1)
+        self.frames_timer.start(0)
         self.animation_timer.start(self.refresh_rate)
 
 
