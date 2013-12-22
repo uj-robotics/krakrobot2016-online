@@ -230,8 +230,6 @@ class KrakrobotSimulator(object):
 
                         frame_time_left += self.tick_rotate / self.turning_speed
 
-                    if current_command[0] == WRITE_CONSOLE:
-                        self.logs.append(current_command[1])
 
                     elif current_command[0] == MOVE:
                         robot_proposed = robot.move(1)
@@ -270,6 +268,8 @@ class KrakrobotSimulator(object):
                     if command[0] == SENSE_GPS:
                         robot_controller.on_sense_gps(robot.sense_gps())
                         frame_time_left += self.gps_delay
+                    elif command[0] == WRITE_CONSOLE:
+                        self.logs.append(command[1])
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
                         robot_controller.on_sense_sonar(int(w))
