@@ -325,7 +325,7 @@ class KrakrobotSimulator(object):
 
 
     def get_logs(self):
-        return ['KrakrobotSimulator']
+        return self.logs
 
 
     def _create_sim_data(self, robot):
