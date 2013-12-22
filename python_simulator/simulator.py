@@ -123,6 +123,15 @@ class KrakrobotSimulator(object):
         return self.sim_frames.get()
 
 
+    def get_next_frame_nowait(self):
+        """
+            @returns next frame of simulation data
+
+            @note Only get an item if one is immediately available. Otherwise
+            raise the Empty exception.
+        """
+        return self.sim_frames.get_nowait()
+
 
     def check_goal(self, robot):
         """ Checks if goal is within threshold distance"""
