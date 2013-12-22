@@ -141,7 +141,6 @@ class SimulationThread(QtCore.QThread):
         """Running KrakrobotSimulator simulation"""
         #self.simulator.reset()
         print "Simulation has finished. Results: {0}".format(self.simulator.run())
-        self.exec_()
 
 
 class KrakrobotBoardAnimation(QtGui.QGraphicsView):
@@ -205,8 +204,15 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             return
 
         self.animation_started = True
+        self.frame_template = ''
+        self.frames = []
+        self.current_frame = 0
+        self.frame_count = 0
+        self.animation_started = False
+        self.animation_paused = False
 
         self.simulation_thread = SimulationThread()
+        self.simulation_thread.finished.connect(self.parent().parent().simulation_finished)
         self.clear_board()
         self.simulation_thread.set_simulator(self.simulator)
         self.simulation_thread.start()
@@ -591,7 +597,7 @@ class MainWindow(QtGui.QMainWindow):
 
         file_name = QtGui.QFileDialog.getOpenFileName(
             self, 'Open robot source code file...', '.',
-            'Python code (*.py);;C++ (*.cpp, *.cc);;Java (*.java)'
+            'Python code (*.py)'
         )
         simulator_params['robot_controller_class'] = \
             compile_robot(str(file_name))[0]
@@ -650,7 +656,7 @@ class MainWindow(QtGui.QMainWindow):
         self.board_animation.start()
 
 
-    def _simulation_finished(self):
+    def simulation_finished(self):
         self.status_bar_message(MSG_EMP+'Simulation has finished!')
         for action in self.conflicting_with_sim:
             action.setEnabled(True)
