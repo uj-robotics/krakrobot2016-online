@@ -139,7 +139,7 @@ class SimulationThread(QtCore.QThread):
 
     def run(self):
         """Running KrakrobotSimulator simulation"""
-        self.simulator.reset()
+        #self.simulator.reset()
         print "Simulation has finished. Results: {0}".format(self.simulator.run())
         self.exec_()
 
@@ -291,6 +291,9 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 class MainWindow(QtGui.QMainWindow):
     """Main window (all-in-one window)"""
 
+    text_edit_width = 80
+    text_edit_height = 20
+
     def __init__(self, simulator):
         super(MainWindow, self).__init__()
         self.simulator = simulator
@@ -313,7 +316,15 @@ class MainWindow(QtGui.QMainWindow):
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
 
-        simulation_layout = QtGui.QVBoxLayout()
+        main_toolbar.addSeparator()
+        steering_noise_label = QtGui.QLabel('steering_noise: ')
+        main_toolbar.addWidget(steering_noise_label)
+        self.steering_noise_edit = QtGui.QTextEdit()
+        self.steering_noise_edit.setMaximumWidth(text_edit_width)
+        self.steering_noise_edit.setMaximumHeight(text_edit_height)
+        main_toolbar.addWidget(self.steering_noise_edit)
+
+        simulation_layout = QtGui.QVBoxLayout(self)
         self.board_animation = KrakrobotBoardAnimation(self.simulator, self)
         self.board_animation.status_bar_message[str].connect(
             self.status_bar_message
