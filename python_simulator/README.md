@@ -19,11 +19,15 @@ General rules
  with exemplary maps and robots is available https://github.com/uj-robotics/Krakrobot2014Qualifications
 4. Each team write their own implementation of the robot's AI (one per team), some sample implementations are also avaliable in
 the package
-5. Robot moves around a square-shaped map of dimensions M x N (unknown to the robot)
+5. Robot moves around a rectangular map of dimensions M x N (unknown to the robot)
 6. Robot is executed by simulator. Robot can choose from given set of actions (for instance move, or turn)
-7. Each action performed (both sensing and acting) costs some time. The robot's total simulation time is the summarized cost of all performed actions from the simulation start to the moment of reaching the goal state (which is checked automatically by the simulation engine, and is defined as being located over the field and communicating it). The goal is to minimize total simulation time to finding the goal. 
+7. Each action performed (both sensing and acting) costs some time. The robot's total simulation time is the summarized cost of all performed actions
+ from the simulation start to the moment of reaching the goal state
+ (which is checked automatically by the simulation engine,
+ and is defined as being located over the field and communicating it).
+ The goal is to minimize total simulation time to finding the goal.
 8. Each map can have upper bound on simulation time, after which all robots will be considered as having infinite total simulation time.
-9. One round of simulations consists of running al contestants AI's on one, randomly generated maze (the same for each robot).
+9. One round of simulations consists of running al contestants AI's on one, randomly generated map (the same for each robot).
 In each round the constants (for instance accuracy of the GPS sensor) can change.
 After each round, the ranking, obtained by sorting the total times in descending order, is created.
 10. Whole qualification will consist of multiple rounds, and the final position of each robot will be its median position in all the rankings.

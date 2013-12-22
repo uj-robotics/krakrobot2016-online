@@ -182,6 +182,9 @@ class KrakrobotSimulator(object):
             while not communicated_finished and not robot.time_elapsed >= self.time_limit:
                 #logger.info(robot_controller.time_consumed)
 
+                if maximum_timedelta <= robot_controller.time_consumed:
+                    raise KrakrobotException("Robot has exceeded CPU time limit")
+
                 if iteration % self.iteration_write_frequency == 0:
                     logger.info("Iteration {0}, produced {1} frames".format(iteration,
                                             frame_count))
@@ -254,7 +257,7 @@ class KrakrobotSimulator(object):
                         frame_time_left += self.gps_time
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
-                        robot_controller.on_sense_sonar(w)
+                        robot_controller.on_sense_sonar(int(w))
                         frame_time_left += self.sonar_time
                     elif command[0] == SENSE_FIELD:
                         w = robot.sense_field(self.grid)
@@ -283,8 +286,6 @@ class KrakrobotSimulator(object):
                     elif command[0] == FINISH:
                         communicated_finished = True
 
-                    if maximum_timedelta <= robot_controller.time_consumed:
-                        raise KrakrobotException("Robot has exceeded CPU time limit")
 
 
         except Exception, e:
@@ -298,7 +299,6 @@ class KrakrobotSimulator(object):
         while frame_time_left > self.frame_dt and self.visualisation:
             ### Save frame <=> last command took long ###
             self.sim_frames.put(self._create_sim_data(robot))
-            self.frames_count += 1
             frame_time_left -= self.frame_dt
 
         logger.info("Exiting")

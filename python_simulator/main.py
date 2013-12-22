@@ -433,6 +433,22 @@ class SimulatorGUI(object):
 
 from optparse import OptionParser
 def create_parser():
+
+
+    """
+                     steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
+                 measurement_noise=0.2, time_limit = 50,
+                 speed = 5.0,
+                 turning_speed = 0.4*pi,
+                 execution_cpu_time_limit = 10.0,
+                 simulation_time_limit = 10.0,
+                 simulation_dt = 0.001,
+                 frame_dt = 0.1,
+                 collision_threshold = 50,
+                 iteration_write_frequency = 1000,
+                 visualisation = True
+                 """
+
     """ Configure options and return parser object """
     parser = OptionParser()
     parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
@@ -442,6 +458,20 @@ def create_parser():
                            "console mode after running the program")
     parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
                       help="Robot that will be compiled and run")
+    parser.add_option("--steering_noise", dest="steering_noise", default=0.01,
+                      help="Sigma of gaussian noise applied to turning motion")
+    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.1,
+                      help="Sigma of gaussian noise applied to sensed distance by sonar")
+
+    parser.add_option("--distance_noise", dest="distance_noise", default=0.001,
+                      help="Sigma of gaussian noise applied to forward motion")
+
+    parser.add_option("--speed", dest="speed", default=5.0,
+                      help="Speed of the robot (i.e. units/simulation second)")
+    parser.add_option("--turning_speed", dest="turning_speed", default=0.4*3.14,
+                      help="Turning speed of the robot (i.e. rad/simulation second)")
+
+
 
     #parser.add_option("-v", "--verbose",default=True, type="int", dest="verbose", help="If set prints simulation steps")
     #parser.add_option( "--agent_1", type="string",default="UCTAgent", dest="agent1", help="""Set agent1 to "UCTAgent","UCTAgentTran", "UCTAgentTranCut", "RandomAgent", "GreedyAgent" """)
