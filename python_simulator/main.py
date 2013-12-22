@@ -102,7 +102,7 @@ def create_parser():
     parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10000.0,type="float",
                       help="Simulation time limit (in virtual time units)")
 
-    parser.add_option("--frame_dt", dest="frame_dt", default=0.1,type="float",
+    parser.add_option("--frame_dt", dest="frame_dt", default=1,type="float",
                       help="How often (in simulation time units) to produce a frame")
 
     parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,type="int",
@@ -265,7 +265,8 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             if self.current_frame+1 > self.frame_count:
                 return
             svg_data = PrepareFrame(self.frame_template,self.frames[self.current_frame])
-            self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
+            self.xml_stream_reader.clear()
+            self.xml_stream_reader.addData(svg_data)
             self.svg_renderer.load(self.xml_stream_reader)
 
             scene = self.scene()
