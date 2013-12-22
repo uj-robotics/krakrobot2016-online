@@ -147,6 +147,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     """KrakrobotSimulator board animation painting widget"""
 
     status_bar_message = QtCore.pyqtSignal(str)
+    simulation_thread = None
     animation_speed = 5
     frame_template = ''
     frames = []
@@ -208,7 +209,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.frames = []
         self.current_frame = 0
         self.frame_count = 0
-        self.animation_started = False
+        self.animation_started = True
         self.animation_paused = False
 
         self.simulation_thread = SimulationThread()
@@ -282,7 +283,9 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             scene.update()
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-            self.current_frame += self.animation_speed
+
+            if not self.animation_paused:
+                self.current_frame += self.animation_speed
 
             # GUI update #
             main_window = self.parent().parent()
@@ -311,6 +314,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def _init_ui(self, simulator):
 
+        self.setWindowIcon(
+            QtGui.QIcon( './pics/iiujrobotics.png')
+        )
+
         ### Toolbar ###
         main_toolbar = self.addToolBar('Krakrobot Simulator')
         self.setWindowTitle(APP_FULL_NAME)
@@ -322,6 +329,12 @@ class MainWindow(QtGui.QMainWindow):
             'Start Simulation'
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
+
+        self.stop_sim_action = main_toolbar.addAction(
+            QtGui.QIcon.fromTheme('process-stop'),
+            'Terminate'
+        )
+        self.stop_sim_action.triggered.connect(self._pause_simulation)
 
         #TODO: maximum lines for QPlainTextEdit = 1
 
@@ -639,6 +652,11 @@ class MainWindow(QtGui.QMainWindow):
         self._reconstruct_simulator()
         self.board_animation.start()
         self.console_timer.start(1)
+
+
+    def _pause_simulation(self):
+        if self.board_animation.simulation_thread:
+            self.board_animation.simulation_thread.terminate()
 
 
     def simulation_finished(self):
