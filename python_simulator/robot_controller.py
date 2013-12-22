@@ -4,7 +4,7 @@ import random
 class RobotController(object):
     """ You have to implement this class """
     def init(starting_position, steering_noise, distance_noise, sonar_noise,
-                     measurement_noise, speed, turning_speed, execution_cpu_time_limit):
+                     measurement_noise, speed, turning_speed, gps_delay, execution_cpu_time_limit):
         """ @param starting_position - (x,y) tuple representing current_position """
         raise NotImplementedError()
 
@@ -75,11 +75,9 @@ class PythonTimedRobotController(RobotController):
         self.rc = rc
         self.time_consumed = datetime.timedelta(0)
 
-    def init(self, starting_position, steering_noise, distance_noise, sonar_noise,
-             measurement_noise, speed, turning_speed, execution_cpu_time_limit):
+    def init(self, *args, **dargs):
         x = datetime.datetime.now()
-        self.rc.init(starting_position, steering_noise, distance_noise, sonar_noise,
-                     measurement_noise, speed, turning_speed, execution_cpu_time_limit)
+        self.rc.init(*args, **dargs)
         self.time_consumed += datetime.datetime.now() - x
 
     def act(self):

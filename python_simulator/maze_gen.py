@@ -29,7 +29,7 @@ class MapMaze:
         http://thelinuxchronicles.blogspot.com.es/2012/07/python-maze-generation-and-solution.html
     """
 
-    def __init__(self, rows, cols):
+    def __init__(self, rows, cols, prunning_prob):
         """
 
             Generates maze using DFS-maze-gen algorithm,
@@ -102,7 +102,11 @@ class MapMaze:
             goal_x, goal_y = random.randrange(rows_grid), random.randrange(cols_grid)
 
 
-
+        # Prune
+        for i in xrange(rows_grid):
+            for j in xrange(cols_grid):
+                if self.grid[i][j] == MAP_WALL and rows_grid - 1>i>0 and cols_grid-1>j>0:
+                    self.grid[i][j] = MAP_WHITE if random.uniform(0,1) < prunning_prob else MAP_WALL
 
         self.goal = [goal_x, goal_y]
         self.start = [start_x, start_y]
@@ -207,7 +211,7 @@ class MapMaze:
             u = Q.pop(0)
             for dir in [(0,1), (0,-1), (1,0), (-1,0)]:
                 v = (u[0]+dir[0], u[1]+dir[1])
-                if N > u[0] >= 0 and M > u[1] >= 0 and self.grid[v[0]][v[1]] != 1 and v not in dist:
+                if N > u[0] >= 0 and M > u[1] >= 0 and self.grid[v[0]][v[1]] != MAP_WALL and v not in dist:
                     parent[v] = u
                     dist[v] = dist[u] + 1
                     Q.append(v)
@@ -236,8 +240,9 @@ def create_parser():
 
 
 import json
-def generate_map(map_maze, file_name, title = "",
-                 count_direction = 0, count_distance = 0, count_optimal =0
+def generate_map(N,M, file_name, title = "",
+                 count_direction = 0, count_distance = 0, count_optimal =0,
+                 prunning_prob = 0.0
 
                  ):
     """
@@ -247,14 +252,21 @@ def generate_map(map_maze, file_name, title = "",
         @param count_direction How many direction hints to cast
         @param count_distance How many distance hints to cast
         @param count_optimal How many optimal turn hists to cast
-
+        @param prunning_prob After generating map the function will iterate over each field and prune (that is make
+        it empty if it is a wall) with probability prunning_prob
     """
+    map_maze = MapMaze(N,M,prunning_prob)
+
     lines = []
     grid = map_maze.grid
     params = {"N": len(grid), "M":len(grid[0]), "title":title, "K": count_direction+count_distance+count_optimal}
 
     print json.dumps(params)[1:-1]
     lines.append(json.dumps(params)[1:-1])
+
+    N, M = len(grid), len(grid[0])
+
+
 
     for r in xrange(params["N"]):
         lines.append("".join([
@@ -266,7 +278,7 @@ def generate_map(map_maze, file_name, title = "",
     print "\n".join(lines)
 
 
-    N, M = len(grid), len(grid[0])
+
 
     def get_free(grid):
         try_x, try_y = random.randrange(N), random.randrange(M)
@@ -308,6 +320,8 @@ def generate_map(map_maze, file_name, title = "",
         lines.append(REV_CONSTANT_MAP[MAP_SPECIAL_OPTIMAL] +" "+ str(x) +" "+str(y)+" "+str(value) )
         print "Hint encoded ",lines[-1]
 
+    map_maze.bfs_maze(map_maze.goal, map_maze.start)
+
     f = open(file_name, "w")
     f.write("\n".join(lines))
 
@@ -317,15 +331,17 @@ def generate_map(map_maze, file_name, title = "",
 
 
 def generate_simple_maze_test1():
-    mm = MapMaze(40, 40)
-    print mm
-    generate_map(mm, "maps/4.map", "", 0, 0, 0)
-    mm.bfs_maze(mm.goal, mm.start)
+    generate_map(40,40, "maps/4.map", "", 0, 0, 0)
+
+
+def generate_city_map_test2():
+    generate_map(40,40, "maps/2.map", "", 4, 4, 4, prunning_prob=0.7)
 
 
 if __name__ == "__main__":
-    mm = MapMaze(4, 4)
-    print mm
-    generate_map(mm, "maps/1.map", "", count_direction=1, count_distance=1, count_optimal=1)
-    mm.bfs_maze(mm.goal, mm.start)
-    #generate_simple_maze_test1()
+    generate_city_map_test2()
+    #mm = MapMaze(4, 4)
+    #print mm
+    #generate_map(mm, "maps/1.map", "", count_direction=1, count_distance=1, count_optimal=1)
+    #mm.bfs_maze(mm.goal, mm.start)
+    ##generate_simple_maze_test1()

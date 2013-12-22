@@ -458,32 +458,34 @@ def create_parser():
                            "console mode after running the program")
     parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
                       help="Robot that will be compiled and run")
-    parser.add_option("--steering_noise", dest="steering_noise", default=0.01,
+    parser.add_option("--steering_noise", dest="steering_noise", default=0.01, type="float",
                       help="Sigma of gaussian noise applied to turning motion")
-    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.1,
+    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.1,type="float",
                       help="Sigma of gaussian noise applied to sensed distance by sonar")
-    parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,
+    parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,type="float",
                       help="Sigma of gaussian noise applied to the sensed GPS position")
 
+    parser.add_option("--gps_delay", dest="gps_delay", default=2.0,type="float",
+                      help="Time consumption (in simulation time units) of GPS")
 
-    parser.add_option("--distance_noise", dest="distance_noise", default=0.001,
+    parser.add_option("--distance_noise", dest="distance_noise", default=0.001,type="float",
                       help="Sigma of gaussian noise applied to forward motion")
 
-    parser.add_option("--speed", dest="speed", default=5.0,
+    parser.add_option("--speed", dest="speed", default=5.0,type="float",
                       help="Speed of the robot (i.e. units/simulation second)")
-    parser.add_option("--turning_speed", dest="turning_speed", default=0.4*3.14,
+    parser.add_option("--turning_speed", dest="turning_speed", default=1.0,type="float",
                       help="Turning speed of the robot (i.e. rad/simulation second)")
 
 
-    parser.add_option("--execution_cpu_time_limit", dest="execution_cpu_time_limit", default=10.0,
+    parser.add_option("--execution_cpu_time_limit", dest="execution_cpu_time_limit", default=10.0,type="float",
                       help="Execution CPU time limit")
-    parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10.0,
+    parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10.0,type="float",
                       help="Simulation time limit (in virtual time units)")
 
-    parser.add_option("--frame_dt", dest="frame_dt", default=0.1,
+    parser.add_option("--frame_dt", dest="frame_dt", default=0.1,type="float",
                       help="How often (in simulation time units) to produce a frame")
 
-    parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,
+    parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,type="int",
                       help="How often (number of ticks of simulator) to report simulation status")
     return parser
 
@@ -507,7 +509,8 @@ def main():
                         "execution_cpu_time_limit": options.execution_cpu_time_limit,
                         "simulation_time_limit":options.simulation_time_limit,
                         "frame_dt":options.frame_dt,
-                        "iteration_write_frequency":options.iteration_write_frequency
+                        "iteration_write_frequency":options.iteration_write_frequency,
+                        "gps_delay":options.gps_delay
         ,"robot_controller_class": compile_robot(options.robot)[0]
     }
  
