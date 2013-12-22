@@ -335,7 +335,7 @@ class MainWindow(QtGui.QMainWindow):
 
         sonar_noise_label = QtGui.QLabel('sonar_noise: ')
         params_toolbar.addWidget(sonar_noise_label)
-        self.sonar_noise_edit = QtGui.QPlainTextEdit()
+        self.sonar_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['sonar_noise']))
         self.sonar_noise_edit.setMaximumWidth(self.text_edit_width)
         self.sonar_noise_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.sonar_noise_edit)
@@ -343,7 +343,7 @@ class MainWindow(QtGui.QMainWindow):
 
         distance_noise_label = QtGui.QLabel('distance_noise: ')
         params_toolbar.addWidget(distance_noise_label)
-        self.distance_noise_edit = QtGui.QPlainTextEdit()
+        self.distance_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['distance_noise']))
         self.distance_noise_edit.setMaximumWidth(self.text_edit_width)
         self.distance_noise_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.distance_noise_edit)
@@ -351,7 +351,7 @@ class MainWindow(QtGui.QMainWindow):
 
         measurement_noise_label = QtGui.QLabel('measurement_noise: ')
         params_toolbar.addWidget(measurement_noise_label)
-        self.measurement_noise_edit = QtGui.QPlainTextEdit()
+        self.measurement_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['measurement_noise']))
         self.measurement_noise_edit.setMaximumWidth(self.text_edit_width)
         self.measurement_noise_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.measurement_noise_edit)
@@ -359,7 +359,7 @@ class MainWindow(QtGui.QMainWindow):
 
         speed_label = QtGui.QLabel('speed: ')
         params_toolbar.addWidget(speed_label)
-        self.speed_edit = QtGui.QPlainTextEdit()
+        self.speed_edit = QtGui.QPlainTextEdit(str(simulator_params['speed']))
         self.speed_edit.setMaximumWidth(self.text_edit_width)
         self.speed_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.speed_edit)
@@ -367,7 +367,7 @@ class MainWindow(QtGui.QMainWindow):
 
         turning_speed_label = QtGui.QLabel('turning_speed: ')
         params_toolbar.addWidget(turning_speed_label)
-        self.turning_speed_edit = QtGui.QPlainTextEdit()
+        self.turning_speed_edit = QtGui.QPlainTextEdit(str(simulator_params['turning_speed']))
         self.turning_speed_edit.setMaximumWidth(self.text_edit_width)
         self.turning_speed_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.turning_speed_edit)
@@ -375,7 +375,7 @@ class MainWindow(QtGui.QMainWindow):
 
         execution_cpu_time_limit_label = QtGui.QLabel('execution_cpu_time_limit: ')
         params_toolbar.addWidget(execution_cpu_time_limit_label)
-        self.execution_cpu_time_limit_edit = QtGui.QPlainTextEdit()
+        self.execution_cpu_time_limit_edit = QtGui.QPlainTextEdit(str(simulator_params['execution_cpu_time_limit']))
         self.execution_cpu_time_limit_edit.setMaximumWidth(self.text_edit_width)
         self.execution_cpu_time_limit_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.execution_cpu_time_limit_edit)
@@ -383,23 +383,15 @@ class MainWindow(QtGui.QMainWindow):
 
         simulation_time_limit_label = QtGui.QLabel('simulation_time_limit: ')
         params_toolbar.addWidget(simulation_time_limit_label)
-        self.simulation_time_limit_edit = QtGui.QPlainTextEdit()
+        self.simulation_time_limit_edit = QtGui.QPlainTextEdit(str(simulator_params['simulation_time_limit']))
         self.simulation_time_limit_edit.setMaximumWidth(self.text_edit_width)
         self.simulation_time_limit_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.simulation_time_limit_edit)
         self.simulation_time_limit_edit.textChanged.connect(self._update_simulation_time_limit)
 
-        simulation_dt_label = QtGui.QLabel('simulation_dt: ')
-        params_toolbar.addWidget(simulation_dt_label)
-        self.simulation_dt_edit = QtGui.QPlainTextEdit()
-        self.simulation_dt_edit.setMaximumWidth(self.text_edit_width)
-        self.simulation_dt_edit.setMaximumHeight(self.text_edit_height)
-        params_toolbar.addWidget(self.simulation_dt_edit)
-        self.simulation_dt_edit.textChanged.connect(self._update_simulation_dt)
-
         frame_dt_label = QtGui.QLabel('frame_dt: ')
         params_toolbar.addWidget(frame_dt_label)
-        self.frame_dt_edit = QtGui.QPlainTextEdit()
+        self.frame_dt_edit = QtGui.QPlainTextEdit(str(simulator_params['frame_dt']))
         self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
         self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.frame_dt_edit)
@@ -407,23 +399,15 @@ class MainWindow(QtGui.QMainWindow):
 
         gps_delay_label = QtGui.QLabel('gps_delay: ')
         params_toolbar.addWidget(gps_delay_label)
-        self.gps_delay_edit = QtGui.QPlainTextEdit()
+        self.gps_delay_edit = QtGui.QPlainTextEdit(str(simulator_params['gps_delay']))
         self.gps_delay_edit.setMaximumWidth(self.text_edit_width)
         self.gps_delay_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.gps_delay_edit)
         self.gps_delay_edit.textChanged.connect(self._update_gps_delay)
 
-        collision_threshold_label = QtGui.QLabel('collision_threshold: ')
-        params_toolbar.addWidget(collision_threshold_label)
-        self.collision_threshold_edit = QtGui.QPlainTextEdit()
-        self.collision_threshold_edit.setMaximumWidth(self.text_edit_width)
-        self.collision_threshold_edit.setMaximumHeight(self.text_edit_height)
-        params_toolbar.addWidget(self.collision_threshold_edit)
-        self.collision_threshold_edit.textChanged.connect(self._update_collision_threshold)
-
         iteration_write_frequency_label = QtGui.QLabel('iteration_write_frequency: ')
         params_toolbar.addWidget(iteration_write_frequency_label)
-        self.iteration_write_frequency_edit = QtGui.QPlainTextEdit()
+        self.iteration_write_frequency_edit = QtGui.QPlainTextEdit(str(simulator_params['iteration_write_frequency']))
         self.iteration_write_frequency_edit.setMaximumWidth(self.text_edit_width)
         self.iteration_write_frequency_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.iteration_write_frequency_edit)
@@ -549,10 +533,8 @@ class MainWindow(QtGui.QMainWindow):
             self.turning_speed_edit,
             self.execution_cpu_time_limit_edit,
             self.simulation_time_limit_edit,
-            self.simulation_dt_edit,
             self.frame_dt_edit,
             self.gps_delay_edit,
-            self.collision_threshold_edit,
             self.iteration_write_frequency_edit
         ]
 
@@ -719,11 +701,6 @@ class MainWindow(QtGui.QMainWindow):
             float(self.execution_cpu_time_limit_edit.toPlainText())
 
 
-    def _update_simulation_dt(self):
-        simulator_params['simulation_dt'] = \
-            float(self.simulation_dt.toPlainText())
-
-
     def _update_simulation_time_limit(self):
         simulator_params['simulation_time_limit'] = \
             float(self.simulation_time_limit_edit.toPlainText())
@@ -742,11 +719,6 @@ class MainWindow(QtGui.QMainWindow):
     def _update_gps_delay(self):
         simulator_params['gps_delay'] = \
             float(self.gps_delay_edit.toPlainText())
-
-
-    def _update_collision_threshold(self):
-        simulator_params['collision_threshold'] = \
-            float(self.collision_threshold_edit.toPlainText())
 
 
     def _update_iteration_write_frequency(self):
