@@ -54,21 +54,6 @@ frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
 from optparse import OptionParser
 def create_parser():
-
-    """
-                     steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
-                 measurement_noise=0.2, time_limit = 50,
-                 speed = 5.0,
-                 turning_speed = 0.4*pi,
-                 execution_cpu_time_limit = 10.0,
-                 simulation_time_limit = 10.0,
-                 simulation_dt = 0.001,
-                 frame_dt = 0.1,
-                 collision_threshold = 50,
-                 iteration_write_frequency = 1000,
-                 visualisation = True
-                 """
-
     """ Configure options and return parser object """
     parser = OptionParser()
     parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
@@ -78,9 +63,9 @@ def create_parser():
                            "console mode after running the program")
     parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
                       help="Robot that will be compiled and run")
-    parser.add_option("--steering_noise", dest="steering_noise", default=0.01, type="float",
+    parser.add_option("--steering_noise", dest="steering_noise", default=0.0004, type="float",
                       help="Sigma of gaussian noise applied to turning motion")
-    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.1,type="float",
+    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.0015,type="float",
                       help="Sigma of gaussian noise applied to sensed distance by sonar")
     parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,type="float",
                       help="Sigma of gaussian noise applied to the sensed GPS position")
