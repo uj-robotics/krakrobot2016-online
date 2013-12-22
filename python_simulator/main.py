@@ -323,6 +323,12 @@ class MainWindow(QtGui.QMainWindow):
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
 
+        self.stop_sim_action = main_toolbar.addAction(
+            QtGui.QIcon.fromTheme('process-stop'),
+            'Pause'
+        )
+        self.stop_sim_action.triggered.connect(self._pause_simulation)
+
         #TODO: maximum lines for QPlainTextEdit = 1
 
         params_toolbar = self.addToolBar('Simulator parameters')
@@ -639,6 +645,10 @@ class MainWindow(QtGui.QMainWindow):
         self._reconstruct_simulator()
         self.board_animation.start()
         self.console_timer.start(1)
+
+
+    def _pause_simulation(self):
+        self.board_animation.simulation_thread.terminate()
 
 
     def simulation_finished(self):
