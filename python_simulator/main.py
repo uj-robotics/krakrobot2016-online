@@ -505,7 +505,15 @@ class MainWindow(QtGui.QMainWindow):
         code_layout_widget.setLayout(code_layout)
         self.code_dock_widget.setWidget(code_layout_widget)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.code_dock_widget)
+        # Currently no need for code console
         self.code_dock_widget.hide()
+
+        self.output_console = QtGui.QTextBrowser()
+        self.output_console.setFont(QtGui.QFont('Monospace', 10))
+
+        self.console_dock_widget = QtGui.QDockWidget('  Output console', self)
+        self.console_dock_widget.setWidget(self.output_console)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.console_dock_widget)
 
         ### Menu ###
         map_menu = QtGui.QMenu('&Map', self)
@@ -514,18 +522,15 @@ class MainWindow(QtGui.QMainWindow):
         self.menuBar().addMenu(map_menu)
 
         robot_menu = QtGui.QMenu('&Robot', self)
-        self.open_source_action = robot_menu.addAction('&Open source code file...')
+        self.open_source_action = robot_menu.addAction('&Load source code file...')
         self.open_source_action.triggered.connect(self.open_source)
-        #self.menuBar().addMenu(robot_menu)
+        self.menuBar().addMenu(robot_menu)
 
         widgets_menu = QtGui.QMenu('&Widgets', self)
         self.code_tool_action = widgets_menu.addAction(
-            self.code_dock_widget.toggleViewAction()
+            self.console_dock_widget.toggleViewAction()
         )
-        #self.menuBar().addMenu(widgets_menu)
-
-        #settings_menu = QtGui.QMenu('&Settings', self)
-        #self.menuBar().addMenu(settings_menu)
+        self.menuBar().addMenu(widgets_menu)
 
         # Actions that we need to disable when simulating
         self.conflicting_with_sim = [
@@ -588,10 +593,8 @@ class MainWindow(QtGui.QMainWindow):
             self, 'Open robot source code file...', '.',
             'Python code (*.py);;C++ (*.cpp, *.cc);;Java (*.java)'
         )
-        data = self._read_file_data(file_name)
-        self.code_text_edit.setText(data)
-        self.code_text_edit.file_name = file_name
-        self.code_dock_widget.show()
+        simulator_params['robot_controller_class'] = \
+            compile_robot(str(file_name))[0]
 
 
     def _speed_value_changed(self):
@@ -776,14 +779,7 @@ class SimulatorGUI(object):
 
 import sys
 def main():
-    import imp
- 
- 
- 
- 
-    #simulator_params["robot_controller_class"] =OmitCollisionsLocal
- 
- 
+
     if not options.command_line:
         simulator = KrakrobotSimulator(**simulator_params)
         gui = SimulatorGUI(sys.argv, simulator)
