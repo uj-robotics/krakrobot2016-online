@@ -70,7 +70,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     """KrakrobotSimulator board animation painting widget"""
 
     status_bar_message = QtCore.pyqtSignal(str)
-    animation_speed = 1
+    animation_speed = 5
     frame_template = ''
     frames = []
     current_frame = 0
@@ -159,8 +159,9 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
         if self.simulator:
 
-            sim_data = self.simulator.get_next_frame()
-            if not sim_data:
+            try:
+                sim_data = self.simulator.get_next_frame_nowait()
+            except Exception:
                 return
             fill_visualisation_descriptor(sim_data)
 
@@ -176,6 +177,8 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     def animation_update(self):
 
         if len(self.frames) > 0:
+            if self.current_frame+1 > self.frame_count:
+                return
             svg_data = PrepareFrame(self.frame_template,self.frames[self.current_frame])
             self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
             self.svg_renderer.load(self.xml_stream_reader)
@@ -193,7 +196,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             scene.update()
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-            self.current_frame += 1
+            self.current_frame += self.animation_speed
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -221,8 +224,6 @@ class MainWindow(QtGui.QMainWindow):
         self.start_sim_action.triggered.connect(self._run_simulation)
 
         simulation_layout = QtGui.QVBoxLayout()
-        #self.simulation_view = SimulationGraphicsView(simulator, self)
-        #simulation_layout.addWidget(self.simulation_view)
         self.board_animation = KrakrobotBoardAnimation(self)
         self.board_animation.status_bar_message[str].connect(
             self.status_bar_message
@@ -495,32 +496,32 @@ def create_parser():
                            "console mode after running the program")
     parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
                       help="Robot that will be compiled and run")
-    parser.add_option("--steering_noise", dest="steering_noise", default=0.01,
+    parser.add_option("--steering_noise", action='store', type='float', dest="steering_noise", default=0.01,
                       help="Sigma of gaussian noise applied to turning motion")
-    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.1,
+    parser.add_option("--sonar_noise", action='store', type='float', dest="sonar_noise", default=0.1,
                       help="Sigma of gaussian noise applied to sensed distance by sonar")
-    parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,
+    parser.add_option("--gps_noise", action='store', type='float', dest="measurement_noise", default=0.1,
                       help="Sigma of gaussian noise applied to the sensed GPS position")
 
 
-    parser.add_option("--distance_noise", dest="distance_noise", default=0.001,
+    parser.add_option("--distance_noise", action='store', type='float', dest="distance_noise", default=0.001,
                       help="Sigma of gaussian noise applied to forward motion")
 
-    parser.add_option("--speed", dest="speed", default=5.0,
+    parser.add_option("--speed", action='store', type='float', dest="speed", default=5.0,
                       help="Speed of the robot (i.e. units/simulation second)")
-    parser.add_option("--turning_speed", dest="turning_speed", default=0.4*3.14,
+    parser.add_option("--turning_speed", action='store', type='float', dest="turning_speed", default=0.4*3.14,
                       help="Turning speed of the robot (i.e. rad/simulation second)")
 
 
-    parser.add_option("--execution_cpu_time_limit", dest="execution_cpu_time_limit", default=10.0,
+    parser.add_option("--execution_cpu_time_limit", action='store', type='float', dest="execution_cpu_time_limit", default=10.0,
                       help="Execution CPU time limit")
-    parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10.0,
+    parser.add_option("--simulation_time_limit", action='store', type='float', dest="simulation_time_limit", default=10.0,
                       help="Simulation time limit (in virtual time units)")
 
-    parser.add_option("--frame_dt", dest="frame_dt", default=0.1,
+    parser.add_option("--frame_dt", dest="frame_dt", action='store', type='float', default=0.1,
                       help="How often (in simulation time units) to produce a frame")
 
-    parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,
+    parser.add_option("--iteration_write_frequency", action='store', type='int', dest="iteration_write_frequency", default=1000,
                       help="How often (number of ticks of simulator) to report simulation status")
     return parser
 
