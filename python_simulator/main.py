@@ -90,10 +90,11 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.frames_timer.timeout.connect(self.frames_update)
         self.animation_timer = QtCore.QTimer(self)
         self.animation_timer.timeout.connect(self.animation_update)
+
         self.setScene(QtGui.QGraphicsScene(self))
         self.setTransformationAnchor(self.AnchorUnderMouse)
-        self.setDragMode(self.ScrollHandDrag)
-        self.setViewportUpdateMode(self.FullViewportUpdate)
+        self.setCacheMode(self.CacheBackground)
+        self.setViewportUpdateMode(self.NoViewportUpdate)
 
 
     def clear_board(self):
@@ -153,10 +154,11 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             self.animation_timer.start(self.refresh_rate)
             self.status_bar_message.emit('Animation played...')
 
-        #self.update()
-
 
     def frames_update(self):
+
+        if self.simulator.finished:
+            self.frames_timer.stop()
 
         if self.simulator:
 
@@ -173,6 +175,10 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             svg_data = RenderAnimatedPart(sim_data)
             self.frames.append(svg_data)
             self.frame_count += 1
+
+            # GUI update #
+            main_window = self.parent().parent()
+            main_window.update_frame_count(self.frame_count)
 
 
     def animation_update(self):
@@ -194,7 +200,9 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
             self.current_frame += self.animation_speed
 
-            #GUI update
+            # GUI update #
+            main_window = self.parent().parent()
+            main_window.update_current_frame(self.current_frame)
 
 
 
@@ -232,7 +240,7 @@ class MainWindow(QtGui.QMainWindow):
         #playback_layout.addStrut(1)
         playback_toolbar = QtGui.QToolBar()
         self.speed_box = QtGui.QSpinBox(self)
-        self.speed_box.setRange(1,100)
+        self.speed_box.setRange(1, 1000)
         self.speed_box.setValue(10)
         self.speed_box.setToolTip('Change animation speed')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
@@ -333,11 +341,27 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar().showMessage(message)
 
 
-    def update_data(self, current_frame, frame_count):
+    def update_frame_count(self, frame_count):
         if self.update_slider:
             self.scroll_bar.setMaximum(frame_count)
+            self.scroll_text.frame_count = str(frame_count)
+            self._update_scroll_bar_text()
+
+
+    def update_current_frame(self, current_frame):
+        if self.update_slider:
             self.scroll_bar.setValue(current_frame)
-            self.scroll_text.setText('frame '+str(current_frame)+'/'+str(frame_count))
+            self.scroll_text.current_frame = str(current_frame)
+            self._update_scroll_bar_text()
+
+
+    def _update_scroll_bar_text(self):
+            self.scroll_text.setText('frame '+str(
+                self.scroll_text.current_frame
+                )+'/'+str(
+                self.scroll_text.frame_count
+                )
+            )
             self.scroll_text.setMaximumWidth(self.scroll_text.sizeHint().width())
 
 
