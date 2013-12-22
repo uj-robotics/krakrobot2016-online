@@ -103,6 +103,7 @@ class KrakrobotSimulator(object):
 
 
 
+
         for i in xrange(self.N):
             for j in xrange(self.M):
                 if self.grid[i][j] == MAP_GOAL:
@@ -153,6 +154,8 @@ class KrakrobotSimulator(object):
         self.robot_timer = 0.0
         self.sim_frames = Queue(100000)
         self.finished = False
+
+        self.logs = []
 
 
 
@@ -265,6 +268,8 @@ class KrakrobotSimulator(object):
                     if command[0] == SENSE_GPS:
                         robot_controller.on_sense_gps(robot.sense_gps())
                         frame_time_left += self.gps_delay
+                    elif command[0] == WRITE_CONSOLE:
+                        self.logs.append(command[1])
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
                         robot_controller.on_sense_sonar(int(w))
@@ -320,7 +325,7 @@ class KrakrobotSimulator(object):
 
 
     def get_logs(self):
-        return ['KrakrobotSimulator']
+        return self.logs
 
 
     def _create_sim_data(self, robot):

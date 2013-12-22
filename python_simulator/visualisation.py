@@ -57,7 +57,7 @@ from vegesvgplot import (
 #TODO: move it from here
 def fill_visualisation_descriptor(Data):
     Map = Data['Map']
-    Data['Title'] = 'Krakrobot Eliminacje, przejazd..'
+    Data['Title'] = 'Krakrobot 2014 Qualifications'
     Grid = {
     'CanvasMinima': (0.5, 1.5),
     'CanvasMaxima': (27.5, 18.5),
