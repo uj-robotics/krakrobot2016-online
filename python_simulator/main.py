@@ -49,7 +49,7 @@ from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 from threading import Event
 from robot_controller import compile_robot
 
-graphics_update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+graphicsmutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
 from optparse import OptionParser
@@ -141,13 +141,13 @@ class SimulationThread(QtCore.QThread):
         """Running KrakrobotSimulator simulation"""
         #self.simulator.reset()
         print "Simulation has finished. Results: {0}".format(self.simulator.run())
-        self.exec_()
 
 
 class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     """KrakrobotSimulator board animation painting widget"""
 
     status_bar_message = QtCore.pyqtSignal(str)
+    simulation_thread = None
     animation_speed = 5
     frame_template = ''
     frames = []
@@ -205,8 +205,15 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             return
 
         self.animation_started = True
+        self.frame_template = ''
+        self.frames = []
+        self.current_frame = 0
+        self.frame_count = 0
+        self.animation_started = True
+        self.animation_paused = False
 
         self.simulation_thread = SimulationThread()
+        self.simulation_thread.finished.connect(self.parent().parent().simulation_finished)
         self.clear_board()
         self.simulation_thread.set_simulator(self.simulator)
         self.simulation_thread.start()
@@ -276,7 +283,9 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             scene.update()
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-            self.current_frame += self.animation_speed
+
+            if not self.animation_paused:
+                self.current_frame += self.animation_speed
 
             # GUI update #
             main_window = self.parent().parent()
@@ -287,22 +296,27 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.simulator = simulator
 
 
-
 class MainWindow(QtGui.QMainWindow):
     """Main window (all-in-one window)"""
 
     text_edit_width = 80
-    text_edit_height = 20
+    text_edit_height = 30
 
     def __init__(self, simulator):
         super(MainWindow, self).__init__()
         self.simulator = simulator
         self.update_slider = True
         self.currently_simulating = False
+        self.console_timer = QtCore.QTimer(self)
+        self.console_timer.timeout.connect(self._update_console_log)
         self._init_ui(simulator)
 
 
     def _init_ui(self, simulator):
+
+        self.setWindowIcon(
+            QtGui.QIcon( './pics/iiujrobotics.png')
+        )
 
         ### Toolbar ###
         main_toolbar = self.addToolBar('Krakrobot Simulator')
@@ -316,35 +330,103 @@ class MainWindow(QtGui.QMainWindow):
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
 
-        main_toolbar.addSeparator()
+        self.stop_sim_action = main_toolbar.addAction(
+            QtGui.QIcon.fromTheme('process-stop'),
+            'Terminate'
+        )
+        self.stop_sim_action.triggered.connect(self._pause_simulation)
+
+        #TODO: maximum lines for QPlainTextEdit = 1
+
+        params_toolbar = self.addToolBar('Simulator parameters')
+
         steering_noise_label = QtGui.QLabel('steering_noise: ')
-        main_toolbar.addWidget(steering_noise_label)
-        self.steering_noise_edit = QtGui.QTextEdit()
+        params_toolbar.addWidget(steering_noise_label)
+        self.steering_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['steering_noise']))
         self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
         self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
-        self.steering_noise_edit.document().setMaximumBlockCount(1)
-        main_toolbar.addWidget(self.steering_noise_edit)
+        params_toolbar.addWidget(self.steering_noise_edit)
+        self.steering_noise_edit.textChanged.connect(self._update_steering_noise)
 
-        steering_noise_label = QtGui.QLabel('sonar_noise: ')
-        main_toolbar.addWidget(steering_noise_label)
-        self.steering_noise_edit = QtGui.QTextEdit()
-        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
-        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
-        main_toolbar.addWidget(self.steering_noise_edit)
+        sonar_noise_label = QtGui.QLabel('sonar_noise: ')
+        params_toolbar.addWidget(sonar_noise_label)
+        self.sonar_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['sonar_noise']))
+        self.sonar_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.sonar_noise_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.sonar_noise_edit)
+        self.sonar_noise_edit.textChanged.connect(self._update_sonar_noise)
 
-        steering_noise_label = QtGui.QLabel('distance_noise: ')
-        main_toolbar.addWidget(steering_noise_label)
-        self.steering_noise_edit = QtGui.QTextEdit()
-        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
-        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
-        main_toolbar.addWidget(self.steering_noise_edit)
+        distance_noise_label = QtGui.QLabel('distance_noise: ')
+        params_toolbar.addWidget(distance_noise_label)
+        self.distance_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['distance_noise']))
+        self.distance_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.distance_noise_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.distance_noise_edit)
+        self.distance_noise_edit.textChanged.connect(self._update_distance_noise)
 
-        steering_noise_label = QtGui.QLabel('measurement_noise: ')
-        main_toolbar.addWidget(steering_noise_label)
-        self.steering_noise_edit = QtGui.QTextEdit()
-        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
-        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
-        main_toolbar.addWidget(self.steering_noise_edit)
+        measurement_noise_label = QtGui.QLabel('measurement_noise: ')
+        params_toolbar.addWidget(measurement_noise_label)
+        self.measurement_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['measurement_noise']))
+        self.measurement_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.measurement_noise_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.measurement_noise_edit)
+        self.measurement_noise_edit.textChanged.connect(self._update_measurement_noise)
+
+        speed_label = QtGui.QLabel('speed: ')
+        params_toolbar.addWidget(speed_label)
+        self.speed_edit = QtGui.QPlainTextEdit(str(simulator_params['speed']))
+        self.speed_edit.setMaximumWidth(self.text_edit_width)
+        self.speed_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.speed_edit)
+        self.speed_edit.textChanged.connect(self._update_speed)
+
+        turning_speed_label = QtGui.QLabel('turning_speed: ')
+        params_toolbar.addWidget(turning_speed_label)
+        self.turning_speed_edit = QtGui.QPlainTextEdit(str(simulator_params['turning_speed']))
+        self.turning_speed_edit.setMaximumWidth(self.text_edit_width)
+        self.turning_speed_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.turning_speed_edit)
+        self.turning_speed_edit.textChanged.connect(self._update_turning_speed)
+
+        execution_cpu_time_limit_label = QtGui.QLabel('execution_cpu_time_limit: ')
+        params_toolbar.addWidget(execution_cpu_time_limit_label)
+        self.execution_cpu_time_limit_edit = QtGui.QPlainTextEdit(str(simulator_params['execution_cpu_time_limit']))
+        self.execution_cpu_time_limit_edit.setMaximumWidth(self.text_edit_width)
+        self.execution_cpu_time_limit_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.execution_cpu_time_limit_edit)
+        self.execution_cpu_time_limit_edit.textChanged.connect(self._update_execution_cpu_time_limit)
+
+        simulation_time_limit_label = QtGui.QLabel('simulation_time_limit: ')
+        params_toolbar.addWidget(simulation_time_limit_label)
+        self.simulation_time_limit_edit = QtGui.QPlainTextEdit(str(simulator_params['simulation_time_limit']))
+        self.simulation_time_limit_edit.setMaximumWidth(self.text_edit_width)
+        self.simulation_time_limit_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.simulation_time_limit_edit)
+        self.simulation_time_limit_edit.textChanged.connect(self._update_simulation_time_limit)
+
+        frame_dt_label = QtGui.QLabel('frame_dt: ')
+        params_toolbar.addWidget(frame_dt_label)
+        self.frame_dt_edit = QtGui.QPlainTextEdit(str(simulator_params['frame_dt']))
+        self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
+        self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.frame_dt_edit)
+        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
+
+        gps_delay_label = QtGui.QLabel('gps_delay: ')
+        params_toolbar.addWidget(gps_delay_label)
+        self.gps_delay_edit = QtGui.QPlainTextEdit(str(simulator_params['gps_delay']))
+        self.gps_delay_edit.setMaximumWidth(self.text_edit_width)
+        self.gps_delay_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.gps_delay_edit)
+        self.gps_delay_edit.textChanged.connect(self._update_gps_delay)
+
+        iteration_write_frequency_label = QtGui.QLabel('iteration_write_frequency: ')
+        params_toolbar.addWidget(iteration_write_frequency_label)
+        self.iteration_write_frequency_edit = QtGui.QPlainTextEdit(str(simulator_params['iteration_write_frequency']))
+        self.iteration_write_frequency_edit.setMaximumWidth(self.text_edit_width)
+        self.iteration_write_frequency_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.iteration_write_frequency_edit)
+        self.iteration_write_frequency_edit.textChanged.connect(self._update_iteration_write_frequency)
 
         simulation_layout = QtGui.QVBoxLayout()
         self.board_animation = KrakrobotBoardAnimation(self.simulator, self)
@@ -391,7 +473,7 @@ class MainWindow(QtGui.QMainWindow):
             self._send_slider_value_and_continue_updates
         )
         playback_layout.addWidget(self.scroll_bar)
-        print "C"
+
         self.scroll_text = QtGui.QLabel('-/-', self)
         self.scroll_text.current_frame = '-'
         self.scroll_text.frame_count = '-'
@@ -428,7 +510,15 @@ class MainWindow(QtGui.QMainWindow):
         code_layout_widget.setLayout(code_layout)
         self.code_dock_widget.setWidget(code_layout_widget)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.code_dock_widget)
+        # Currently no need for code console
         self.code_dock_widget.hide()
+
+        self.output_console = QtGui.QTextBrowser()
+        self.output_console.setFont(QtGui.QFont('Monospace', 10))
+
+        self.console_dock_widget = QtGui.QDockWidget('  Output console', self)
+        self.console_dock_widget.setWidget(self.output_console)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.console_dock_widget)
 
         ### Menu ###
         map_menu = QtGui.QMenu('&Map', self)
@@ -437,22 +527,30 @@ class MainWindow(QtGui.QMainWindow):
         self.menuBar().addMenu(map_menu)
 
         robot_menu = QtGui.QMenu('&Robot', self)
-        self.open_source_action = robot_menu.addAction('&Open source code file...')
+        self.open_source_action = robot_menu.addAction('&Load source code file...')
         self.open_source_action.triggered.connect(self.open_source)
-        #self.menuBar().addMenu(robot_menu)
+        self.menuBar().addMenu(robot_menu)
 
         widgets_menu = QtGui.QMenu('&Widgets', self)
         self.code_tool_action = widgets_menu.addAction(
-            self.code_dock_widget.toggleViewAction()
+            self.console_dock_widget.toggleViewAction()
         )
-        #self.menuBar().addMenu(widgets_menu)
-
-        #settings_menu = QtGui.QMenu('&Settings', self)
-        #self.menuBar().addMenu(settings_menu)
+        self.menuBar().addMenu(widgets_menu)
 
         # Actions that we need to disable when simulating
         self.conflicting_with_sim = [
-            self.start_sim_action
+            self.start_sim_action,
+            self.steering_noise_edit,
+            self.sonar_noise_edit,
+            self.distance_noise_edit,
+            self.measurement_noise_edit,
+            self.speed_edit,
+            self.turning_speed_edit,
+            self.execution_cpu_time_limit_edit,
+            self.simulation_time_limit_edit,
+            self.frame_dt_edit,
+            self.gps_delay_edit,
+            self.iteration_write_frequency_edit
         ]
 
 
@@ -464,17 +562,17 @@ class MainWindow(QtGui.QMainWindow):
         if self.update_slider:
             self.scroll_bar.setMaximum(frame_count)
             self.scroll_text.frame_count = str(frame_count)
-            self._update_scroll_bar_text()
+            self.scroll_bar_text()
 
 
     def update_current_frame(self, current_frame):
         if self.update_slider:
             self.scroll_bar.setValue(current_frame)
             self.scroll_text.current_frame = str(current_frame)
-            self._update_scroll_bar_text()
+            self.scroll_bar_text()
 
 
-    def _update_scroll_bar_text(self):
+    def scroll_bar_text(self):
             self.scroll_text.setText('frame '+str(
                 self.scroll_text.current_frame
                 )+'/'+str(
@@ -496,12 +594,10 @@ class MainWindow(QtGui.QMainWindow):
 
         file_name = QtGui.QFileDialog.getOpenFileName(
             self, 'Open robot source code file...', '.',
-            'Python code (*.py);;C++ (*.cpp, *.cc);;Java (*.java)'
+            'Python code (*.py)'
         )
-        data = self._read_file_data(file_name)
-        self.code_text_edit.setText(data)
-        self.code_text_edit.file_name = file_name
-        self.code_dock_widget.show()
+        simulator_params['robot_controller_class'] = \
+            compile_robot(str(file_name))[0]
 
 
     def _speed_value_changed(self):
@@ -555,10 +651,17 @@ class MainWindow(QtGui.QMainWindow):
             action.setEnabled(False)
         self._reconstruct_simulator()
         self.board_animation.start()
+        self.console_timer.start(1)
 
 
-    def _simulation_finished(self):
+    def _pause_simulation(self):
+        if self.board_animation.simulation_thread:
+            self.board_animation.simulation_thread.terminate()
+
+
+    def simulation_finished(self):
         self.status_bar_message(MSG_EMP+'Simulation has finished!')
+        self.console_timer.stop()
         for action in self.conflicting_with_sim:
             action.setEnabled(True)
 
@@ -581,9 +684,85 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _reconstruct_simulator(self):
+        self.simulator = KrakrobotSimulator(**simulator_params)
         self.board_animation.new_simulator(
-            KrakrobotSimulator(**simulator_params)
+            self.simulator
         )
+
+
+    def _update_console_log(self):
+        logsc = len(self.board_animation.simulator.get_logs())
+        if logsc > 0:
+            self.output_console.setPlainText(
+                str(self.output_console.toPlainText()) + '\n' +
+                str(self.board_animation.simulator.get_logs()[
+                    len(self.board_animation.simulator.get_logs())-1
+                ])
+            )
+        self.output_console.verticalScrollBar().setSliderPosition(
+            self.output_console.verticalScrollBar().maximum()
+        )
+
+
+    def _update_steering_noise(self):
+        simulator_params['steering_noise'] = \
+            float(self.steering_noise_edit.toPlainText())
+
+
+    def _update_sonar_noise(self):
+        simulator_params['sonar_noise'] = \
+            float(self.sonar_noise_edit.toPlainText())
+
+
+    def _update_distance_noise(self):
+        simulator_params['distance_noise'] = \
+            float(self.distance_noise_edit.toPlainText())
+
+
+    def _update_measurement_noise(self):
+        simulator_params['measurement_noise'] = \
+            float(self.measurement_noise_edit.toPlainText())
+
+
+    def _update_speed(self):
+        simulator_params['speed'] = \
+            float(self.speed_edit.toPlainText())
+
+
+    def _update_turning_speed(self):
+        simulator_params['turning_speed'] = \
+            float(self._edit.toPlainText())
+
+
+    def _update_execution_cpu_time_limit(self):
+        simulator_params['execution_cpu_time_limit'] = \
+            float(self.execution_cpu_time_limit_edit.toPlainText())
+
+
+    def _update_simulation_time_limit(self):
+        simulator_params['simulation_time_limit'] = \
+            float(self.simulation_time_limit_edit.toPlainText())
+
+
+    def _update_simulation_dt(self):
+        simulator_params['simulation_dt'] = \
+            float(self.simulation_dt_edit.toPlainText())
+
+
+    def _update_frame_dt(self):
+        simulator_params['frame_dt'] = \
+            float(self.frame_dt_edit.toPlainText())
+
+
+    def _update_gps_delay(self):
+        simulator_params['gps_delay'] = \
+            float(self.gps_delay_edit.toPlainText())
+
+
+    def _update_iteration_write_frequency(self):
+        simulator_params['iteration_write_frequency'] = \
+            float(self.iteration_write_frequency_edit.toPlainText())
+
 
 
 
@@ -616,14 +795,7 @@ class SimulatorGUI(object):
 
 import sys
 def main():
-    import imp
- 
- 
- 
- 
-    #simulator_params["robot_controller_class"] =OmitCollisionsLocal
- 
- 
+
     if not options.command_line:
         simulator = KrakrobotSimulator(**simulator_params)
         gui = SimulatorGUI(sys.argv, simulator)
