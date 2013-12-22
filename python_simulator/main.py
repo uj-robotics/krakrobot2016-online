@@ -304,6 +304,8 @@ class MainWindow(QtGui.QMainWindow):
         self.simulator = simulator
         self.update_slider = True
         self.currently_simulating = False
+        self.console_timer = QtCore.QTimer(self)
+        self.console_timer.timeout.connect(self._update_console_log)
         self._init_ui(simulator)
 
 
@@ -636,10 +638,12 @@ class MainWindow(QtGui.QMainWindow):
             action.setEnabled(False)
         self._reconstruct_simulator()
         self.board_animation.start()
+        self.console_timer.start(1)
 
 
     def simulation_finished(self):
         self.status_bar_message(MSG_EMP+'Simulation has finished!')
+        self.console_timer.stop()
         for action in self.conflicting_with_sim:
             action.setEnabled(True)
 
@@ -662,9 +666,22 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _reconstruct_simulator(self):
+        self.simulator = KrakrobotSimulator(**simulator_params)
         self.board_animation.new_simulator(
-            KrakrobotSimulator(**simulator_params)
+            self.simulator
         )
+
+
+    def _update_console_log(self):
+        print self.board_animation.simulator.get_logs()
+        logsc = len(self.board_animation.simulator.get_logs())
+        if logsc > 0:
+            self.output_console.setPlainText(
+                self.board_animation.simulator.get_logs()[
+                    len(self.board_animation.simulator.get_logs())-1
+                ]
+            )
+
 
     def _update_steering_noise(self):
         simulator_params['steering_noise'] = \
