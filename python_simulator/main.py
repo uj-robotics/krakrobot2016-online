@@ -209,7 +209,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.frames = []
         self.current_frame = 0
         self.frame_count = 0
-        self.animation_started = False
+        self.animation_started = True
         self.animation_paused = False
 
         self.simulation_thread = SimulationThread()
@@ -283,7 +283,9 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             scene.update()
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-            self.current_frame += self.animation_speed
+
+            if not self.animation_paused:
+                self.current_frame += self.animation_speed
 
             # GUI update #
             main_window = self.parent().parent()
