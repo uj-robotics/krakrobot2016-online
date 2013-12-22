@@ -453,7 +453,7 @@ def create_parser():
     parser = OptionParser()
     parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
                       help="If simulation will run without visualisation")
-    parser.add_option("-m", "--map", dest="map", default="maps/5.map",
+    parser.add_option("-m", "--map", dest="map", default="maps/3.map",
                       help="Map that will be run after hitting Start Simulation button, or if in "
                            "console mode after running the program")
     parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
@@ -462,6 +462,9 @@ def create_parser():
                       help="Sigma of gaussian noise applied to turning motion")
     parser.add_option("--sonar_noise", dest="sonar_noise", default=0.1,
                       help="Sigma of gaussian noise applied to sensed distance by sonar")
+    parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,
+                      help="Sigma of gaussian noise applied to the sensed GPS position")
+
 
     parser.add_option("--distance_noise", dest="distance_noise", default=0.001,
                       help="Sigma of gaussian noise applied to forward motion")
@@ -472,12 +475,16 @@ def create_parser():
                       help="Turning speed of the robot (i.e. rad/simulation second)")
 
 
+    parser.add_option("--execution_cpu_time_limit", dest="execution_cpu_time_limit", default=10.0,
+                      help="Execution CPU time limit")
+    parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10.0,
+                      help="Simulation time limit (in virtual time units)")
 
-    #parser.add_option("-v", "--verbose",default=True, type="int", dest="verbose", help="If set prints simulation steps")
-    #parser.add_option( "--agent_1", type="string",default="UCTAgent", dest="agent1", help="""Set agent1 to "UCTAgent","UCTAgentTran", "UCTAgentTranCut", "RandomAgent", "GreedyAgent" """)
-    #parser.add_option( "--agent_2", type="string", default="GreedyAgent", dest="agent2", help="""Set agent2 to "UCTAgent", "UCTAgentTran", "UCTAgentTranCut",  "RandomAgent", "GreedyAgent" """)
-    #parser.add_option("-t", "--time_per_move",default=3, type="int", dest="time_per_move", help="Set time per move, default is 2s")
-    #parser.add_option("-n", "--number_of_simulations", default=10, type="int", dest="num_sim", help="Sets number of simulations, default is 10")
+    parser.add_option("--frame_dt", dest="frame_dt", default=0.1,
+                      help="How often (in simulation time units) to produce a frame")
+
+    parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,
+                      help="How often (number of ticks of simulator) to report simulation status")
     return parser
 
 
@@ -490,7 +497,17 @@ def main():
     import imp
  
  
-    simulator_params = {"visualisation": not options.command_line
+    simulator_params = {"visualisation": not options.command_line,
+                        "speed": options.speed,
+                        "distance_noise": options.distance_noise,
+                        "steering_noise": options.steering_noise,
+                        "sonar_noise": options.sonar_noise,
+                        "measurement_noise": options.measurement_noise,
+                        "turning_speed":options.turning_speed,
+                        "execution_cpu_time_limit": options.execution_cpu_time_limit,
+                        "simulation_time_limit":options.simulation_time_limit,
+                        "frame_dt":options.frame_dt,
+                        "iteration_write_frequency":options.iteration_write_frequency
         ,"robot_controller_class": compile_robot(options.robot)[0]
     }
  

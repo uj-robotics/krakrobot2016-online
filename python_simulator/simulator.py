@@ -20,12 +20,12 @@ class KrakrobotSimulator(object):
 
     def __init__(self,  map, robot_controller_class, init_position = None,
                  steering_noise=0.01, sonar_noise = 0.1, distance_noise=0.001,
-                 measurement_noise=0.2, time_limit = 50,
+                 measurement_noise=0.2,
                  speed = 5.0,
                  turning_speed = 0.4*pi,
                  execution_cpu_time_limit = 10.0,
                  simulation_time_limit = 10.0,
-                 simulation_dt = 0.001,
+                 simulation_dt = 0.0001,
                  frame_dt = 0.1,
                  collision_threshold = 50,
                  iteration_write_frequency = 1000,
@@ -42,6 +42,7 @@ class KrakrobotSimulator(object):
             @param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
             @param simulation_time_limit - limit in ms for whole robot execution (also with init)
             @param collision_threshold - maximum number of collisions after which robot is destroyed
+            @param simulation_dt -  controlls simulation calculation intensivity
 
             @param frame_dt - save frame every dt
             @param robot - RobotController class that will be simulated in run procedure
@@ -80,12 +81,12 @@ class KrakrobotSimulator(object):
 
         self.visualisation = visualisation
 
-        self.sonar_time = 0.01
-        self.gps_time = 1.0
-        self.light_sensor_time = 0.01
+        self.sonar_time = SONAR_TIME
+        self.gps_time = GPS_TIME
+        self.light_sensor_time  =  FIELD_TIME
 
-        self.tick_move = 0.01
-        self.tick_rotate = 0.07
+        self.tick_move = TICK_MOVE
+        self.tick_rotate = TICK_ROTATE
 
         self.simulation_time_limit = simulation_time_limit
         self.execution_cpu_time_limit = execution_cpu_time_limit
@@ -98,7 +99,6 @@ class KrakrobotSimulator(object):
         self.steering_noise   = steering_noise
         self.reset()
 
-        self.time_limit = time_limit
 
 
 
@@ -162,7 +162,7 @@ class KrakrobotSimulator(object):
         # Initialize robot controller object given by contestant
         robot_controller = PythonTimedRobotController(self.robot_controller)
         robot_controller.init(self.init_position, robot.steering_noise
-            ,robot.distance_noise, robot.measurement_noise, self.speed, self.turning_speed,
+            ,robot.distance_noise, robot.sonar_noise, robot.measurement_noise, self.speed, self.turning_speed,
                               self.execution_cpu_time_limit
                               )
 
@@ -179,7 +179,7 @@ class KrakrobotSimulator(object):
         iteration = 0
         communicated_finished = False
         try:
-            while not communicated_finished and not robot.time_elapsed >= self.time_limit:
+            while not communicated_finished and not robot.time_elapsed >= self.simulation_time_limit:
                 #logger.info(robot_controller.time_consumed)
 
                 if maximum_timedelta <= robot_controller.time_consumed:

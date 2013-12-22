@@ -66,7 +66,7 @@ def fill_visualisation_descriptor(Data):
     'YIsUp': False,
     'Transpose': True,
     'SquareAlignment': 'Centre',
-    'DrawGrid': True,
+    'DrawGrid': False,
     'DrawUnitAxes': False,
     'GridLineAttributes': {
       'stroke-width': '0.02', 'stroke': 'rgba(0, 192, 255, 0.5)'
