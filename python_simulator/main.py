@@ -321,7 +321,7 @@ class MainWindow(QtGui.QMainWindow):
 
         steering_noise_label = QtGui.QLabel('steering_noise: ')
         params_toolbar.addWidget(steering_noise_label)
-        self.steering_noise_edit = QtGui.QPlainTextEdit()
+        self.steering_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['steering_noise']))
         self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
         self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.steering_noise_edit)
@@ -382,6 +382,14 @@ class MainWindow(QtGui.QMainWindow):
         self.simulation_time_limit_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.simulation_time_limit_edit)
         self.simulation_time_limit_edit.textChanged.connect(self._update_simulation_time_limit)
+
+        simulation_dt_label = QtGui.QLabel('simulation_dt: ')
+        params_toolbar.addWidget(simulation_dt_label)
+        self.simulation_dt_edit = QtGui.QPlainTextEdit()
+        self.simulation_dt_edit.setMaximumWidth(self.text_edit_width)
+        self.simulation_dt_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.simulation_dt_edit)
+        self.simulation_dt_edit.textChanged.connect(self._update_simulation_dt)
 
         frame_dt_label = QtGui.QLabel('frame_dt: ')
         params_toolbar.addWidget(frame_dt_label)
@@ -521,7 +529,20 @@ class MainWindow(QtGui.QMainWindow):
 
         # Actions that we need to disable when simulating
         self.conflicting_with_sim = [
-            self.start_sim_action
+            self.start_sim_action,
+            self.steering_noise_edit,
+            self.sonar_noise_edit,
+            self.distance_noise_edit,
+            self.measurement_noise_edit,
+            self.speed_edit,
+            self.turning_speed_edit,
+            self.execution_cpu_time_limit_edit,
+            self.simulation_time_limit_edit,
+            self.simulation_dt_edit,
+            self.frame_dt_edit,
+            self.gps_delay_edit,
+            self.collision_threshold_edit,
+            self.iteration_write_frequency_edit
         ]
 
 
@@ -687,6 +708,11 @@ class MainWindow(QtGui.QMainWindow):
     def _update_execution_cpu_time_limit(self):
         simulator_params['execution_cpu_time_limit'] = \
             float(self.execution_cpu_time_limit_edit.toPlainText())
+
+
+    def _update_simulation_dt(self):
+        simulator_params['simulation_dt'] = \
+            float(self.simulation_dt.toPlainText())
 
 
     def _update_simulation_time_limit(self):
