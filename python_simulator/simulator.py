@@ -306,7 +306,7 @@ class KrakrobotSimulator(object):
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(communicated_finished and self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
-        while frame_time_left > self.frame_dt and self.visualisation:
+        while frame_time_left >= self.frame_dt and self.visualisation:
             ### Save frame <=> last command took long ###
             self.sim_frames.put(self._create_sim_data(robot))
             frame_time_left -= self.frame_dt
