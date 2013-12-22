@@ -314,6 +314,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def _init_ui(self, simulator):
 
+        self.setWindowIcon(
+            QtGui.QIcon( './pics/iiujrobotics.png')
+        )
+
         ### Toolbar ###
         main_toolbar = self.addToolBar('Krakrobot Simulator')
         self.setWindowTitle(APP_FULL_NAME)
