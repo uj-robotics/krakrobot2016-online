@@ -322,9 +322,31 @@ class MainWindow(QtGui.QMainWindow):
         self.steering_noise_edit = QtGui.QTextEdit()
         self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
         self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
+        self.steering_noise_edit.document().setMaximumBlockCount(1)
         main_toolbar.addWidget(self.steering_noise_edit)
 
-        simulation_layout = QtGui.QVBoxLayout(self)
+        steering_noise_label = QtGui.QLabel('sonar_noise: ')
+        main_toolbar.addWidget(steering_noise_label)
+        self.steering_noise_edit = QtGui.QTextEdit()
+        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
+        main_toolbar.addWidget(self.steering_noise_edit)
+
+        steering_noise_label = QtGui.QLabel('distance_noise: ')
+        main_toolbar.addWidget(steering_noise_label)
+        self.steering_noise_edit = QtGui.QTextEdit()
+        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
+        main_toolbar.addWidget(self.steering_noise_edit)
+
+        steering_noise_label = QtGui.QLabel('measurement_noise: ')
+        main_toolbar.addWidget(steering_noise_label)
+        self.steering_noise_edit = QtGui.QTextEdit()
+        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
+        main_toolbar.addWidget(self.steering_noise_edit)
+
+        simulation_layout = QtGui.QVBoxLayout()
         self.board_animation = KrakrobotBoardAnimation(self.simulator, self)
         self.board_animation.status_bar_message[str].connect(
             self.status_bar_message
@@ -339,6 +361,7 @@ class MainWindow(QtGui.QMainWindow):
         self.speed_box.setToolTip('Change animation speed')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
         playback_toolbar.addWidget(self.speed_box)
+
         play_progress_action = playback_toolbar.addAction(
             QtGui.QIcon.fromTheme('media-playback-start'),
             'Play progress animation'
@@ -368,7 +391,7 @@ class MainWindow(QtGui.QMainWindow):
             self._send_slider_value_and_continue_updates
         )
         playback_layout.addWidget(self.scroll_bar)
-
+        print "C"
         self.scroll_text = QtGui.QLabel('-/-', self)
         self.scroll_text.current_frame = '-'
         self.scroll_text.frame_count = '-'
@@ -502,7 +525,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _send_slider_value_and_continue_updates(self):
-        print self.scroll_bar.value()
         self._send_scroll_bar_value()
         self._continue_slider_updates()
 
