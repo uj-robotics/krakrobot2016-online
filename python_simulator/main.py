@@ -52,15 +52,17 @@ from robot_controller import compile_robot
 graphics_update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
-class SimulationThread(QtCore.QThread):
 
-    def set_parent(self, parent):
-        self.parent = parent
+class SimulationThread(QtCore.QThread):
+    """KrakrobotSimulator threading"""
+
+    def set_simulator(self, simulator):
+        self.simulator = simulator
 
     def run(self):
         """Running KrakrobotSimulator simulation"""
-        self.parent.simulator.reset()
-        self.parent.simulator.run()
+        self.simulator.reset()
+        self.simulator.run()
         self.exec_() #?
 
 
@@ -268,7 +270,6 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         scene.addItem(self.svg_item)
 
         scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
-        print self.svg_item.maximumCacheSize()
 
 
     def paintEvent(self, event):
@@ -280,26 +281,29 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
 
         # Load new graphics
         if self.svg_data:
+            qpainter = QtGui.QPainter(self)
+
             self.xml_stream_reader = QtCore.QXmlStreamReader(self.svg_data)
             self.svg_renderer.load(self.xml_stream_reader)# = QtSvg.QSvgRenderer(self.xml_stream_reader)
             self.svg_item = QtSvg.QGraphicsSvgItem()
 
+            #self.svg_renderer.render(qpainter, self.svg_renderer.viewBoxF())
+            self.svg_item.pain(qpainter)
 
 
 
-            scene = self.scene()
-            #scene.removeItem(self.svg_item)
-            self.svg_item.setSharedRenderer(self.svg_renderer)
-            self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
-            self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
-            self.svg_item.setZValue(0)
-            scene.items()[0].hide()
-            scene.items()[0].show()
+            #scene = self.scene()
+            #self.svg_item.setSharedRenderer(self.svg_renderer)
+            #self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+            #self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
+            #self.svg_item.setZValue(0)
+            #scene.items()[0].hide()
+            #scene.items()[0].show()
             #scene.addItem(self.svg_item)
 
-            scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+            #scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
-            QtGui.QGraphicsView.paintEvent(self, event)
+            #QtGui.QGraphicsView.paintEvent(self, event)
 
 
     def wheelEvent(self, event):
@@ -312,12 +316,138 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.message(MSG_EMP+'Animation has finished!')
 
 
+class KrakrobotBoardAnimation(QtGui.QGraphicsView):
+    """KrakrobotSimulator board animation painting widget"""
+
+    status_bar_message = QtCore.pyqtSignal(str)
+    animation_speed = 300
+    frame_template = ''
+    frames = []
+    current_frame = 0
+    frame_count = 0
+    simulator = None
+
+    def __init__(self, parent):
+        super(KrakrobotBoardAnimation, self).__init__(parent)
+        self.init_ui()
+
+
+    def init_ui(self):
+        self.timer = QtCore.QBasicTimer()
+        #self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.is_started = False
+        self.is_paused = False
+        self.setScene(QtGui.QGraphicsScene(self))
+        self.setTransformationAnchor(self.AnchorUnderMouse)
+        self.setDragMode(self.ScrollHandDrag)
+        self.setViewportUpdateMode(self.FullViewportUpdate)
+
+
+    def clear_board(self):
+
+        self.xml_stream_reader = QtCore.QXmlStreamReader()
+        if self.frame_template:
+            print "jest"
+            self.xml_stream_reader = QtCore.QXmlStreamReader(self.frame_template)
+
+        self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
+        self.svg_item = QtSvg.QGraphicsSvgItem()#str(time.ctime()))
+        self.svg_item.setSharedRenderer(self.svg_renderer)
+        self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+        self.svg_item.setCacheMode(QtGui.QGraphicsItem.DeviceCoordinateCache)
+        self.svg_item.setZValue(0)
+
+        scene = self.scene()
+        scene.addItem(self.svg_item)
+        scene.update()
+
+        scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+
+
+
+    def start(self, simulator):
+
+        if self.is_paused:
+            return
+
+        self.is_started = True
+
+        self.simulation_thread = SimulationThread()
+        self.simulator = simulator
+        self.clear_board()
+        self.simulation_thread.set_simulator(simulator)
+        self.simulation_thread.start()
+
+        self.status_bar_message.emit('Simulation started...')
+
+        self.timer.start(self.animation_speed, self)
+
+
+    def pause(self):
+
+        if not self.is_started:
+            return
+
+        self.is_paused = not self.is_paused
+
+        if self.is_paused:
+            self.timer.stop()
+            self.status_bar_message.emit('Animation paused.')
+
+        else:
+            self.timer.start(self.speed, self)
+            self.status_bar_message.emit('Animation played...')
+
+        self.update()
+
+
+    def paintEvent(self, event):
+
+
+        if len(self.frames) > 0:
+
+            svg_data = PrepareFrame(self.frame_template,self.frames[self.current_frame])
+            self.xml_stream_reader = QtCore.QXmlStreamReader(svg_data)
+            self.svg_renderer.load(self.xml_stream_reader)# = QtSvg.QSvgRenderer(self.xml_stream_reader)
+            self.svg_item = QtSvg.QGraphicsSvgItem()
+
+            scene = self.scene()
+            #scene.removeItem(self.svg_item)
+            self.svg_item.setSharedRenderer(self.svg_renderer)
+            self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
+            self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
+            self.svg_item.setZValue(0)
+            scene.items()[0].hide()
+            scene.addItem(self.svg_item)
+            scene.update()
+
+            scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
+
+
+    def timerEvent(self, event):
+
+        if event.timerId() == self.timer.timerId() and self.simulator:
+
+            sim_data = self.simulator.get_next_frame()
+            fill_visualisation_descriptor(sim_data)
+
+            if self.frame_template == '':
+                self.frame_template = RenderFrameTemplate(sim_data)
+                self.clear_board()
+
+            svg_data = RenderAnimatedPart(sim_data)
+            self.frames.append(svg_data)
+            self.frame_count += 1
+
+
+
 class MainWindow(QtGui.QMainWindow):
     """Main window (all-in-one window)"""
 
     def __init__(self, simulator):
         super(MainWindow, self).__init__()
         self._init_ui(simulator)
+        self.simulator = simulator
         self.update_slider = True
         self.animation_paused = False
         self.currently_simulating = False
@@ -336,11 +466,16 @@ class MainWindow(QtGui.QMainWindow):
         self.start_sim_action.triggered.connect(self._run_simulation)
 
         simulation_layout = QtGui.QVBoxLayout()
-        self.simulation_view = SimulationGraphicsView(simulator, self)
-        simulation_layout.addWidget(self.simulation_view)
+        #self.simulation_view = SimulationGraphicsView(simulator, self)
+        #simulation_layout.addWidget(self.simulation_view)
+        self.board_animation = KrakrobotBoardAnimation(self)
+        self.board_animation.status_bar_message[str].connect(
+            self.status_bar_message
+        )
+        simulation_layout.addWidget(self.board_animation)
 
         playback_layout = QtGui.QHBoxLayout()
-        playback_layout.addStrut(1)
+        #playback_layout.addStrut(1)
         playback_toolbar = QtGui.QToolBar()
         self.speed_box = QtGui.QDoubleSpinBox(self)
         self.speed_box.setRange(2,100)
@@ -384,6 +519,7 @@ class MainWindow(QtGui.QMainWindow):
 
         playback_layout_widget = QtGui.QWidget()
         playback_layout_widget.setLayout(playback_layout)
+        playback_layout_widget.setMaximumHeight(playback_layout_widget.sizeHint().height())
         simulation_layout.addWidget(playback_layout_widget)
 
         self.simulation_layout_widget = QtGui.QWidget()
@@ -397,13 +533,13 @@ class MainWindow(QtGui.QMainWindow):
         self.code_dock_widget = QtGui.QDockWidget('  Coding console', self)
         code_toolbar = QtGui.QToolBar(self.code_dock_widget)
         code_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        self.send_to_robot_action = code_toolbar.addAction(
+        self.save_code_action = code_toolbar.addAction(
             QtGui.QIcon.fromTheme('document-send'),
             # NOTE: or:
             #QtGui.QIcon.fromTheme('media-record'),
-            'Send to robot'
+            'Save code'
         )
-        self.send_to_robot_action.triggered.connect(self._send_to_robot)
+        self.save_code_action.triggered.connect(self._save_code)
         code_layout = QtGui.QVBoxLayout()
         code_layout.addWidget(code_toolbar)
         code_layout.addWidget(self.code_text_edit)
@@ -435,8 +571,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Actions that we need to disable when simulating
         self.conflicting_with_sim = [
-            self.start_sim_action,
-            self.send_to_robot_action
+            self.start_sim_action
         ]
 
 
@@ -468,6 +603,8 @@ class MainWindow(QtGui.QMainWindow):
         )
         data = self._read_file_data(file_name)
         self.code_text_edit.setText(data)
+        self.code_text_edit.file_name = file_name
+        self.code_dock_widget.show()
 
 
     def _speed_value_changed(self):
@@ -519,11 +656,10 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _run_simulation(self):
-        self.status_bar_message('Simulation process started...')
         self.currently_simulating = True
         for action in self.conflicting_with_sim:
             action.setEnabled(False)
-        self.simulation_view.run_simulation()
+        self.board_animation.start(self.simulator)
 
 
     def _simulation_finished(self):
@@ -532,9 +668,15 @@ class MainWindow(QtGui.QMainWindow):
             action.setEnabled(True)
 
 
-    def _send_to_robot(self):
-        data = self.code_text_edit.text()
-        print data
+    def _save_code(self):
+        data = self.code_text_edit.toPlainText()
+        self._save_to_file(self.code_text_edit.file_name, data)
+
+
+    def _save_to_file(self, file_name, data):
+        output_file = open(file_name, 'w')
+        with output_file:
+            output_file.write(str(data))
 
 
     def _read_file_data(self, file_name):
