@@ -110,8 +110,12 @@ def importCode(file_name, name, add_to_sys_modules=0):
 
 
 
+counter_module = 0
 def compile_robot(file_name, module_name = "contestant_module"):
     """ Compiles robot from given file and returns class object """
+    global counter_module
+    module_name += str(counter_module)
+    counter_module += 1
     mod =  importCode(file_name, module_name)
     compiled_class = None
     for symbol in dir(mod):
