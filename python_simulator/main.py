@@ -49,7 +49,7 @@ from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 from threading import Event
 from robot_controller import compile_robot
 
-graphics_update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+graphicsmutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
 from optparse import OptionParser
@@ -287,12 +287,11 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.simulator = simulator
 
 
-
 class MainWindow(QtGui.QMainWindow):
     """Main window (all-in-one window)"""
 
     text_edit_width = 80
-    text_edit_height = 20
+    text_edit_height = 30
 
     def __init__(self, simulator):
         super(MainWindow, self).__init__()
@@ -316,15 +315,115 @@ class MainWindow(QtGui.QMainWindow):
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
 
-        main_toolbar.addSeparator()
+        #TODO: maximum lines for QPlainTextEdit = 1
+
+        params_toolbar = self.addToolBar('Simulator parameters')
+
         steering_noise_label = QtGui.QLabel('steering_noise: ')
-        main_toolbar.addWidget(steering_noise_label)
-        self.steering_noise_edit = QtGui.QTextEdit()
+        params_toolbar.addWidget(steering_noise_label)
+        self.steering_noise_edit = QtGui.QPlainTextEdit(str(simulator_params['steering_noise']))
         self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
         self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
-        main_toolbar.addWidget(self.steering_noise_edit)
+        params_toolbar.addWidget(self.steering_noise_edit)
+        self.steering_noise_edit.textChanged.connect(self._update_steering_noise)
 
-        simulation_layout = QtGui.QVBoxLayout(self)
+        sonar_noise_label = QtGui.QLabel('sonar_noise: ')
+        params_toolbar.addWidget(sonar_noise_label)
+        self.sonar_noise_edit = QtGui.QPlainTextEdit()
+        self.sonar_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.sonar_noise_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.sonar_noise_edit)
+        self.sonar_noise_edit.textChanged.connect(self._update_sonar_noise)
+
+        distance_noise_label = QtGui.QLabel('distance_noise: ')
+        params_toolbar.addWidget(distance_noise_label)
+        self.distance_noise_edit = QtGui.QPlainTextEdit()
+        self.distance_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.distance_noise_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.distance_noise_edit)
+        self.distance_noise_edit.textChanged.connect(self._update_distance_noise)
+
+        measurement_noise_label = QtGui.QLabel('measurement_noise: ')
+        params_toolbar.addWidget(measurement_noise_label)
+        self.measurement_noise_edit = QtGui.QPlainTextEdit()
+        self.measurement_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.measurement_noise_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.measurement_noise_edit)
+        self.measurement_noise_edit.textChanged.connect(self._update_measurement_noise)
+
+        speed_label = QtGui.QLabel('speed: ')
+        params_toolbar.addWidget(speed_label)
+        self.speed_edit = QtGui.QPlainTextEdit()
+        self.speed_edit.setMaximumWidth(self.text_edit_width)
+        self.speed_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.speed_edit)
+        self.speed_edit.textChanged.connect(self._update_speed)
+
+        turning_speed_label = QtGui.QLabel('turning_speed: ')
+        params_toolbar.addWidget(turning_speed_label)
+        self.turning_speed_edit = QtGui.QPlainTextEdit()
+        self.turning_speed_edit.setMaximumWidth(self.text_edit_width)
+        self.turning_speed_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.turning_speed_edit)
+        self.turning_speed_edit.textChanged.connect(self._update_turning_speed)
+
+        execution_cpu_time_limit_label = QtGui.QLabel('execution_cpu_time_limit: ')
+        params_toolbar.addWidget(execution_cpu_time_limit_label)
+        self.execution_cpu_time_limit_edit = QtGui.QPlainTextEdit()
+        self.execution_cpu_time_limit_edit.setMaximumWidth(self.text_edit_width)
+        self.execution_cpu_time_limit_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.execution_cpu_time_limit_edit)
+        self.execution_cpu_time_limit_edit.textChanged.connect(self._update_execution_cpu_time_limit)
+
+        simulation_time_limit_label = QtGui.QLabel('simulation_time_limit: ')
+        params_toolbar.addWidget(simulation_time_limit_label)
+        self.simulation_time_limit_edit = QtGui.QPlainTextEdit()
+        self.simulation_time_limit_edit.setMaximumWidth(self.text_edit_width)
+        self.simulation_time_limit_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.simulation_time_limit_edit)
+        self.simulation_time_limit_edit.textChanged.connect(self._update_simulation_time_limit)
+
+        simulation_dt_label = QtGui.QLabel('simulation_dt: ')
+        params_toolbar.addWidget(simulation_dt_label)
+        self.simulation_dt_edit = QtGui.QPlainTextEdit()
+        self.simulation_dt_edit.setMaximumWidth(self.text_edit_width)
+        self.simulation_dt_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.simulation_dt_edit)
+        self.simulation_dt_edit.textChanged.connect(self._update_simulation_dt)
+
+        frame_dt_label = QtGui.QLabel('frame_dt: ')
+        params_toolbar.addWidget(frame_dt_label)
+        self.frame_dt_edit = QtGui.QPlainTextEdit()
+        self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
+        self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.frame_dt_edit)
+        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
+
+        gps_delay_label = QtGui.QLabel('gps_delay: ')
+        params_toolbar.addWidget(gps_delay_label)
+        self.gps_delay_edit = QtGui.QPlainTextEdit()
+        self.gps_delay_edit.setMaximumWidth(self.text_edit_width)
+        self.gps_delay_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.gps_delay_edit)
+        self.gps_delay_edit.textChanged.connect(self._update_gps_delay)
+
+        collision_threshold_label = QtGui.QLabel('collision_threshold: ')
+        params_toolbar.addWidget(collision_threshold_label)
+        self.collision_threshold_edit = QtGui.QPlainTextEdit()
+        self.collision_threshold_edit.setMaximumWidth(self.text_edit_width)
+        self.collision_threshold_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.collision_threshold_edit)
+        self.collision_threshold_edit.textChanged.connect(self._update_collision_threshold)
+
+        iteration_write_frequency_label = QtGui.QLabel('iteration_write_frequency: ')
+        params_toolbar.addWidget(iteration_write_frequency_label)
+        self.iteration_write_frequency_edit = QtGui.QPlainTextEdit()
+        self.iteration_write_frequency_edit.setMaximumWidth(self.text_edit_width)
+        self.iteration_write_frequency_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.iteration_write_frequency_edit)
+        self.iteration_write_frequency_edit.textChanged.connect(self._update_iteration_write_frequency)
+
+        simulation_layout = QtGui.QVBoxLayout()
         self.board_animation = KrakrobotBoardAnimation(self.simulator, self)
         self.board_animation.status_bar_message[str].connect(
             self.status_bar_message
@@ -339,6 +438,7 @@ class MainWindow(QtGui.QMainWindow):
         self.speed_box.setToolTip('Change animation speed')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
         playback_toolbar.addWidget(self.speed_box)
+
         play_progress_action = playback_toolbar.addAction(
             QtGui.QIcon.fromTheme('media-playback-start'),
             'Play progress animation'
@@ -429,7 +529,20 @@ class MainWindow(QtGui.QMainWindow):
 
         # Actions that we need to disable when simulating
         self.conflicting_with_sim = [
-            self.start_sim_action
+            self.start_sim_action,
+            self.steering_noise_edit,
+            self.sonar_noise_edit,
+            self.distance_noise_edit,
+            self.measurement_noise_edit,
+            self.speed_edit,
+            self.turning_speed_edit,
+            self.execution_cpu_time_limit_edit,
+            self.simulation_time_limit_edit,
+            self.simulation_dt_edit,
+            self.frame_dt_edit,
+            self.gps_delay_edit,
+            self.collision_threshold_edit,
+            self.iteration_write_frequency_edit
         ]
 
 
@@ -441,17 +554,17 @@ class MainWindow(QtGui.QMainWindow):
         if self.update_slider:
             self.scroll_bar.setMaximum(frame_count)
             self.scroll_text.frame_count = str(frame_count)
-            self._update_scroll_bar_text()
+            self.scroll_bar_text()
 
 
     def update_current_frame(self, current_frame):
         if self.update_slider:
             self.scroll_bar.setValue(current_frame)
             self.scroll_text.current_frame = str(current_frame)
-            self._update_scroll_bar_text()
+            self.scroll_bar_text()
 
 
-    def _update_scroll_bar_text(self):
+    def scroll_bar_text(self):
             self.scroll_text.setText('frame '+str(
                 self.scroll_text.current_frame
                 )+'/'+str(
@@ -502,7 +615,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _send_slider_value_and_continue_updates(self):
-        print self.scroll_bar.value()
         self._send_scroll_bar_value()
         self._continue_slider_updates()
 
@@ -562,6 +674,76 @@ class MainWindow(QtGui.QMainWindow):
         self.board_animation.new_simulator(
             KrakrobotSimulator(**simulator_params)
         )
+
+    def _update_steering_noise(self):
+        simulator_params['steering_noise'] = \
+            float(self.steering_noise_edit.toPlainText())
+
+
+    def _update_sonar_noise(self):
+        simulator_params['sonar_noise'] = \
+            float(self.sonar_noise_edit.toPlainText())
+
+
+    def _update_distance_noise(self):
+        simulator_params['distance_noise'] = \
+            float(self.distance_noise_edit.toPlainText())
+
+
+    def _update_measurement_noise(self):
+        simulator_params['measurement_noise'] = \
+            float(self.measurement_noise_edit.toPlainText())
+
+
+    def _update_speed(self):
+        simulator_params['speed'] = \
+            float(self.speed_edit.toPlainText())
+
+
+    def _update_turning_speed(self):
+        simulator_params['turning_speed'] = \
+            float(self._edit.toPlainText())
+
+
+    def _update_execution_cpu_time_limit(self):
+        simulator_params['execution_cpu_time_limit'] = \
+            float(self.execution_cpu_time_limit_edit.toPlainText())
+
+
+    def _update_simulation_dt(self):
+        simulator_params['simulation_dt'] = \
+            float(self.simulation_dt.toPlainText())
+
+
+    def _update_simulation_time_limit(self):
+        simulator_params['simulation_time_limit'] = \
+            float(self.simulation_time_limit_edit.toPlainText())
+
+
+    def _update_simulation_dt(self):
+        simulator_params['simulation_dt'] = \
+            float(self.simulation_dt_edit.toPlainText())
+
+
+    def _update_frame_dt(self):
+        simulator_params['frame_dt'] = \
+            float(self.frame_dt_edit.toPlainText())
+
+
+    def _update_gps_delay(self):
+        simulator_params['gps_delay'] = \
+            float(self.gps_delay_edit.toPlainText())
+
+
+    def _update_collision_threshold(self):
+        simulator_params['collision_threshold'] = \
+            float(self.collision_threshold_edit.toPlainText())
+
+
+    def _update_iteration_write_frequency(self):
+        simulator_params['iteration_write_frequency'] = \
+            float(self.iteration_write_frequency_edit.toPlainText())
+
 
 
 
