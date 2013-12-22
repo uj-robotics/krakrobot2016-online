@@ -140,7 +140,7 @@ class SimulationThread(QtCore.QThread):
     def run(self):
         """Running KrakrobotSimulator simulation"""
         self.simulator.reset()
-        self.simulator.run()
+        print "Simulation has finished. Results: {0}".format(self.simulator.run())
         self.exec_()
 
 
@@ -158,9 +158,10 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     animation_paused = False
     refresh_rate = 10
 
-    def __init__(self, parent):
+    def __init__(self, simulator, parent):
         super(KrakrobotBoardAnimation, self).__init__(parent)
         self.init_ui()
+        self.simulator = simulator
 
 
     def init_ui(self):
@@ -198,7 +199,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
 
 
-    def start(self, simulator):
+    def start(self):
 
         if self.animation_paused:
             return
@@ -206,9 +207,8 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         self.animation_started = True
 
         self.simulation_thread = SimulationThread()
-        self.simulator = simulator
         self.clear_board()
-        self.simulation_thread.set_simulator(simulator)
+        self.simulation_thread.set_simulator(self.simulator)
         self.simulation_thread.start()
 
         self.status_bar_message.emit('Simulation started...')
@@ -283,16 +283,20 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             main_window.update_current_frame(self.current_frame)
 
 
+    def new_simulator(self, simulator):
+        self.simulator = simulator
+
+
 
 class MainWindow(QtGui.QMainWindow):
     """Main window (all-in-one window)"""
 
     def __init__(self, simulator):
         super(MainWindow, self).__init__()
-        self._init_ui(simulator)
         self.simulator = simulator
         self.update_slider = True
         self.currently_simulating = False
+        self._init_ui(simulator)
 
 
     def _init_ui(self, simulator):
@@ -308,7 +312,7 @@ class MainWindow(QtGui.QMainWindow):
         self.start_sim_action.triggered.connect(self._run_simulation)
 
         simulation_layout = QtGui.QVBoxLayout()
-        self.board_animation = KrakrobotBoardAnimation(self)
+        self.board_animation = KrakrobotBoardAnimation(self.simulator, self)
         self.board_animation.status_bar_message[str].connect(
             self.status_bar_message
         )
@@ -354,6 +358,8 @@ class MainWindow(QtGui.QMainWindow):
         playback_layout.addWidget(self.scroll_bar)
 
         self.scroll_text = QtGui.QLabel('-/-', self)
+        self.scroll_text.current_frame = '-'
+        self.scroll_text.frame_count = '-'
         self.scroll_text.setMaximumWidth(self.scroll_text.sizeHint().width())
         playback_layout.addWidget(self.scroll_text)
 
@@ -448,7 +454,7 @@ class MainWindow(QtGui.QMainWindow):
         file_name = QtGui.QFileDialog.getOpenFileName(
             self, 'Load map from file...', '.', 'Krakrobot maps (*.map)'
         )
-        simulator_params['map'] = file_name
+        simulator_params['map'] = str(file_name)
 
 
     def open_source(self):
@@ -513,7 +519,8 @@ class MainWindow(QtGui.QMainWindow):
         self.currently_simulating = True
         for action in self.conflicting_with_sim:
             action.setEnabled(False)
-        self.board_animation.start(self.simulator)
+        self._reconstruct_simulator()
+        self.board_animation.start()
 
 
     def _simulation_finished(self):
@@ -537,6 +544,12 @@ class MainWindow(QtGui.QMainWindow):
         input_file = open(file_name, 'r')
         with input_file:
             return input_file.read()
+
+
+    def _reconstruct_simulator(self):
+        self.board_animation.new_simulator(
+            KrakrobotSimulator(**simulator_params)
+        )
 
 
 
