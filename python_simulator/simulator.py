@@ -103,6 +103,7 @@ class KrakrobotSimulator(object):
 
 
 
+
         for i in xrange(self.N):
             for j in xrange(self.M):
                 if self.grid[i][j] == MAP_GOAL:
@@ -153,6 +154,8 @@ class KrakrobotSimulator(object):
         self.robot_timer = 0.0
         self.sim_frames = Queue(100000)
         self.finished = False
+
+        self.logs = []
 
 
 
@@ -227,6 +230,8 @@ class KrakrobotSimulator(object):
 
                         frame_time_left += self.tick_rotate / self.turning_speed
 
+                    if current_command[0] == WRITE_CONSOLE:
+                        self.logs.append(current_command[1])
 
                     elif current_command[0] == MOVE:
                         robot_proposed = robot.move(1)
