@@ -65,8 +65,10 @@ Map is a discretized grid with several field types, i.e:
 note that the only possible values are S(0), E(2), N(4), W(6) )
 * Hint distance (field_type = 9, field_value is a floor of actual distance to the goal)
 
-We have bundled with the simulator map generator utility. To use it please refer to map_gen.py file  Generation of the maps can be highly parametrized, please refer
-to the documentation in the code. Note however that maps for the final evaluation might be generated differently (that is using different generator, or designed by hand).
+We have bundled with the simulator map generator utility.
+ To use it please refer to map_gen.py file  Generation of the maps can be highly parametrized, please refer
+to the documentation in the code. Note however that maps for the final evaluation might be
+generated differently (that is using different generator, or designed by hand).
 
 
 ![Example map](pics/1.png)
@@ -162,7 +164,7 @@ The RobotController class should implement
 execution_cpu_time_limit) - initialization function. Specifications of the arguments:
 	* starting_position : tuple [x,y,angle], where x and y are accurate positions of the robot (we assume
 upper-left corner is (0,0) and x runs vertically, whereas y runs horizontally) and angle which is an angle in radians
-with respect to X axis (TODO: add picture)
+with respect to X axis 
 	* steering_noise : sigma of gaussian noise applied to turning motion
 	* distance_noise : sigma of gaussian noise applied to forward motion
 	* sonar_noise : sigma of gaussian noise applied to sonar
@@ -171,6 +173,8 @@ with respect to X axis (TODO: add picture)
 	* turning_speed: turning speed in radians/simulation_second of the robot
 	* gps_delay : amount of simulation time units to run gps measurement
 	* execution_cpu_time_limit: total real running time that can be consumed by the robot in seconds
+
+![Example map](pics/2.png)
 
 * **act()** - this is the basic function. It is called always after executing last command.
 In act you should return a list. For constants see *defines.py*
@@ -181,6 +185,8 @@ In act you should return a list. For constants see *defines.py*
 	*  Sense sonar: ["sense_sonar"] - consumes constant amount of time : 0.01 simulation time unit
 	*  Sense field: ["sense_field"] - consumes constant amount of time : 0.01 simulation time_unit
 	*  Communicate finish: ["finish"] - consumes 0 units of time
+	*  Write to console: ["write_console", string] - consumes 0 units of time, however cannot be used in submission (that is
+	code that you submit to us cannot execute action "write_console", you can use it only for debugging)
 
 * **on_sense_gps(x,y)** - reponds to (x,y) measurement (no return)
 
@@ -208,6 +214,7 @@ Evaluation
 Current version is local, that is you are not submitting your code to us. We will launch online evaluation
 in the mid January. The online evaluation opening date will be emailed to contestants and announced on the
 contest page. The final evaluation will take place some time after 12.02.2014 and results will be announced on the contest page.
+
 
 
 Hints and resources

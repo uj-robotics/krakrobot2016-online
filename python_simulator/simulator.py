@@ -103,6 +103,7 @@ class KrakrobotSimulator(object):
 
 
 
+
         for i in xrange(self.N):
             for j in xrange(self.M):
                 if self.grid[i][j] == MAP_GOAL:
@@ -124,6 +125,15 @@ class KrakrobotSimulator(object):
         return self.sim_frames.get()
 
 
+    def get_next_frame_nowait(self):
+        """
+            @returns next frame of simulation data
+
+            @note Only get an item if one is immediately available. Otherwise
+            raise the Empty exception.
+        """
+        return self.sim_frames.get_nowait()
+
 
     def check_goal(self, robot):
         """ Checks if goal is within threshold distance"""
@@ -144,6 +154,8 @@ class KrakrobotSimulator(object):
         self.robot_timer = 0.0
         self.sim_frames = Queue(100000)
         self.finished = False
+
+        self.logs = []
 
 
 
@@ -256,6 +268,8 @@ class KrakrobotSimulator(object):
                     if command[0] == SENSE_GPS:
                         robot_controller.on_sense_gps(robot.sense_gps())
                         frame_time_left += self.gps_delay
+                    elif command[0] == WRITE_CONSOLE:
+                        self.logs.append(command[1])
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
                         robot_controller.on_sense_sonar(int(w))
@@ -297,7 +311,7 @@ class KrakrobotSimulator(object):
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(communicated_finished and self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
-        while frame_time_left > self.frame_dt and self.visualisation:
+        while frame_time_left >= self.frame_dt and self.visualisation:
             ### Save frame <=> last command took long ###
             self.sim_frames.put(self._create_sim_data(robot))
             frame_time_left -= self.frame_dt
@@ -308,6 +322,10 @@ class KrakrobotSimulator(object):
         return {"time_elapsed": robot.time_elapsed, "goal_achieved": communicated_finished and self.check_goal(robot),
                 "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000
                 }
+
+
+    def get_logs(self):
+        return self.logs
 
 
     def _create_sim_data(self, robot):
