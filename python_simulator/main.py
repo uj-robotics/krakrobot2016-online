@@ -235,14 +235,13 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
     def frames_update(self):
 
-        if self.simulator.finished:
-            self.frames_timer.stop()
-
         if self.simulator:
 
             try:
                 sim_data = self.simulator.get_next_frame_nowait()
             except Exception:
+                if self.simulator.finished:
+                    self.frames_timer.stop()
                 return
             fill_visualisation_descriptor(sim_data)
 
@@ -301,6 +300,8 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _init_ui(self, simulator):
+
+        ### Toolbar ###
         main_toolbar = self.addToolBar('Krakrobot Simulator')
         self.setWindowTitle(APP_FULL_NAME)
         self.status_bar_message('Welcome to ' + APP_FULL_NAME + '!')
@@ -320,7 +321,6 @@ class MainWindow(QtGui.QMainWindow):
         simulation_layout.addWidget(self.board_animation)
 
         playback_layout = QtGui.QHBoxLayout()
-        #playback_layout.addStrut(1)
         playback_toolbar = QtGui.QToolBar()
         self.speed_box = QtGui.QSpinBox(self)
         self.speed_box.setRange(1, 1000)
