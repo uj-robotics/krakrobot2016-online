@@ -111,38 +111,6 @@ class SimulationRenderThread(QtCore.QThread):
         self.frame_count = 0
 
 
-    def run_simulation(self):
-        """Running KrakrobotSimulator simulation"""
-        self.simulator.reset()
-        self.simulator.run()
-        self.exec_() #?
-
-
-    def run_rendering(self):
-        """ Job rendering frames to stack """
-        while not self.renderer_stop.is_set():
-            # note: will hang here
-            sim_data = self.simulator.get_next_frame()
-            fill_visualisation_descriptor(sim_data)
-
-            if self.frame_template == "":
-                print "Rendering frame template"
-                self.frame_template = RenderFrameTemplate(sim_data)
-
-            svg_data = RenderAnimatedPart(sim_data)
-            self.frames.append(svg_data)
-            self.frame_count += 1
-
-    def run_animation(self):
-        """
-        It manually triggers update. TODO: check if there is no better way of controlling update rate
-        """
-        while not self.renderer_stop.is_set():
-            graphics_update_mutex.lock()
-            self.parent.scene().update()
-            graphics_update_mutex.unlock()
-            time.sleep(0.001)
-
     def run(self):
         """SVG rendering"""
         #self.simulation_process_thread = Thread(target=self.run_simulation)
@@ -326,7 +294,8 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
             self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
             self.svg_item.setZValue(0)
             scene.items()[0].hide()
-            scene.addItem(self.svg_item)
+            scene.items()[0].show()
+            #scene.addItem(self.svg_item)
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
