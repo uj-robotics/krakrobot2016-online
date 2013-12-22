@@ -49,11 +49,60 @@ from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 from threading import Event
 from robot_controller import compile_robot
 
+graphics_update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+
+class SimulationThread(QtCore.QThread):
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def run(self):
+        """Running KrakrobotSimulator simulation"""
+        self.parent.simulator.reset()
+        self.parent.simulator.run()
+        self.exec_() #?
+
+
+class RenderingThread(QtCore.QThread):
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def run(self):
+        """ Job rendering frames to stack """
+        while not self.parent.renderer_stop.is_set():
+            # note: will hang here
+            sim_data = self.parent.simulator.get_next_frame()
+            fill_visualisation_descriptor(sim_data)
+
+            if self.parent.frame_template == "":
+                self.parent.frame_template = RenderFrameTemplate(sim_data)
+
+            svg_data = RenderAnimatedPart(sim_data)
+            self.parent.frames.append(svg_data)
+            self.parent.frame_count += 1
+        self.exec_() #?
+
+
+class AnimationUpdateThread(QtCore.QThread):
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def run(self):
+        while not self.parent.renderer_stop.is_set():
+            graphics_update_mutex.lock()
+            self.parent.parent.scene().update()
+            graphics_update_mutex.unlock()
+            time.sleep(0.001)
+        self.exec_() #?
+
+
 class SimulationRenderThread(QtCore.QThread):
 
     def __init__(self, simulator, parent):
         super(SimulationRenderThread, self).__init__()
-        self.frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
         self.simulator = simulator
         self.parent = parent
         self.frames = [] # frame buffer
@@ -89,30 +138,36 @@ class SimulationRenderThread(QtCore.QThread):
         It manually triggers update. TODO: check if there is no better way of controlling update rate
         """
         while not self.renderer_stop.is_set():
-            self.parent.update_mutex.lock()
+            graphics_update_mutex.lock()
             self.parent.scene().update()
-            self.parent.update_mutex.unlock()
+            graphics_update_mutex.unlock()
             time.sleep(0.001)
 
     def run(self):
         """SVG rendering"""
-        self.simulation_process_thread = Thread(target=self.run_simulation)
+        #self.simulation_process_thread = Thread(target=self.run_simulation)
+        self.simulation_process_thread = SimulationThread()
+        self.simulation_process_thread.set_parent(self)
         self.simulation_process_thread.start()
 
-        self.simulation_rendering_thread = Thread(target=self.run_rendering)
+        #self.simulation_rendering_thread = Thread(target=self.run_rendering)
+        self.simulation_rendering_thread = RenderingThread()
+        self.simulation_rendering_thread.set_parent(self)
         self.simulation_rendering_thread.start()
 
         time.sleep(0.5)
 
-        self.animation_thread = Thread(target=self.run_animation)
+        #self.animation_thread = Thread(target=self.run_animation)
+        self.animation_thread = AnimationUpdateThread()
+        self.animation_thread.set_parent(self)
         self.animation_thread.start()
 
 
 
         i = 0
-        self.frame_change_mutex.lock()
+        frame_change_mutex.lock()
         self.current_frame = 0
-        self.frame_change_mutex.unlock()
+        frame_change_mutex.unlock()
         self.frame_rate = 100
         self.starting = True
         self.paused = False
@@ -123,28 +178,33 @@ class SimulationRenderThread(QtCore.QThread):
 
         while True:
             # Wait for current frame
-            while self.current_frame+1 > self.frame_count:
+            # Store dynamic variable
+            frame_change_mutex.lock()
+            current_frame = self.current_frame
+            frame_change_mutex.unlock()
+
+            while current_frame+1 > self.frame_count:
                 time.sleep(0.01)
 
-            if self.current_frame == 0:
-                self.parent.update_mutex.lock()
-                self.parent.setup_scene(PrepareFrame(self.frame_template,self.frames[self.current_frame]))
-                self.parent.update_mutex.unlock()
+            if current_frame == 0:
+                graphics_update_mutex.lock()
+                self.parent.setup_scene(PrepareFrame(self.frame_template,self.frames[current_frame]))
+                graphics_update_mutex.unlock()
             else:
-                self.parent.update_mutex.lock()
+                graphics_update_mutex.lock()
                 #It is important that this code does not work at all, it only sets current frame!
                 #self.parent.update_data(PrepareFrame(self.frame_template, self.frames[current_frame]))
                 self.parent.update_data(
-                    PrepareFrame(self.frame_template, self.frames[self.current_frame]),
-                    self.current_frame,
+                    PrepareFrame(self.frame_template, self.frames[current_frame]),
+                    current_frame,
                     self.frame_count
                 )
-                self.parent.update_mutex.unlock()
+                graphics_update_mutex.unlock()
 
             if not self.paused:
-                self.frame_change_mutex.lock()
+                frame_change_mutex.lock()
                 self.current_frame += 1
-                self.frame_change_mutex.unlock()
+                frame_change_mutex.unlock()
 
             time.sleep(self.simulator.frame_dt/self.frame_rate) #10x time
 
@@ -170,7 +230,6 @@ class SimulationGraphicsView(QtGui.QGraphicsView):
         self.parent = parent
         self.simulation_render_thread = SimulationRenderThread(simulator, self)
         self.simulation_render_thread.finished.connect(self._animation_finished)
-        self.update_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
         self.svg_data = None
         self._init_ui()
 
@@ -456,10 +515,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def _send_scroll_bar_value(self):
         """Send scroll bar value to simulation and render threads"""
-        self.simulation_view.simulation_render_thread.frame_change_mutex.lock()
+        frame_change_mutex.lock()
         self.simulation_view.simulation_render_thread.current_frame = \
             self.scroll_bar.value()
-        self.simulation_view.simulation_render_thread.frame_change_mutex.unlock()
+        frame_change_mutex.unlock()
 
 
     def _send_slider_value_and_continue_updates(self):
