@@ -147,6 +147,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     """KrakrobotSimulator board animation painting widget"""
 
     status_bar_message = QtCore.pyqtSignal(str)
+    simulation_thread = None
     animation_speed = 5
     frame_template = ''
     frames = []
@@ -325,7 +326,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.stop_sim_action = main_toolbar.addAction(
             QtGui.QIcon.fromTheme('process-stop'),
-            'Pause'
+            'Terminate'
         )
         self.stop_sim_action.triggered.connect(self._pause_simulation)
 
@@ -648,7 +649,8 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _pause_simulation(self):
-        self.board_animation.simulation_thread.terminate()
+        if self.board_animation.simulation_thread:
+            self.board_animation.simulation_thread.terminate()
 
 
     def simulation_finished(self):
