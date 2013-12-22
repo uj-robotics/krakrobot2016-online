@@ -673,14 +673,17 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _update_console_log(self):
-        print self.board_animation.simulator.get_logs()
         logsc = len(self.board_animation.simulator.get_logs())
         if logsc > 0:
             self.output_console.setPlainText(
-                self.board_animation.simulator.get_logs()[
+                str(self.output_console.toPlainText()) + '\n' +
+                str(self.board_animation.simulator.get_logs()[
                     len(self.board_animation.simulator.get_logs())-1
-                ]
+                ])
             )
+        self.output_console.verticalScrollBar().setSliderPosition(
+            self.output_console.verticalScrollBar().maximum()
+        )
 
 
     def _update_steering_noise(self):
