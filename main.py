@@ -280,7 +280,7 @@ class MainWindow(QtGui.QMainWindow):
     def _init_ui(self, simulator):
 
         self.setWindowIcon(
-            QtGui.QIcon( './pics/iiujrobotics.png')
+            QtGui.QIcon( './pics/iiujrobotics.svg')
         )
 
         ### Toolbar ###
