@@ -1,8 +1,6 @@
 KrakRobot 2014
-==============
-
 Lost in Cracow's alleys
------------------------
+===========================
 
 
 Welcome to the rules and technical specification for the KrakRobot 2014 online qualifications task.
@@ -17,7 +15,7 @@ In this package you will find the simulator, example maps in the 'maps' director
 General rules
 -----------------------
 
-1. Contestants have to be students, enrolled at Bachelor, Masters or PhD level programme in any field.
+1. Contestants have to be students, enrolled at Bachelor's, Master's or PhD level programme in any field.
 2. KrakRobot is a team competition – each team has to consist of 2 or 3 people, working together.
 3. The task is simulation based – the appropriate code bundled
  with the example maps and robots is available here: https://github.com/uj-robotics/KrakRobot2014Qualifications
@@ -28,8 +26,8 @@ the package
 7. Each action performed (both sensing and acting) costs a set amount of time. The robot's total simulation time is the summed cost of all performed actions
  from the simulation start to the moment of reaching the goal state
  (which is checked for automatically by the simulation engine,
- and is defined as being located over the field and communicating it).
- The goal is to minimize total simulation time of finding the goal.===========================<<<goal - goal?>>>
+ and is defined as being located over the goal field and communicating it).
+ The goal is to minimize total simulation time of finding the goal field.
 8. Each map can have an upper bound on simulation time, after which all robots will be considered as having infinite total simulation time.
 9. One round of simulations consists of running all teams' AIs on one, randomly generated map (the same for each robot).
 In each round the constants (for instance accuracy of the GPS sensor) can change.
@@ -37,7 +35,7 @@ After each round, the ranking, obtained by sorting the total times in descending
 10. The whole qualifications will consist of multiple rounds, and the final position of each robot will be its median position in all the rankings.
 The best teams (number of advancing teams will be disclosed in January) will advance to the finals, which will take place on 12 April 2014 in Cracow (more information will be available on the website soon).
 11. Each simulation has limited CPU time, which will be passed to the robot at the initialization step. There is also a 1024 MB RAM limit.
-12. Any modifications to the simulation code, attempts to hack the engine in order to achieve a better score (either by reading the map or by any other type of cheating) will result in the disqualification.of noise applied to forward motion====================<<<disqualification of noise? :P >>>
+12. Any modifications to the simulation code, attempts to hack the engine in order to achieve a better score (either by reading the map or by any other type of cheating) will result in the disqualification of the team
 13. The jury has an indisputable right to disqualify any team if violations of these regulations are detected.
 14. The jury has a right to change the rules of the qualifications task at any time. However, each modification will be sent to all the
 registered contestants and annouced on the official website (www.krakrobot.pl). The jury has also the right to introduce minor modifications
@@ -67,7 +65,7 @@ The map is a discretized grid with several field types, i.e:
 * Direction hint (field_type = 11, field_value in 0...7 indicating directions S, SE, E, NE, N, NW, N, SW respectively)
 * Optimal path direction hint (field_type = 10, field_value in 0....7 indicating directions as above, note
 however that the only possible values are S(0), E(2), N(4), W(6) )
-* Distance hint (field_type = 9, field_value is a floor of the actual distance to the goal)==================================<<<w jakiej metryce?>>>
+* Distance hint (field_type = 9, field_value is a floor of the actual distance to the goal)
 
 We have bundled the map generator utility with the simulator.
  In order to use it, please refer to map_gen.py file  Generation of the maps can be highly parameterized, please refer
@@ -104,7 +102,7 @@ Simulator runs the robot until one of the following criteria is met:
 
 *  Simulation time has exceeded the given maximum
 *  The robot has exceeded the CPU time limit
-*  The robot has exceeded the RAM limit (note: not controlled in your version)===========<<<co to znaczy? not controlled in your version>>>
+*  The robot has exceeded the RAM limit (note: not controlled in your version)
 *  The robot has reached the goal
 *  The robot has thrown an exception
 *  The robot has exceeded the maximum number of collisions (dependent on the map, but always more than 100)
@@ -146,7 +144,7 @@ from the Robot's center in the heading direction.
 
 Field sensor might be a little bit confusing. When it is called, Simulator calculates on which
 field the Robot is right now (i.e. floor(x), floor(y) ) and calls Robot's on_sense_field method with 
-field type and field value as arguments (e.g. distance hint). Note that when the Robot =================<<<było (for instance distance) - czy o to chodziło? >>>
+field type and field value as arguments (e.g. a distance hint). Note that when the Robot
 is close to the boundary of a field the results might be hard to predict. 
 
 
@@ -175,12 +173,12 @@ with respect to X axis
 	* gps_noise : sigma of gaussian noise applied to gps measurements
 	* speed : speed of the robot in units/simulation_second (speed of the forward motion)
 	* turning_speed: turning speed of the robot in radians/simulation_second 
-	* gps_delay : amount of simulation time units to run gps measurement=============<<<co to są simulation time units>>>
+	* gps_delay : amount of simulation seconds consumed by a gps measurement
 	* execution_cpu_time_limit: total real running time that can be consumed by the robot in seconds
 
 ![Example map](pics/2.png)
 
-* **act()** - this is the basic function. It is called always after executing the last command.============<<<nie rozumiem>>>
+* **act()** - this is the basic function. It is called repeatedly after the previous command has been executed.
 In act you should return a list. For constants see *defines.py*
 
 	*  Moving : ["move", number_of_ticks] - consumes variable amount of time: number_of_ticks*TICK_MOVE / speed
