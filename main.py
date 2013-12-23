@@ -96,6 +96,7 @@ simulator_params = {"visualisation": not options.command_line,
                     "map": options.map
 }
 
+
 class SimulationThread(QtCore.QThread):
     """KrakrobotSimulator threading"""
 
@@ -104,7 +105,6 @@ class SimulationThread(QtCore.QThread):
 
     def run(self):
         """Running KrakrobotSimulator simulation"""
-        #self.simulator.reset()
         print "Simulation has finished. Results: {0}".format(self.simulator.run())
 
 
@@ -143,6 +143,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
 
     def clear_board(self):
+        """Clear and prepare board for animation"""
 
         scene = self.scene()
         scene.clear()
@@ -153,7 +154,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             self.xml_stream_reader = QtCore.QXmlStreamReader(self.frame_template)
 
         self.svg_renderer = QtSvg.QSvgRenderer(self.xml_stream_reader)
-        self.svg_item = QtSvg.QGraphicsSvgItem()#str(time.ctime()))
+        self.svg_item = QtSvg.QGraphicsSvgItem()
         self.svg_item.setSharedRenderer(self.svg_renderer)
         self.svg_item.setFlags(QtGui.QGraphicsItem.ItemClipsToShape)
         self.svg_item.setCacheMode(QtGui.QGraphicsItem.NoCache)
@@ -164,8 +165,8 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
         scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
 
-
     def start(self):
+        """Start simulation process"""
 
         if self.animation_paused:
             return
@@ -191,6 +192,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
 
     def pause_animation(self):
+        """Pause animation process"""
 
         if not self.animation_started:
             return
@@ -207,6 +209,11 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
 
     def frames_update(self):
+        """Update collection and GUI with current simulator frames data
+
+        This method is an event of self.frames_timer timeout
+
+        """
 
         if self.simulator:
 
@@ -232,6 +239,11 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
 
     def animation_update(self):
+        """Update GUI with current animation frame
+
+        This method is an event of self.animation_timer timeout
+
+        """
 
         if len(self.frames) > 0:
             if self.current_frame+1 > self.frame_count:
@@ -575,9 +587,10 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _send_scroll_bar_value(self):
-        """Send scroll bar value to simulation and render thread"""
+        """Send scroll bar value to animation widget"""
         frame_change_mutex.lock()
         self.board_animation.current_frame = self.scroll_bar.value()
+        self.board_animation.animation_update()
         frame_change_mutex.unlock()
 
 
@@ -587,7 +600,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _play_progress_animation(self):
-        """Play progress (replay record) animation"""
+        """Play animation process"""
         if self.board_animation.animation_paused:
             self.board_animation.pause_animation()
 
@@ -726,8 +739,6 @@ class MainWindow(QtGui.QMainWindow):
             float(self.iteration_write_frequency_edit.toPlainText())
 
 
-
-
 class SimulatorGUI(object):
     """GUI master class"""
 
@@ -753,9 +764,8 @@ class SimulatorGUI(object):
         sys.exit(self.qt_app.exec_())
 
 
-# Command Tool
-
 import sys
+
 def main():
 
     if not options.command_line:
@@ -765,7 +775,6 @@ def main():
     else:
         simulator = KrakrobotSimulator(simulation_dt=0.0, **simulator_params)
         print "Simulation has finished. Results: {0}".format(simulator.run())
-
 
 
 if __name__ == '__main__':
