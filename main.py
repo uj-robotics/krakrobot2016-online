@@ -537,6 +537,9 @@ class MainWindow(QtGui.QMainWindow):
             self, 'Load map from file...', '.', 'Krakrobot maps (*.map)'
         )
         simulator_params['map'] = str(file_name)
+        self.status_bar_message(
+            'Map loaded from ' + str(file_name)
+        )
 
 
     def open_source(self):
@@ -547,6 +550,9 @@ class MainWindow(QtGui.QMainWindow):
         )
         simulator_params['robot_controller_class'] = \
             compile_robot(str(file_name))[0]
+        self.status_bar_message(
+            'Robot source code loaded from ' + str(file_name)
+        )
 
 
     def _speed_value_changed(self):
