@@ -1,6 +1,7 @@
 Krakrobot 2014 Lost in the Cracows' alleys
 ===========================
 
+
 Welcome to the rules and technical specification for the Krakrobot 2014 online qualifications problem.
 
 The qualification round consists of one task,
