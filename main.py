@@ -548,8 +548,14 @@ class MainWindow(QtGui.QMainWindow):
             self, 'Open robot source code file...', '.',
             'Python code (*.py)'
         )
-        simulator_params['robot_controller_class'] = \
-            compile_robot(str(file_name))[0]
+        try:
+            compilation = compile_robot(str(file_name))[0]
+        except Exception as error:
+            self.status_bar_message(
+                MSG_EMP + 'Robot source code compiling error: ' + str(error)
+            )
+            return -1
+        simulator_params['robot_controller_class'] = compilation
         self.status_bar_message(
             'Robot source code loaded from ' + str(file_name)
         )
