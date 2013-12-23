@@ -137,6 +137,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
         self.setScene(QtGui.QGraphicsScene(self))
         self.setTransformationAnchor(self.AnchorUnderMouse)
+        self.setDragMode(self.ScrollHandDrag)
         self.setCacheMode(self.CacheBackground)
         self.setViewportUpdateMode(self.NoViewportUpdate)
 
@@ -259,6 +260,12 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
     def new_simulator(self, simulator):
         self.simulator = simulator
+
+
+    def wheelEvent(self, event):
+        factor = pow(1.2, event.delta()/240.0)
+        self.scale(factor, factor)
+        event.accept()
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -455,29 +462,6 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.simulation_layout_widget)
 
         ### Tools ###
-        self.code_text_edit = QtGui.QTextEdit(self)
-        self.code_text_edit.setFont(QtGui.QFont('Monospace', 10))
-
-        self.code_dock_widget = QtGui.QDockWidget('  Coding console', self)
-        code_toolbar = QtGui.QToolBar(self.code_dock_widget)
-        code_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        self.save_code_action = code_toolbar.addAction(
-            QtGui.QIcon.fromTheme('document-send'),
-            # NOTE: or:
-            #QtGui.QIcon.fromTheme('media-record'),
-            'Save code'
-        )
-        self.save_code_action.triggered.connect(self._save_code)
-        code_layout = QtGui.QVBoxLayout()
-        code_layout.addWidget(code_toolbar)
-        code_layout.addWidget(self.code_text_edit)
-        code_layout_widget = QtGui.QWidget()
-        code_layout_widget.setLayout(code_layout)
-        self.code_dock_widget.setWidget(code_layout_widget)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.code_dock_widget)
-        # Currently no need for code console
-        self.code_dock_widget.hide()
-
         self.output_console = QtGui.QTextBrowser()
         self.output_console.setFont(QtGui.QFont('Monospace', 10))
 
