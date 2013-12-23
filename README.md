@@ -1,6 +1,9 @@
 KrakRobot 2014
++==============
++
 Lost in Cracow's alleys
-===========================
+-===========================
++-----------------------
 
 
 Welcome to the rules and technical specification for the KrakRobot 2014 online qualifications task.
