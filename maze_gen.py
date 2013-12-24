@@ -1,7 +1,5 @@
 """
 Standalone command tool for generating maze
-
-@note: This file is confidential and cannot be seen by contestants
 """
 
 from defines import *
