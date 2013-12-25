@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
 
-""" Simulator which runs the simulation and renders SVG frames """
+""" Krakrobot Python Simulator
 
-__author__ = u'Stanisław Jastrzębski'
+    Simulator which runs the simulation and renders SVG frames.
+
+"""
+
+
+from utils import logger, load_map
+from Queue import Queue
+import time
+import datetime
 
 from defines import *
 
@@ -13,10 +21,19 @@ from math import (
   floor, ceil, exp
 )
 
-from utils import logger, load_map
-from Queue import Queue
-import time
-import datetime
+
+__author__ = u'Stanisław Jastrzębski'
+__copyright__ = 'Copyright 2013-2014,\
+                    Jagiellonian University Robotics Interest Group'
+__credits__ = ['Konrad Talik', 'Piotr Kruk', u'Stanisław Jastrzębski',
+                    'Wojciech Czarnecki']
+
+__license__ = 'MIT'
+__version__ = '0.0.1a'
+__maintainer__ = u'Stanisław Jastrzębski'
+__email__ = 'staszek.jastrzebski@gmail.com'
+__status__ = 'Development'
+
 
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50

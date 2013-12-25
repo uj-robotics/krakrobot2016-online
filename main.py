@@ -3,17 +3,10 @@
 
 """ Krakrobot Python Simulator
 
-    Krakrobot 2013 Qualifications simulator main.
+    Krakrobot 2014 Qualifications simulator main.
 
 """
 
-__authors__ = u'Konrad Talik, Stanisław Jastrzębski'
-__license__ = u'The MIT License (MIT)'
-
-VERSION = '0.0.1a'
-APP_NAME = 'Krakrobot Simulator'
-APP_FULL_NAME = APP_NAME + ' ' + VERSION
-MSG_EMP = '-> '
 
 from optparse import OptionParser
 from Queue import Queue
@@ -26,12 +19,32 @@ from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
 
 from simulator import KrakrobotSimulator
 from robot_controller import compile_robot
-from visualisation import PrepareFrame, RenderAnimatedPart, RenderFrameTemplate, \
-    Save, fill_visualisation_descriptor
+from visualisation import PrepareFrame, RenderAnimatedPart,\
+    RenderFrameTemplate, Save, fill_visualisation_descriptor
 from defines import *
+
+
+__authors__ = u'Konrad Talik, Stanisław Jastrzębski'
+__copyright__ = 'Copyright 2013-2014,\
+                    Jagiellonian University Robotics Interest Group'
+__credits__ = ['Konrad Talik', 'Piotr Kruk', u'Stanisław Jastrzębski',
+                    'Wojciech Czarnecki']
+
+__license__ = 'MIT'
+__version__ = '0.0.1a'
+__maintainer__ = 'Konrad Talik'
+__email__ = 'konradtalik@gmail.com'
+__status__ = 'Development'
+
+
+APP_NAME = 'Krakrobot Simulator'
+APP_FULL_NAME = APP_NAME + ' ' + __version__
+MSG_EMP = '-> '
+
 
 graphicsmutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+
 
 def create_parser():
     """ Configure options and return parser object """
