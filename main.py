@@ -33,7 +33,8 @@ __copyright__ = 'Copyright 2013-2014,\
 __license__ = 'MIT'
 __version__ = '0.0.1a'
 __maintainer__ = 'Konrad Talik'
-__email__ = 'konradtalik@gmail.com'
+# Please report bugs in GUI to this email, and bugs in simulator to stanislaw.jastrzebski<at>gmail.com
+__email__ = 'konradtalik@gmail.com'  
 __status__ = 'Development'
 
 
