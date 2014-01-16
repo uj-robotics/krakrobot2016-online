@@ -25,8 +25,6 @@ from math import (
 __author__ = u'Stanisław Jastrzębski'
 __copyright__ = 'Copyright 2013-2014,\
                     Jagiellonian University Robotics Interest Group'
-__credits__ = ['Konrad Talik', 'Piotr Kruk', u'Stanisław Jastrzębski',
-                    'Wojciech Czarnecki']
 
 __license__ = 'MIT'
 __version__ = '0.0.1a'

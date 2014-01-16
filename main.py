@@ -4,9 +4,11 @@
 """ Krakrobot Python Simulator
 
     Krakrobot 2014 Qualifications simulator.
-    
-    Many thanks to udacity.com: https://www.udacity.com/wiki/CS373%20Visualizing%20Maze%20Driving ,
-    we have reused visualisation code and the general idea while implementing this simulator.
+
+    Many thanks to udacity.com:
+    https://www.udacity.com/wiki/CS373%20Visualizing%20Maze%20Driving,
+    we have reused visualisation code and the general idea while implementing
+    this simulator.
 """
 
 
@@ -33,8 +35,9 @@ __copyright__ = 'Copyright 2013-2014,\
 __license__ = 'MIT'
 __version__ = '0.0.1a'
 __maintainer__ = 'Konrad Talik'
-# Please report bugs in GUI to this email, and bugs in simulator to stanislaw.jastrzebski<at>gmail.com
-__email__ = 'konradtalik@gmail.com'  
+# Please report bugs in GUI to this email
+# and bugs in simulator [simulator.py] to stanislaw.jastrzebski<at>gmail.com
+__email__ = 'konradtalik@gmail.com'
 __status__ = 'Development'
 
 
