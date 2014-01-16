@@ -128,8 +128,10 @@ class Robot:
     def sense_gps(self):
         """ Returns estimation for position (GPS signal) """
         self.time_elapsed += self.gps_time
-        return [random.gauss(self.x, self.measurement_noise),
+        ret =  [random.gauss(self.x, self.measurement_noise),
                 random.gauss(self.y, self.measurement_noise)]
+        return ret
+
 
     def sense_sonar(self, grid):
         """

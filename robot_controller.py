@@ -96,10 +96,11 @@ class PythonTimedRobotController(RobotController):
         x = datetime.datetime.now()
         self.rc.on_sense_field(field_type, field_parameter)
         self.time_consumed += datetime.datetime.now() - x
+
     def on_sense_gps(self, x, y):
-        x = datetime.datetime.now()
+        tmp = datetime.datetime.now()
         self.rc.on_sense_gps(x,y)
-        self.time_consumed += datetime.datetime.now() - x
+        self.time_consumed += datetime.datetime.now() - tmp
 
 
 
