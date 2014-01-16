@@ -286,7 +286,7 @@ class KrakrobotSimulator(object):
 
                     # Dispatch command
                     if command[0] == SENSE_GPS:
-                        robot_controller.on_sense_gps(robot.sense_gps())
+                        robot_controller.on_sense_gps(*robot.sense_gps())
                         frame_time_left += self.gps_delay
                     elif command[0] == WRITE_CONSOLE:
                         self.logs.append(command[1])
