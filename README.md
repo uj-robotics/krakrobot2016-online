@@ -74,6 +74,7 @@ We have bundled the map generator utility with the simulator.
 to the documentation in the code. Note however that the maps for the final evaluation might be
 generated differently (that is using a different generator, or designed by hand).
 
+Please note that map doesn't have to be a maze.
 
 ![Example map](pics/1.png)
 
