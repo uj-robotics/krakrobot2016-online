@@ -287,7 +287,11 @@ class KrakrobotSimulator(object):
                         robot_controller.on_sense_gps(*robot.sense_gps())
                         frame_time_left += self.gps_delay
                     elif command[0] == WRITE_CONSOLE:
-                        self.logs.append(command[1])
+                        self.logs.append(
+                            '{FRAME: ' + str(frame_count) + \
+                            ', TIME: ' + str(robot.time_elapsed) + \
+                            ' } ' + command[1]
+                        )
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
                         robot_controller.on_sense_sonar(int(w))

@@ -19,7 +19,7 @@ from threading import Thread
 from threading import Event
 import datetime
 
-from PyQt4 import QtGui, QtCore, QtSvg, QtOpenGL
+from PyQt4 import QtGui, QtCore, QtSvg
 
 from simulator import KrakrobotSimulator
 from robot_controller import compile_robot
@@ -544,7 +544,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def update_current_frame(self, current_frame):
-        if self.update_slider:
+        #if self.update_slider:
             self.scroll_bar.setValue(current_frame)
             self.scroll_text.current_frame = str(current_frame)
             self.scroll_bar_text()
@@ -607,6 +607,7 @@ class MainWindow(QtGui.QMainWindow):
         """Send scroll bar value to animation widget"""
         frame_change_mutex.lock()
         self.board_animation.current_frame = self.scroll_bar.value()
+        current_frame = self.scroll_bar.value()
         self.board_animation.animation_update()
         frame_change_mutex.unlock()
 
@@ -646,6 +647,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _pause_simulation(self):
+        self.currently_simulating = False
         self.simulation_finished()
         if self.board_animation.simulation_thread:
             self.board_animation.simulation_thread.terminate()
@@ -685,11 +687,9 @@ class MainWindow(QtGui.QMainWindow):
     def _update_console_log(self):
         logsc = len(self.board_animation.simulator.get_logs())
         if logsc > 0:
-            self.output_console.setPlainText(
-                str(self.output_console.toPlainText()) + '\n' +
-                str(self.board_animation.simulator.get_logs()[
-                    len(self.board_animation.simulator.get_logs())-1
-                ])
+            self.output_console.append( str(
+                    self.board_animation.simulator.get_logs()[logsc-1]
+                )
             )
         self.output_console.verticalScrollBar().setSliderPosition(
             self.output_console.verticalScrollBar().maximum()
