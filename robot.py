@@ -95,6 +95,8 @@ class Robot:
         Move the robot forward by x **Ticks**
         """
 
+        if(abs(x) > 1): raise("Illegal move")
+
         # make a new copy (TODO: use deepcopy)
         res = deepcopy(self)
 
@@ -111,6 +113,8 @@ class Robot:
         """
         Turn robot by x **Ticks**
         """
+
+        if(abs(x) > 1): raise("Illegal turn")
 
         # make a new copy (TODO: use deepcopy)
         res = deepcopy(self)

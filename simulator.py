@@ -43,7 +43,7 @@ class KrakrobotSimulator(object):
                  turning_speed = 0.4*pi,
                  execution_cpu_time_limit = 10.0,
                  simulation_time_limit = 10.0,
-                 simulation_dt = 0.0001,
+                 simulation_dt = 0.0,
                  frame_dt = 0.1,
                  gps_delay=2.0,
                  collision_threshold = 50,
@@ -236,10 +236,13 @@ class KrakrobotSimulator(object):
                     frame_time_left -= self.frame_dt
 
 
-                elif current_command is not None:
+
+                if current_command is not None:
                     ### Process current command ###
 
                     if current_command[0] == TURN:
+
+
 
                         robot = robot.turn(1) if current_command[1] > 0 else robot.turn(-1)
                         if current_command[1] > 1: current_command = [current_command[0], current_command[1] - 1]
@@ -308,6 +311,7 @@ class KrakrobotSimulator(object):
                         if len(command) <= 1 or len(command) > 2:
                             raise KrakrobotException("Wrong command length")
                         current_command = command
+                        current_command[1] = int(current_command[1])
                         # Turn robot
                         #robot = robot.turn(command[1])
 
@@ -319,7 +323,9 @@ class KrakrobotSimulator(object):
                             raise KrakrobotException("Not allowed negative distance")
                         # Move robot
 
+
                         current_command = command
+                        current_command[1] = int(current_command[1])
                     elif command[0] == FINISH:
                         communicated_finished = True
 
