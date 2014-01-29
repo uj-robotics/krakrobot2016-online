@@ -11,7 +11,7 @@ WRITE_CONSOLE = "write_console"
 
 ### Contest constants ###
 TICK_MOVE = 0.01
-TICK_ROTATE = 0.0002
+TICK_ROTATE = 0.002
 GPS_TIME = 1.0
 SONAR_TIME = 0.1
 FIELD_TIME = 0.1

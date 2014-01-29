@@ -114,7 +114,7 @@ Every step of the simulation is an execution of one command (with appropriate
 noise if applicable. Noise applicable to *every tick*). In one step the robot can
 
 * Move one tick (one tick distance is specified in defines.py in TICK_MOVE constant)
-* Turn one tick (one tick angular distance is specified in defines.py in TICK_ROTATE constant)
+* Turn one tick (one tick angular distance in radians is specified in defines.py in TICK_ROTATE constant)
 * Use one of the three provided sensors
 * Communicate finishing
 

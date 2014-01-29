@@ -89,7 +89,7 @@ class KrakrobotSimulator(object):
             for i in xrange(self.N):
                 for j in xrange(self.M):
                     if self.grid[i][j] == MAP_START_POSITION:
-                        self.init_position = (i,j,0)
+                        self.init_position = (i, j, 0)
 
         self.speed = speed
         self.turning_speed = turning_speed
@@ -297,7 +297,7 @@ class KrakrobotSimulator(object):
                         )
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
-                        robot_controller.on_sense_sonar(int(w))
+                        robot_controller.on_sense_sonar(w)
                         frame_time_left += self.sonar_time
                     elif command[0] == SENSE_FIELD:
                         w = robot.sense_field(self.grid)
@@ -328,6 +328,9 @@ class KrakrobotSimulator(object):
                         current_command[1] = int(current_command[1])
                     elif command[0] == FINISH:
                         communicated_finished = True
+
+                    else:
+                        raise KrakrobotException("Not received command from act(), or command was incorrect :(")
 
 
 
