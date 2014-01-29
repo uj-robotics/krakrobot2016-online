@@ -519,8 +519,8 @@ class MainWindow(QtGui.QMainWindow):
         playback_layout = QtGui.QHBoxLayout()
         playback_toolbar = QtGui.QToolBar()
         self.speed_box = QtGui.QSpinBox(self)
-        self.speed_box.setRange(1, 1000)
-        self.speed_box.setValue(10)
+        self.speed_box.setRange(0, 1000)
+        self.speed_box.setValue(5)
         self.speed_box.setToolTip('Change animation speed')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
         playback_toolbar.addWidget(self.speed_box)
@@ -713,7 +713,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _skip_forward(self):
-        self.scroll_bar.setValue(self.scroll_bar.maximum())
+        self.scroll_bar.setValue(self.scroll_bar.maximum()-1)
         self._send_scroll_bar_value()
         self._pause_progress_animation()
 
