@@ -54,7 +54,7 @@ To run your solution on 1.map run and press Run Simulation button.
 ``python main.py -m maps/1.map -r <your_file_path>``
 
 However note that we cannot see many details, as the animation is too fast. We can force the simulator to render more frames by
-passing argument frame_dt . Note that you can also alter simulation speed.
+passing argument frame_dt (however be careful not to render too many frames for long runs, our simulator is RAM consuming at the moment :) . Note that you can also alter simulation speed.
 
 ``python main.py -m maps/1.map -r <your_file_path> --frame_dt=0.01``
 
