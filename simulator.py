@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-""" Krakrobot Python Simulator
+"""
+    Krakrobot Python Simulator
 
     Simulator which runs the simulation and renders SVG frames.
 
@@ -48,7 +49,8 @@ class KrakrobotSimulator(object):
                  gps_delay=2.0,
                  collision_threshold = 50,
                  iteration_write_frequency = 1000,
-                 visualisation = True
+                 visualisation = True,
+                 print_robot=True,
                  ):
         """
             Initialize KrakrobotSimulator object
@@ -96,6 +98,7 @@ class KrakrobotSimulator(object):
         self.simulation_dt = simulation_dt
         self.frame_dt = frame_dt
         self.robot_controller = robot_controller_class()
+        self.print_robot = print_robot
 
 
         self.visualisation = visualisation
@@ -290,11 +293,12 @@ class KrakrobotSimulator(object):
                         robot_controller.on_sense_gps(*robot.sense_gps())
                         frame_time_left += self.gps_delay
                     elif command[0] == WRITE_CONSOLE:
-                        self.logs.append(
-                            '{FRAME: ' + str(frame_count) + \
+                        new_line = '(FRAME: ' + str(frame_count) + \
                             ', TIME: ' + str(robot.time_elapsed) + \
-                            ' } ' + command[1]
-                        )
+                            '), ' + command[1]
+                        self.logs.append(new_line)
+                        if self.print_robot:
+                            print new_line
                     elif command[0] == SENSE_SONAR:
                         w = robot.sense_sonar(self.grid)
                         robot_controller.on_sense_sonar(w)
