@@ -128,6 +128,17 @@ Here is our proposition:
 Having done this, the rest is quite straightforward. We need to carefully design the state transition rules (for instance
 from STATE_SCANNING to STATE_DECIDE_NEXT). Here are our propositions. The code is simillar to the one provided for scanning.
 
-* 
+   * *STATE_DECIDE_NEXT* : we check if we have scanned all the fields touching our field. If no change state to STATE_SCANNING
+if yes *enqueue* commands that will move us to this field (that is rotation and movement) and change state to STATE_FINDING_POSITION
+
+   * *STATE_FINDING_POSITION* : this is the easiest state. We will run 4 times GPS scan and then average everything and switch to STATE_DECIDE_NEXT
+
+   * *STATE_SCANNING* : was described before
+
+   * *STATE_FOUND_GOAL* : end execution and fire command FINISH
+
+The code following this logic is accessible at examples/turner.py. Note that it doesn't work well when noise (for steering, movement or
+measurement) is high. However it is able to find goal in average sized maps, when noise is very low. Try executing turner.py on
+different maps to see the effect.
 
 
