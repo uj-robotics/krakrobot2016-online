@@ -350,16 +350,17 @@ class KrakrobotSimulator(object):
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.time_elapsed)+ " time")
 
-        # Simulation process finished
-        self.finished = True
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(communicated_finished and self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
+        self.sim_frames.put(self._create_sim_data(robot))
         while frame_time_left >= self.frame_dt and self.visualisation and not self.terminate_flag:
             ### Save frame <=> last command took long ###
             self.sim_frames.put(self._create_sim_data(robot))
             frame_time_left -= self.frame_dt
 
+        # Simulation process finished
+        self.finished = True
         logger.info("Exiting")
 
         # Return simulation results

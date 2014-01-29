@@ -457,6 +457,14 @@ class MainWindow(QtGui.QMainWindow):
         params_toolbar.addWidget(self.measurement_noise_edit)
         self.measurement_noise_edit.textChanged.connect(self._update_measurement_noise)
 
+        frame_dt_label = QtGui.QLabel('frame_dt: ')
+        params_toolbar.addWidget(frame_dt_label)
+        self.frame_dt_edit = QtGui.QPlainTextEdit(str(simulator_params['frame_dt']))
+        self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
+        self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.frame_dt_edit)
+        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
+
         speed_label = QtGui.QLabel('speed: ')
         params_toolbar.addWidget(speed_label)
         self.speed_edit = QtGui.QPlainTextEdit(str(simulator_params['speed']))
@@ -488,14 +496,6 @@ class MainWindow(QtGui.QMainWindow):
         self.simulation_time_limit_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.simulation_time_limit_edit)
         self.simulation_time_limit_edit.textChanged.connect(self._update_simulation_time_limit)
-
-        frame_dt_label = QtGui.QLabel('frame_dt: ')
-        params_toolbar.addWidget(frame_dt_label)
-        self.frame_dt_edit = QtGui.QPlainTextEdit(str(simulator_params['frame_dt']))
-        self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
-        self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
-        params_toolbar.addWidget(self.frame_dt_edit)
-        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
 
         gps_delay_label = QtGui.QLabel('gps_delay: ')
         params_toolbar.addWidget(gps_delay_label)
