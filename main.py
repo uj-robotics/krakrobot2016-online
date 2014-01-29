@@ -189,6 +189,8 @@ simulator_params = {"visualisation": not options.command_line,
 class SimulationThread(QtCore.QThread):
     """KrakrobotSimulator threading"""
 
+    simulator = None
+
     def set_simulator(self, simulator):
         self.simulator = simulator
 
@@ -297,6 +299,12 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             self.status_bar_message.emit('Animation played...')
 
 
+    def terminate_simulation(self):
+        self.simulation_thread.terminate()
+        self.simulator.terminate()
+        self.frames_timer.stop()
+
+
     def frames_update(self):
         """Update collection and GUI with current simulator frames data
 
@@ -403,11 +411,11 @@ class MainWindow(QtGui.QMainWindow):
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
 
-        self.stop_sim_action = main_toolbar.addAction(
+        self.terminate_sim_action = main_toolbar.addAction(
             QtGui.QIcon.fromTheme('process-stop'),
             'Terminate'
         )
-        self.stop_sim_action.triggered.connect(self._pause_simulation)
+        self.terminate_sim_action.triggered.connect(self._terminate_simulation)
 
         #TODO: maximum lines for QPlainTextEdit = 1
 
@@ -695,22 +703,30 @@ class MainWindow(QtGui.QMainWindow):
             self.board_animation.pause_animation()
 
 
-    def _pause_progress_animation(self):
+    def _toggle_pause_progress_animation(self):
         self.board_animation.pause_animation()
+
+
+    def _pause_progress_animation(self):
+        if not self.board_animation.animation_paused:
+            self.board_animation.pause_animation()
 
 
     def _skip_forward(self):
         self.scroll_bar.setValue(self.scroll_bar.maximum())
         self._send_scroll_bar_value()
+        self._pause_progress_animation()
 
 
     def _skip_backward(self):
         self.scroll_bar.setValue(self.scroll_bar.minimum())
         self._send_scroll_bar_value()
+        self._pause_progress_animation()
 
 
     def _run_simulation(self):
         self.currently_simulating = True
+        self._play_progress_animation()
         for action in self.conflicting_with_sim:
             action.setEnabled(False)
         self._reconstruct_simulator()
@@ -718,11 +734,12 @@ class MainWindow(QtGui.QMainWindow):
         self.console_timer.start(1)
 
 
-    def _pause_simulation(self):
+    def _terminate_simulation(self):
+        self.board_animation.terminate_simulation()
         self.currently_simulating = False
         self.simulation_finished()
-        if self.board_animation.simulation_thread:
-            self.board_animation.simulation_thread.terminate()
+        # Communicative purposes
+        self._pause_progress_animation()
 
 
     def simulation_finished(self):

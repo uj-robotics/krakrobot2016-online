@@ -8,7 +8,7 @@
 """
 
 
-from utils import logger, load_map
+from utils import logger, logging, load_map
 from Queue import Queue
 import time
 import datetime
@@ -51,6 +51,7 @@ class KrakrobotSimulator(object):
                  iteration_write_frequency = 1000,
                  visualisation = True,
                  print_robot=True,
+                 print_logger=False,
                  ):
         """
             Initialize KrakrobotSimulator object
@@ -99,6 +100,7 @@ class KrakrobotSimulator(object):
         self.frame_dt = frame_dt
         self.robot_controller = robot_controller_class()
         self.print_robot = print_robot
+        self.print_logger = print_logger
 
 
         self.visualisation = visualisation
@@ -121,7 +123,11 @@ class KrakrobotSimulator(object):
         self.steering_noise   = steering_noise
         self.reset()
 
-
+        #TODO: Disable logger printing when needed
+        if self.print_logger:
+            logger.propagate = True
+        else:
+            logger.propagate = False
 
 
 
@@ -175,6 +181,7 @@ class KrakrobotSimulator(object):
         self.robot_timer = 0.0
         self.sim_frames = Queue(100000)
         self.finished = False
+        self.terminate_flag = False
 
         self.logs = []
 
@@ -213,7 +220,9 @@ class KrakrobotSimulator(object):
         iteration = 0
         communicated_finished = False
         try:
-            while not communicated_finished and not robot.time_elapsed >= self.simulation_time_limit:
+            while not communicated_finished \
+                and not robot.time_elapsed >= self.simulation_time_limit \
+                and not self.terminate_flag:
                 #logger.info(robot_controller.time_consumed)
 
                 if maximum_timedelta <= robot_controller.time_consumed:
@@ -346,7 +355,7 @@ class KrakrobotSimulator(object):
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(communicated_finished and self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
 
-        while frame_time_left >= self.frame_dt and self.visualisation:
+        while frame_time_left >= self.frame_dt and self.visualisation and not self.terminate_flag:
             ### Save frame <=> last command took long ###
             self.sim_frames.put(self._create_sim_data(robot))
             frame_time_left -= self.frame_dt
@@ -379,4 +388,7 @@ class KrakrobotSimulator(object):
         data['GoalAchieved'] = self.goal_achieved
         return data
 
+
+    def terminate(self):
+        self.terminate_flag = True
 
