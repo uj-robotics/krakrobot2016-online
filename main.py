@@ -53,7 +53,6 @@ APP_NAME = 'Krakrobot Simulator'
 APP_FULL_NAME = APP_NAME + ' ' + __version__
 MSG_EMP = '-> '
 
-
 graphicsmutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
@@ -135,14 +134,14 @@ def create_parser():
     parser.add_option(
         "--execution_cpu_time_limit",
         dest="execution_cpu_time_limit",
-        default=10.0,
+        default=100.0,
         type="float",
         help="Execution CPU time limit"
     )
     parser.add_option(
         "--simulation_time_limit",
         dest="simulation_time_limit",
-        default=10000.0,
+        default=100000.0,
         type="float",
         help="Simulation time limit (in virtual time units)"
     )
@@ -204,7 +203,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
     status_bar_message = QtCore.pyqtSignal(str)
     simulation_thread = None
-    animation_speed = 5
+    animation_speed = 1
     frame_template = ''
     frames = []
     current_frame = 0
@@ -212,7 +211,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     simulator = None
     animation_started = False
     animation_paused = False
-    refresh_rate = 10
+    refresh_rate = 100
 
     def __init__(self, simulator, parent):
         super(KrakrobotBoardAnimation, self).__init__(parent)
@@ -360,11 +359,15 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
             if not self.animation_paused:
+                previous_frame = self.current_frame
                 self.current_frame += self.animation_speed
 
             # GUI update #
             main_window = self.parent().parent()
             main_window.update_current_frame(self.current_frame)
+            # Animation output update - we must calculate frames we have skipped
+            for frame in range(previous_frame, self.current_frame+1):
+                main_window.check_and_update_animation_console(frame)
 
 
     def new_simulator(self, simulator):
@@ -388,6 +391,7 @@ class MainWindow(QtGui.QMainWindow):
         self.simulator = simulator
         self.update_slider = True
         self.currently_simulating = False
+        self.console_dict = {}
         self.console_timer = QtCore.QTimer(self)
         self.console_timer.timeout.connect(self._update_console_log)
         self._init_ui(simulator)
@@ -519,8 +523,8 @@ class MainWindow(QtGui.QMainWindow):
         playback_layout = QtGui.QHBoxLayout()
         playback_toolbar = QtGui.QToolBar()
         self.speed_box = QtGui.QSpinBox(self)
-        self.speed_box.setRange(0, 1000)
-        self.speed_box.setValue(5)
+        self.speed_box.setRange(1, 1000)
+        self.speed_box.setValue(1)
         self.speed_box.setToolTip('Change animation speed')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
         playback_toolbar.addWidget(self.speed_box)
@@ -563,20 +567,41 @@ class MainWindow(QtGui.QMainWindow):
 
         playback_layout_widget = QtGui.QWidget()
         playback_layout_widget.setLayout(playback_layout)
-        playback_layout_widget.setMaximumHeight(playback_layout_widget.sizeHint().height())
+        playback_layout_widget.setMaximumHeight(
+            playback_layout_widget.sizeHint().height()
+        )
         simulation_layout.addWidget(playback_layout_widget)
 
         self.simulation_layout_widget = QtGui.QWidget()
         self.simulation_layout_widget.setLayout(simulation_layout)
         self.setCentralWidget(self.simulation_layout_widget)
 
-        ### Tools ###
-        self.output_console = QtGui.QTextBrowser()
-        self.output_console.setFont(QtGui.QFont('Monospace', 10))
+        ### Widgets (as named in this application) ###
+        self.console_font = QtGui.QFont('Monospace', 10)
 
-        self.console_dock_widget = QtGui.QDockWidget('  Output console', self)
+        self.output_console = QtGui.QTextBrowser()
+        self.output_console.setFont(self.console_font)
+        self.console_dock_widget = QtGui.QDockWidget(
+            '  &Simulation output console  ',
+            self
+        )
         self.console_dock_widget.setWidget(self.output_console)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.console_dock_widget)
+        self.addDockWidget(
+            QtCore.Qt.BottomDockWidgetArea,
+            self.console_dock_widget
+        )
+
+        self.animation_console = QtGui.QTextBrowser()
+        self.animation_console.setFont(self.console_font)
+        self.animation_console_dock_widget = QtGui.QDockWidget(
+            '  &Animation output console  ',
+            self
+        )
+        self.animation_console_dock_widget.setWidget(self.animation_console)
+        self.addDockWidget(
+            QtCore.Qt.BottomDockWidgetArea,
+            self.animation_console_dock_widget
+        )
 
         ### Menu ###
         map_menu = QtGui.QMenu('&Map', self)
@@ -590,8 +615,11 @@ class MainWindow(QtGui.QMainWindow):
         self.menuBar().addMenu(robot_menu)
 
         widgets_menu = QtGui.QMenu('&Widgets', self)
-        self.code_tool_action = widgets_menu.addAction(
+        self.console_action = widgets_menu.addAction(
             self.console_dock_widget.toggleViewAction()
+        )
+        self.animation_console_action = widgets_menu.addAction(
+            self.animation_console_dock_widget.toggleViewAction()
         )
         self.menuBar().addMenu(widgets_menu)
 
@@ -776,14 +804,25 @@ class MainWindow(QtGui.QMainWindow):
     def _update_console_log(self):
         logsc = len(self.board_animation.simulator.get_logs())
         if logsc > 0:
+            new_line = self.board_animation.simulator.get_logs()[logsc-1]
+            new_line_split = new_line.split(':\n')
+            line_dict = eval(new_line_split[0])
+            self.console_dict[ line_dict['frame'] ] = new_line
+
             self.output_console.append( str(
-                    self.board_animation.simulator.get_logs()[logsc-1]
+                    new_line
                 )
             )
+
         self.output_console.verticalScrollBar().setSliderPosition(
             self.output_console.verticalScrollBar().maximum()
         )
 
+    def check_and_update_animation_console(self, frame):
+        if self.console_dict.has_key(frame):
+            self.animation_console.append(
+                self.console_dict[frame]
+            )
 
     def _update_steering_noise(self):
         simulator_params['steering_noise'] = \
