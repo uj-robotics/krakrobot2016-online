@@ -17,6 +17,7 @@
 from optparse import OptionParser
 from Queue import Queue
 import time
+import os
 from threading import Thread
 from threading import Event
 import datetime
@@ -673,10 +674,15 @@ class MainWindow(QtGui.QMainWindow):
         file_name = QtGui.QFileDialog.getOpenFileName(
             self, 'Load map from file...', '.', 'Krakrobot maps (*.map)'
         )
-        simulator_params['map'] = str(file_name)
-        self.status_bar_message(
-            'Map loaded from ' + str(file_name)
-        )
+        if os.path.isfile(file_name):
+            simulator_params['map'] = str(file_name)
+            self.status_bar_message(
+                'Map loaded from ' + str(file_name)
+            )
+        else:
+            self.status_bar_message(
+                'File does not exist: ' + str(file_name)
+            )
 
 
     def open_source(self):
