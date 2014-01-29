@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-""" Krakrobot Python Simulator
+"""
+    Krakrobot Python Simulator
 
     Krakrobot 2014 Qualifications simulator.
 
@@ -35,9 +36,15 @@ __copyright__ = 'Copyright 2013-2014,\
 __license__ = 'MIT'
 __version__ = '0.0.1a'
 __maintainer__ = 'Konrad Talik'
+
 # Please report bugs in GUI to this email
-# and bugs in simulator [simulator.py] to stanislaw.jastrzebski<at>gmail.com
 __email__ = 'konradtalik@gmail.com'
+# or on https://github.com/uj-robotics/Krakrobot2014Qualifications/issues
+
+# For bugs in simulator itself [simulator.py]
+# please report to stanislaw.jastrzebski<at>gmail.com
+# or on https://github.com/uj-robotics/Krakrobot2014Qualifications/issues
+
 __status__ = 'Development'
 
 
@@ -53,42 +60,106 @@ frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 def create_parser():
     """ Configure options and return parser object """
     parser = OptionParser()
-    parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
-                      help="If simulation will run without visualisation")
-    parser.add_option("-m", "--map", dest="map", default="maps/3.map",
-                      help="Map that will be run after hitting Start Simulation button, or if in "
-                           "console mode after running the program")
-    parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
-                      help="Robot that will be compiled and run")
-    parser.add_option("--steering_noise", dest="steering_noise", default=0.0004, type="float",
-                      help="Sigma of gaussian noise applied to turning motion")
-    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.0015,type="float",
-                      help="Sigma of gaussian noise applied to sensed distance by sonar")
-    parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,type="float",
-                      help="Sigma of gaussian noise applied to the sensed GPS position")
-
-    parser.add_option("--gps_delay", dest="gps_delay", default=2.0,type="float",
-                      help="Time consumption (in simulation time units) of GPS")
-
-    parser.add_option("--distance_noise", dest="distance_noise", default=0.001,type="float",
-                      help="Sigma of gaussian noise applied to forward motion")
-
-    parser.add_option("--speed", dest="speed", default=5.0,type="float",
-                      help="Speed of the robot (i.e. units/simulation second)")
-    parser.add_option("--turning_speed", dest="turning_speed", default=1.0,type="float",
-                      help="Turning speed of the robot (i.e. rad/simulation second)")
-
-
-    parser.add_option("--execution_cpu_time_limit", dest="execution_cpu_time_limit", default=10.0,type="float",
-                      help="Execution CPU time limit")
-    parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10000.0,type="float",
-                      help="Simulation time limit (in virtual time units)")
-
-    parser.add_option("--frame_dt", dest="frame_dt", default=1,type="float",
-                      help="How often (in simulation time units) to produce a frame")
-
-    parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,type="int",
-                      help="How often (number of ticks of simulator) to report simulation status")
+    parser.add_option(
+        "-c",
+        "--command_line",
+        dest="command_line",
+        action="store_true",
+        default=False,
+        help="Run simulation without visualisation"
+    )
+    parser.add_option(
+        "-m",
+        "--map",
+        dest="map",
+        default="maps/3.map",
+        help="Map that will be run after hitting Start Simulation button, "
+            "or in command_line mode after running the program"
+    )
+    parser.add_option(
+        "-r",
+        "--robot",
+        dest="robot",
+        default="examples/omit_collisions_example.py",
+        help="Robot that will be compiled and run"
+    )
+    parser.add_option(
+        "--steering_noise",
+        dest="steering_noise",
+        default=0.0004,
+        type="float",
+        help="Sigma of gaussian noise applied to turning motion"
+    )
+    parser.add_option(
+        "--sonar_noise",
+        dest="sonar_noise",
+        default=0.0015,
+        type="float",
+        help="Sigma of gaussian noise applied to sensed distance by sonar"
+    )
+    parser.add_option(
+        "--gps_noise",
+        dest="measurement_noise",
+        default=0.1,
+        type="float",
+        help="Sigma of gaussian noise applied to the sensed GPS position"
+    )
+    parser.add_option(
+        "--gps_delay",
+        dest="gps_delay",
+        default=2.0,
+        type="float",
+        help="Time consumption (in simulation time units) of GPS"
+    )
+    parser.add_option(
+        "--distance_noise",
+        dest="distance_noise",
+        default=0.001,
+        type="float",
+        help="Sigma of gaussian noise applied to forward motion"
+    )
+    parser.add_option(
+        "--speed",
+        dest="speed",
+        default=5.0,
+        type="float",
+        help="Speed of the robot (i.e. units/simulation second)")
+    parser.add_option(
+        "--turning_speed",
+        dest="turning_speed",
+        default=1.0,
+        type="float",
+        help="Turning speed of the robot (i.e. rad/simulation second)"
+    )
+    parser.add_option(
+        "--execution_cpu_time_limit",
+        dest="execution_cpu_time_limit",
+        default=10.0,
+        type="float",
+        help="Execution CPU time limit"
+    )
+    parser.add_option(
+        "--simulation_time_limit",
+        dest="simulation_time_limit",
+        default=10000.0,
+        type="float",
+        help="Simulation time limit (in virtual time units)"
+    )
+    parser.add_option(
+        "--frame_dt",
+        dest="frame_dt",
+        default=1,
+        type="float",
+        help="How often (in simulation time units) to produce a frame"
+    )
+    parser.add_option(
+        "--iteration_write_frequency",
+        dest="iteration_write_frequency",
+        default=1000,
+        type="int",
+        help="How often (number of ticks of simulator) to report simulation"
+            " status"
+    )
     return parser
 
 
