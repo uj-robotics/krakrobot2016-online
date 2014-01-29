@@ -181,6 +181,8 @@ with respect to X axis
 
 ![Example map](pics/2.png)
 
+**note**: the picture is a little bit misleading, as the origin is in the center of the (0,0) field.
+
 * **act()** - this is the basic function. It is called repeatedly after the previous command has been executed.
 In act you should return a list. For constants see *defines.py*
 
