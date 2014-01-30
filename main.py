@@ -13,7 +13,6 @@
 
 """
 
-
 from optparse import OptionParser
 from Queue import Queue
 import time
@@ -44,10 +43,16 @@ __email__ = 'konradtalik@gmail.com'
 # or on https://github.com/uj-robotics/Krakrobot2014Qualifications/issues
 
 # For bugs in simulator itself [simulator.py]
-# please report to stanislaw.jastrzebski<at>gmail.com
+# please report to staszek.jastrzebski<at>gmail.com
 # or on https://github.com/uj-robotics/Krakrobot2014Qualifications/issues
 
 __status__ = 'Development'
+
+__about__ = """This simulator is being developed for Krakrobot \
+robotics and artificial intelligence competition. \
+Visit website for further information."""
+
+__website__ = 'www.krakrobot.pl'
 
 
 APP_NAME = 'Krakrobot Simulator'
@@ -400,9 +405,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def _init_ui(self, simulator):
 
-        self.setWindowIcon(
-            QtGui.QIcon( './pics/iiujrobotics.svg')
-        )
+        self.window_icon = QtGui.QIcon( './pics/iiujrobotics.svg')
+        self.setWindowIcon(self.window_icon)
 
         ### Toolbar ###
         main_toolbar = self.addToolBar('Krakrobot Simulator')
@@ -624,6 +628,14 @@ class MainWindow(QtGui.QMainWindow):
         )
         self.menuBar().addMenu(widgets_menu)
 
+        help_menu = QtGui.QMenu('&Help', self)
+        self.about_action = help_menu.addAction(
+            QtGui.QIcon.fromTheme('help-about'),
+            '&About...'
+        )
+        self.about_action.triggered.connect(self.about_window)
+        self.menuBar().addMenu(help_menu)
+
         # Actions that we need to disable when simulating
         self.conflicting_with_sim = [
             self.start_sim_action,
@@ -702,6 +714,25 @@ class MainWindow(QtGui.QMainWindow):
         self.status_bar_message(
             'Robot source code loaded from ' + str(file_name)
         )
+
+
+    def about_window(self):
+        QtGui.QMessageBox.about(
+            self,
+            'About Krakrobot Python Simulator ' + __version__,
+            QtCore.QString(__about__+'\n') + \
+            QtCore.QString('\n'+__website__+'\n') + \
+            QtCore.QString('\n'+__authors__+'\n') + \
+            QtCore.QString(
+                'https://github.com/uj-robotics/Krakrobot2014Qualifications\n'
+            ) + \
+            QtCore.QString('\nLicense: '+__license__+'\n') + \
+            QtCore.QString(
+            """Copyright (c) 2013-2014 """
+            """Jagiellonian University Robotics Interest Group,"""
+            """http://www.robotics.ii.uj.edu.pl/"""
+            )
+    )
 
 
     def _speed_value_changed(self):
