@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-""" Krakrobot Python Simulator
+"""
+    Krakrobot Python Simulator
 
     Krakrobot 2014 Qualifications simulator.
 
@@ -9,12 +10,13 @@
     https://www.udacity.com/wiki/CS373%20Visualizing%20Maze%20Driving,
     we have reused visualisation code and the general idea while implementing
     this simulator.
-"""
 
+"""
 
 from optparse import OptionParser
 from Queue import Queue
 import time
+import os
 from threading import Thread
 from threading import Event
 import datetime
@@ -35,16 +37,27 @@ __copyright__ = 'Copyright 2013-2014,\
 __license__ = 'MIT'
 __version__ = '0.0.1a'
 __maintainer__ = 'Konrad Talik'
+
 # Please report bugs in GUI to this email
-# and bugs in simulator [simulator.py] to stanislaw.jastrzebski<at>gmail.com
 __email__ = 'konradtalik@gmail.com'
+# or on https://github.com/uj-robotics/Krakrobot2014Qualifications/issues
+
+# For bugs in simulator itself [simulator.py]
+# please report to staszek.jastrzebski<at>gmail.com
+# or on https://github.com/uj-robotics/Krakrobot2014Qualifications/issues
+
 __status__ = 'Development'
+
+__about__ = """This simulator is being developed for Krakrobot \
+robotics and artificial intelligence competition. \
+Visit website for further information."""
+
+__website__ = 'www.krakrobot.pl'
 
 
 APP_NAME = 'Krakrobot Simulator'
 APP_FULL_NAME = APP_NAME + ' ' + __version__
 MSG_EMP = '-> '
-
 
 graphicsmutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
@@ -53,42 +66,106 @@ frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 def create_parser():
     """ Configure options and return parser object """
     parser = OptionParser()
-    parser.add_option("-c", "--command_line", dest="command_line", action="store_true", default=False,
-                      help="If simulation will run without visualisation")
-    parser.add_option("-m", "--map", dest="map", default="maps/3.map",
-                      help="Map that will be run after hitting Start Simulation button, or if in "
-                           "console mode after running the program")
-    parser.add_option("-r", "--robot", dest="robot", default="examples/omit_collisions_example.py",
-                      help="Robot that will be compiled and run")
-    parser.add_option("--steering_noise", dest="steering_noise", default=0.0004, type="float",
-                      help="Sigma of gaussian noise applied to turning motion")
-    parser.add_option("--sonar_noise", dest="sonar_noise", default=0.0015,type="float",
-                      help="Sigma of gaussian noise applied to sensed distance by sonar")
-    parser.add_option("--gps_noise", dest="measurement_noise", default=0.1,type="float",
-                      help="Sigma of gaussian noise applied to the sensed GPS position")
-
-    parser.add_option("--gps_delay", dest="gps_delay", default=2.0,type="float",
-                      help="Time consumption (in simulation time units) of GPS")
-
-    parser.add_option("--distance_noise", dest="distance_noise", default=0.001,type="float",
-                      help="Sigma of gaussian noise applied to forward motion")
-
-    parser.add_option("--speed", dest="speed", default=5.0,type="float",
-                      help="Speed of the robot (i.e. units/simulation second)")
-    parser.add_option("--turning_speed", dest="turning_speed", default=1.0,type="float",
-                      help="Turning speed of the robot (i.e. rad/simulation second)")
-
-
-    parser.add_option("--execution_cpu_time_limit", dest="execution_cpu_time_limit", default=10.0,type="float",
-                      help="Execution CPU time limit")
-    parser.add_option("--simulation_time_limit", dest="simulation_time_limit", default=10000.0,type="float",
-                      help="Simulation time limit (in virtual time units)")
-
-    parser.add_option("--frame_dt", dest="frame_dt", default=1,type="float",
-                      help="How often (in simulation time units) to produce a frame")
-
-    parser.add_option("--iteration_write_frequency", dest="iteration_write_frequency", default=1000,type="int",
-                      help="How often (number of ticks of simulator) to report simulation status")
+    parser.add_option(
+        "-c",
+        "--command_line",
+        dest="command_line",
+        action="store_true",
+        default=False,
+        help="Run simulation without visualisation"
+    )
+    parser.add_option(
+        "-m",
+        "--map",
+        dest="map",
+        default="maps/3.map",
+        help="Map that will be run after hitting Start Simulation button, "
+            "or in command_line mode after running the program"
+    )
+    parser.add_option(
+        "-r",
+        "--robot",
+        dest="robot",
+        default="examples/omit_collisions_example.py",
+        help="Robot that will be compiled and run"
+    )
+    parser.add_option(
+        "--steering_noise",
+        dest="steering_noise",
+        default=0.0004,
+        type="float",
+        help="Sigma of gaussian noise applied to turning motion"
+    )
+    parser.add_option(
+        "--sonar_noise",
+        dest="sonar_noise",
+        default=0.0015,
+        type="float",
+        help="Sigma of gaussian noise applied to sensed distance by sonar"
+    )
+    parser.add_option(
+        "--gps_noise",
+        dest="measurement_noise",
+        default=0.1,
+        type="float",
+        help="Sigma of gaussian noise applied to the sensed GPS position"
+    )
+    parser.add_option(
+        "--gps_delay",
+        dest="gps_delay",
+        default=2.0,
+        type="float",
+        help="Time consumption (in simulation time units) of GPS"
+    )
+    parser.add_option(
+        "--distance_noise",
+        dest="distance_noise",
+        default=0.001,
+        type="float",
+        help="Sigma of gaussian noise applied to forward motion"
+    )
+    parser.add_option(
+        "--speed",
+        dest="speed",
+        default=5.0,
+        type="float",
+        help="Speed of the robot (i.e. units/simulation second)")
+    parser.add_option(
+        "--turning_speed",
+        dest="turning_speed",
+        default=1.0,
+        type="float",
+        help="Turning speed of the robot (i.e. rad/simulation second)"
+    )
+    parser.add_option(
+        "--execution_cpu_time_limit",
+        dest="execution_cpu_time_limit",
+        default=100.0,
+        type="float",
+        help="Execution CPU time limit"
+    )
+    parser.add_option(
+        "--simulation_time_limit",
+        dest="simulation_time_limit",
+        default=100000.0,
+        type="float",
+        help="Simulation time limit (in virtual time units)"
+    )
+    parser.add_option(
+        "--frame_dt",
+        dest="frame_dt",
+        default=1,
+        type="float",
+        help="How often (in simulation time units) to produce a frame"
+    )
+    parser.add_option(
+        "--iteration_write_frequency",
+        dest="iteration_write_frequency",
+        default=1000,
+        type="int",
+        help="How often (number of ticks of simulator) to report simulation"
+            " status"
+    )
     return parser
 
 
@@ -117,6 +194,8 @@ simulator_params = {"visualisation": not options.command_line,
 class SimulationThread(QtCore.QThread):
     """KrakrobotSimulator threading"""
 
+    simulator = None
+
     def set_simulator(self, simulator):
         self.simulator = simulator
 
@@ -130,7 +209,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
     status_bar_message = QtCore.pyqtSignal(str)
     simulation_thread = None
-    animation_speed = 5
+    animation_speed = 1
     frame_template = ''
     frames = []
     current_frame = 0
@@ -138,7 +217,7 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     simulator = None
     animation_started = False
     animation_paused = False
-    refresh_rate = 10
+    refresh_rate = 100
 
     def __init__(self, simulator, parent):
         super(KrakrobotBoardAnimation, self).__init__(parent)
@@ -225,6 +304,12 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             self.status_bar_message.emit('Animation played...')
 
 
+    def terminate_simulation(self):
+        self.simulation_thread.terminate()
+        self.simulator.terminate()
+        self.frames_timer.stop()
+
+
     def frames_update(self):
         """Update collection and GUI with current simulator frames data
 
@@ -280,11 +365,15 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
             if not self.animation_paused:
+                previous_frame = self.current_frame
                 self.current_frame += self.animation_speed
 
             # GUI update #
             main_window = self.parent().parent()
             main_window.update_current_frame(self.current_frame)
+            # Animation output update - we must calculate frames we have skipped
+            for frame in range(previous_frame, self.current_frame+1):
+                main_window.check_and_update_animation_console(frame)
 
 
     def new_simulator(self, simulator):
@@ -308,6 +397,7 @@ class MainWindow(QtGui.QMainWindow):
         self.simulator = simulator
         self.update_slider = True
         self.currently_simulating = False
+        self.console_dict = {}
         self.console_timer = QtCore.QTimer(self)
         self.console_timer.timeout.connect(self._update_console_log)
         self._init_ui(simulator)
@@ -315,9 +405,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def _init_ui(self, simulator):
 
-        self.setWindowIcon(
-            QtGui.QIcon( './pics/iiujrobotics.svg')
-        )
+        self.window_icon = QtGui.QIcon( './pics/iiujrobotics.svg')
+        self.setWindowIcon(self.window_icon)
 
         ### Toolbar ###
         main_toolbar = self.addToolBar('Krakrobot Simulator')
@@ -331,11 +420,11 @@ class MainWindow(QtGui.QMainWindow):
         )
         self.start_sim_action.triggered.connect(self._run_simulation)
 
-        self.stop_sim_action = main_toolbar.addAction(
+        self.terminate_sim_action = main_toolbar.addAction(
             QtGui.QIcon.fromTheme('process-stop'),
             'Terminate'
         )
-        self.stop_sim_action.triggered.connect(self._pause_simulation)
+        self.terminate_sim_action.triggered.connect(self._terminate_simulation)
 
         #TODO: maximum lines for QPlainTextEdit = 1
 
@@ -373,6 +462,14 @@ class MainWindow(QtGui.QMainWindow):
         params_toolbar.addWidget(self.measurement_noise_edit)
         self.measurement_noise_edit.textChanged.connect(self._update_measurement_noise)
 
+        frame_dt_label = QtGui.QLabel('frame_dt: ')
+        params_toolbar.addWidget(frame_dt_label)
+        self.frame_dt_edit = QtGui.QPlainTextEdit(str(simulator_params['frame_dt']))
+        self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
+        self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.frame_dt_edit)
+        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
+
         speed_label = QtGui.QLabel('speed: ')
         params_toolbar.addWidget(speed_label)
         self.speed_edit = QtGui.QPlainTextEdit(str(simulator_params['speed']))
@@ -405,14 +502,6 @@ class MainWindow(QtGui.QMainWindow):
         params_toolbar.addWidget(self.simulation_time_limit_edit)
         self.simulation_time_limit_edit.textChanged.connect(self._update_simulation_time_limit)
 
-        frame_dt_label = QtGui.QLabel('frame_dt: ')
-        params_toolbar.addWidget(frame_dt_label)
-        self.frame_dt_edit = QtGui.QPlainTextEdit(str(simulator_params['frame_dt']))
-        self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
-        self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
-        params_toolbar.addWidget(self.frame_dt_edit)
-        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
-
         gps_delay_label = QtGui.QLabel('gps_delay: ')
         params_toolbar.addWidget(gps_delay_label)
         self.gps_delay_edit = QtGui.QPlainTextEdit(str(simulator_params['gps_delay']))
@@ -440,7 +529,7 @@ class MainWindow(QtGui.QMainWindow):
         playback_toolbar = QtGui.QToolBar()
         self.speed_box = QtGui.QSpinBox(self)
         self.speed_box.setRange(1, 1000)
-        self.speed_box.setValue(10)
+        self.speed_box.setValue(1)
         self.speed_box.setToolTip('Change animation speed')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
         playback_toolbar.addWidget(self.speed_box)
@@ -483,20 +572,41 @@ class MainWindow(QtGui.QMainWindow):
 
         playback_layout_widget = QtGui.QWidget()
         playback_layout_widget.setLayout(playback_layout)
-        playback_layout_widget.setMaximumHeight(playback_layout_widget.sizeHint().height())
+        playback_layout_widget.setMaximumHeight(
+            playback_layout_widget.sizeHint().height()
+        )
         simulation_layout.addWidget(playback_layout_widget)
 
         self.simulation_layout_widget = QtGui.QWidget()
         self.simulation_layout_widget.setLayout(simulation_layout)
         self.setCentralWidget(self.simulation_layout_widget)
 
-        ### Tools ###
-        self.output_console = QtGui.QTextBrowser()
-        self.output_console.setFont(QtGui.QFont('Monospace', 10))
+        ### Widgets (as named in this application) ###
+        self.console_font = QtGui.QFont('Monospace', 10)
 
-        self.console_dock_widget = QtGui.QDockWidget('  Output console', self)
+        self.output_console = QtGui.QTextBrowser()
+        self.output_console.setFont(self.console_font)
+        self.console_dock_widget = QtGui.QDockWidget(
+            '  &Simulation output console  ',
+            self
+        )
         self.console_dock_widget.setWidget(self.output_console)
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.console_dock_widget)
+        self.addDockWidget(
+            QtCore.Qt.BottomDockWidgetArea,
+            self.console_dock_widget
+        )
+
+        self.animation_console = QtGui.QTextBrowser()
+        self.animation_console.setFont(self.console_font)
+        self.animation_console_dock_widget = QtGui.QDockWidget(
+            '  &Animation output console  ',
+            self
+        )
+        self.animation_console_dock_widget.setWidget(self.animation_console)
+        self.addDockWidget(
+            QtCore.Qt.BottomDockWidgetArea,
+            self.animation_console_dock_widget
+        )
 
         ### Menu ###
         map_menu = QtGui.QMenu('&Map', self)
@@ -510,10 +620,21 @@ class MainWindow(QtGui.QMainWindow):
         self.menuBar().addMenu(robot_menu)
 
         widgets_menu = QtGui.QMenu('&Widgets', self)
-        self.code_tool_action = widgets_menu.addAction(
+        self.console_action = widgets_menu.addAction(
             self.console_dock_widget.toggleViewAction()
         )
+        self.animation_console_action = widgets_menu.addAction(
+            self.animation_console_dock_widget.toggleViewAction()
+        )
         self.menuBar().addMenu(widgets_menu)
+
+        help_menu = QtGui.QMenu('&Help', self)
+        self.about_action = help_menu.addAction(
+            QtGui.QIcon.fromTheme('help-about'),
+            '&About...'
+        )
+        self.about_action.triggered.connect(self.about_window)
+        self.menuBar().addMenu(help_menu)
 
         # Actions that we need to disable when simulating
         self.conflicting_with_sim = [
@@ -565,10 +686,15 @@ class MainWindow(QtGui.QMainWindow):
         file_name = QtGui.QFileDialog.getOpenFileName(
             self, 'Load map from file...', '.', 'Krakrobot maps (*.map)'
         )
-        simulator_params['map'] = str(file_name)
-        self.status_bar_message(
-            'Map loaded from ' + str(file_name)
-        )
+        if os.path.isfile(file_name):
+            simulator_params['map'] = str(file_name)
+            self.status_bar_message(
+                'Map loaded from ' + str(file_name)
+            )
+        else:
+            self.status_bar_message(
+                'File does not exist: ' + str(file_name)
+            )
 
 
     def open_source(self):
@@ -588,6 +714,25 @@ class MainWindow(QtGui.QMainWindow):
         self.status_bar_message(
             'Robot source code loaded from ' + str(file_name)
         )
+
+
+    def about_window(self):
+        QtGui.QMessageBox.about(
+            self,
+            'About Krakrobot Python Simulator ' + __version__,
+            QtCore.QString(__about__+'\n') + \
+            QtCore.QString('\n'+__website__+'\n') + \
+            QtCore.QString('\n'+__authors__+'\n') + \
+            QtCore.QString(
+                'https://github.com/uj-robotics/Krakrobot2014Qualifications\n'
+            ) + \
+            QtCore.QString('\nLicense: '+__license__+'\n') + \
+            QtCore.QString(
+            """Copyright (c) 2013-2014 """
+            """Jagiellonian University Robotics Interest Group,"""
+            """http://www.robotics.ii.uj.edu.pl/"""
+            )
+    )
 
 
     def _speed_value_changed(self):
@@ -623,22 +768,30 @@ class MainWindow(QtGui.QMainWindow):
             self.board_animation.pause_animation()
 
 
-    def _pause_progress_animation(self):
+    def _toggle_pause_progress_animation(self):
         self.board_animation.pause_animation()
 
 
+    def _pause_progress_animation(self):
+        if not self.board_animation.animation_paused:
+            self.board_animation.pause_animation()
+
+
     def _skip_forward(self):
-        self.scroll_bar.setValue(self.scroll_bar.maximum())
+        self.scroll_bar.setValue(self.scroll_bar.maximum()-1)
         self._send_scroll_bar_value()
+        self._pause_progress_animation()
 
 
     def _skip_backward(self):
         self.scroll_bar.setValue(self.scroll_bar.minimum())
         self._send_scroll_bar_value()
+        self._pause_progress_animation()
 
 
     def _run_simulation(self):
         self.currently_simulating = True
+        self._play_progress_animation()
         for action in self.conflicting_with_sim:
             action.setEnabled(False)
         self._reconstruct_simulator()
@@ -646,11 +799,12 @@ class MainWindow(QtGui.QMainWindow):
         self.console_timer.start(1)
 
 
-    def _pause_simulation(self):
+    def _terminate_simulation(self):
+        self.board_animation.terminate_simulation()
         self.currently_simulating = False
         self.simulation_finished()
-        if self.board_animation.simulation_thread:
-            self.board_animation.simulation_thread.terminate()
+        # Communicative purposes
+        self._pause_progress_animation()
 
 
     def simulation_finished(self):
@@ -687,14 +841,25 @@ class MainWindow(QtGui.QMainWindow):
     def _update_console_log(self):
         logsc = len(self.board_animation.simulator.get_logs())
         if logsc > 0:
+            new_line = self.board_animation.simulator.get_logs()[logsc-1]
+            new_line_split = new_line.split(':\n')
+            line_dict = eval(new_line_split[0])
+            self.console_dict[ line_dict['frame'] ] = new_line
+
             self.output_console.append( str(
-                    self.board_animation.simulator.get_logs()[logsc-1]
+                    new_line
                 )
             )
+
         self.output_console.verticalScrollBar().setSliderPosition(
             self.output_console.verticalScrollBar().maximum()
         )
 
+    def check_and_update_animation_console(self, frame):
+        if self.console_dict.has_key(frame):
+            self.animation_console.append(
+                self.console_dict[frame]
+            )
 
     def _update_steering_noise(self):
         simulator_params['steering_noise'] = \
