@@ -45,7 +45,8 @@ Here is our act() function:
       def act(self):
         if len(self.command_queue) == 0:
             if self.state == Rotator.STATE_ROTATE:
-                self.command_queue.append([TURN, self.state_helper * int((0.5*pi)/ TICK_ROTATE )]) # Rotate by 90 deegres
+                self.command_queue.append([TURN, \
+		self.state_helper * int((0.5*pi)/ TICK_ROTATE )]) # Rotate by 90 deegres
                 self.state_helper *= -1
         return self.command_queue.pop(0)
 
@@ -92,24 +93,30 @@ directions for walls and write the result to map_visited dictionary.
 Here is our proposition:
 
      if self.state == Turner.STATE_SCANNING:
-        x_disc, y_disc = int(self.x + 0.5), int(self.y + 0.5) # +0.5 because axis origin is in the middle of a field
+        x_disc, y_disc = int(self.x + 0.5), int(self.y + 0.5) 
+	# +0.5 because axis origin is in the middle of a field
 
         print "Scanning on ",x_disc, " ",y_disc
 
         import math
         # Determine vector in which direction we are scanning
-        vector = (math.cos((self.angle - 90.0)/180.0 * pi), math.sin((self.angle - 90.0)/180.0 * pi))
+        vector = (math.cos((self.angle - 90.0)/180.0 * pi), \
+	math.sin((self.angle - 90.0)/180.0 * pi))
 
         scanned = (x_disc-round(vector[1]), y_disc + round(vector[0]))
 
         # Check if scanned field is not *discovered* yet
-        if (x_disc-round(vector[1]+0.01), y_disc + round(vector[0]+0.01)) not in self.map_visited:
+        if (x_disc-round(vector[1]+0.01), y_disc + \
+	round(vector[0]+0.01)) not in self.map_visited:
             if self.last_distance < 0.9:
-                # Strange indexing because x runs vertically and y runs horizontally
+                # Strange indexing because x runs vertically 
+	       # and y runs horizontally
                 # Set big number so that it won't be visited
-                self.map_visited[(x_disc-round(vector[1]+0.01), y_disc + round(vector[0]+0.01))] = 1000
+                self.map_visited[(x_disc-round(vector[1]+0.01),\
+		 y_disc + round(vector[0]+0.01))] = 1000
             else:
-                self.map_visited[(x_disc-round(vector[1]+0.01), y_disc + round(vector[0]+0.01))] = 0
+                self.map_visited[(x_disc-round(vector[1]+0.01), \
+		y_disc + round(vector[0]+0.01))] = 0
 
         # Keep track of scanned fields
         self.state_helper += 1
