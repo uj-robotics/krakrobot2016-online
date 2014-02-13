@@ -302,7 +302,7 @@ class KrakrobotSimulator(object):
                         robot_controller.on_sense_gps(*robot.sense_gps())
                         frame_time_left += self.gps_delay
                     elif command[0] == WRITE_CONSOLE:
-                        new_line = "{ 'frame': " + str(frame_count) + \
+                        new_line = "{'frame': " + str(frame_count) + \
                             ", 'time': " + str(robot.time_elapsed) + \
                             '}:\n' + command[1]
                         self.logs.append(new_line)
