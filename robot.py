@@ -141,8 +141,8 @@ class Robot:
         """
         Returns distance to wall using 128bit precision floats
         """
-        tolerance_a = np.float64(1e-5)
-        max_a = np.float64(1e4)
+        tolerance_a = np.float64(1e-13)
+        max_a = np.float64(1e10)
         found = False
 
         def is_hit(x, y):
@@ -167,13 +167,10 @@ class Robot:
         a = np.float64(np.tan(np.float64(self.orientation)))
         b = np.float64(y - a*x)
 
-        #logger.info(("A=", a," B=", b))
-        #logger.info((orient_x, orient_y))
-        # Find collisions with x walls
         for i in xrange(0, len(grid)):
 
             if a > max_a:
-                cross_x, cross_y = np.float64(float(i)+1e-10), np.float64(self.y)
+                cross_x, cross_y = np.float64(x), np.float64(float(i)+1e-10)
             else:
                 cross_x, cross_y = np.float64(float(i)+1e-10), np.float64(a*(float(i)+1e-10) + b)
 
@@ -192,10 +189,11 @@ class Robot:
         for i in xrange(0, len(grid[0])):
             # Check if line is almost parallel to the axis
             if abs(a) > tolerance_a:
+
                 cross_x, cross_y = np.float64((float(i)+np.float64(1e-10) - b)/a), \
                                    np.float64(float(i)+1e-10)
             else:
-                cross_x, cross_y = np.float64(self.x), np.float64(float(i)+1e-10)
+                cross_x, cross_y = np.float64(float(i)+1e-10),np.float64(y)
 
 
             if cross_x < 0.0 or cross_x > len(grid)*SQUARE_SIDE or cross_y < 0.0 or cross_y > len(grid[0])*SQUARE_SIDE:
