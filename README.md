@@ -52,9 +52,7 @@ For Windows get python 2.7 for Windows : http://www.python.org/getit/ . Make sur
 Now install packages numpy and PyQt. Installing packages for Windows can be easily done using binaries from here : http://www.lfd.uci.edu/~gohlke/pythonlibs/ . You can also use the python packaging system, for instance pip.
 
 ### Linux
-For linux get python 2.7 and install packages PyQt and numpy. All of those packages should be bundled into packages for your linux. If not, install Qt4 and install pip (https://pypi.python.org/pypi/pip) and then simply type 
-
-``pip install numpy; pip install pyqt4``
+For linux get python 2.7 and install packages PyQt and numpy. All of those packages should be bundled into packages for your linux. You can install numpy using pip. For ubuntu qt package is listed as python-qt4, so you can simple run ``sudo apt-get install python-qt4``
 
 Map
 ---------------------

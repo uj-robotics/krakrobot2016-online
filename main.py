@@ -59,6 +59,8 @@ APP_NAME = 'Krakrobot Simulator'
 APP_FULL_NAME = APP_NAME + ' ' + __version__
 MSG_EMP = '-> '
 
+DEFAULT_ANIMATION_RATE = 10
+
 graphicsmutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 frame_change_mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 
@@ -209,6 +211,10 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
     status_bar_message = QtCore.pyqtSignal(str)
     simulation_thread = None
+    # Interval (ms) of every animation_update timer
+    refresh_rate = 1000/DEFAULT_ANIMATION_RATE
+    # Number of frames skipped in animation_update timer
+    #NOTE: Ths value is being incremented when when refresh_rate is too small
     animation_speed = 1
     frame_template = ''
     frames = []
@@ -217,7 +223,6 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
     simulator = None
     animation_started = False
     animation_paused = False
-    refresh_rate = 100
 
     def __init__(self, simulator, parent):
         super(KrakrobotBoardAnimation, self).__init__(parent)
@@ -375,6 +380,11 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             for frame in range(previous_frame, self.current_frame+1):
                 main_window.check_and_update_animation_console(frame)
 
+            if self.refresh_rate >= 10:
+                self.animation_timer.setInterval(self.refresh_rate)
+            else:
+                self.animation_speed = 10/self.refresh_rate
+
 
     def new_simulator(self, simulator):
         self.simulator = simulator
@@ -525,12 +535,17 @@ class MainWindow(QtGui.QMainWindow):
         )
         simulation_layout.addWidget(self.board_animation)
 
+        ### Playbock Layout ###
         playback_layout = QtGui.QHBoxLayout()
         playback_toolbar = QtGui.QToolBar()
+
+        speed_label = QtGui.QLabel('Anim. rate: ')
+        playback_toolbar.addWidget(speed_label)
+
         self.speed_box = QtGui.QSpinBox(self)
         self.speed_box.setRange(1, 1000)
-        self.speed_box.setValue(1)
-        self.speed_box.setToolTip('Change animation speed')
+        self.speed_box.setValue(DEFAULT_ANIMATION_RATE)
+        self.speed_box.setToolTip('Change animation rate')
         self.speed_box.valueChanged.connect(self._speed_value_changed)
         playback_toolbar.addWidget(self.speed_box)
 
@@ -736,8 +751,8 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def _speed_value_changed(self):
-        self.board_animation.animation_speed = \
-            self.speed_box.value()
+        self.board_animation.refresh_rate = \
+            1000/self.speed_box.value()
 
 
     def _hold_slider_updates(self):
@@ -860,6 +875,11 @@ class MainWindow(QtGui.QMainWindow):
             self.animation_console.append(
                 self.console_dict[frame]
             )
+
+
+    def closeEvent(self, event):
+        self._terminate_simulation()
+
 
     def _update_steering_noise(self):
         simulator_params['steering_noise'] = \
