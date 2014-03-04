@@ -75,6 +75,8 @@ class KrakrobotSimulator(object):
             grid, metadata  = load_map(map)
             self.map_title = metadata["title"]
             self.grid = grid
+            for row in grid:
+                logger.info(row)
         else:
             self.grid = map
             self.map_title = ""
@@ -164,8 +166,8 @@ class KrakrobotSimulator(object):
 
     def check_goal(self, robot):
         """ Checks if goal is within threshold distance"""
-        dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
-        return dist < self.goal_threshold
+#         dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
+        return robot.sense_field(self.grid) == MAP_GOAL#dist < self.goal_threshold
 
 
 
@@ -213,6 +215,8 @@ class KrakrobotSimulator(object):
         self.robot_path.append((robot.x, robot.y))
         collision_counter = 0 # We have maximum collision allowed
 
+        import resource
+        memory_footprint_estimation_mb =  resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000
 
         frame_time_left = self.simulation_dt
         frame_count = 0
@@ -224,6 +228,11 @@ class KrakrobotSimulator(object):
                 and not robot.time_elapsed >= self.simulation_time_limit \
                 and not self.terminate_flag:
                 #logger.info(robot_controller.time_consumed)
+
+                # Temporary memory checking
+                memory_footprint_estimation_mb =  resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000
+                if memory_footprint_estimation_mb > 2000 and not self.visualisation:
+                    raise KrakrobotException("Robot has exceeded 2GB memory footprint")
 
                 if maximum_timedelta <= robot_controller.time_consumed:
                     raise KrakrobotException("Robot has exceeded CPU time limit")
@@ -314,6 +323,8 @@ class KrakrobotSimulator(object):
                         frame_time_left += self.sonar_time
                     elif command[0] == SENSE_FIELD:
                         w = robot.sense_field(self.grid)
+                        if w == MAP_GOAL:
+                            print robot.x, " ", robot.y, " ", w 
                         if type(w) is not list:
                             robot_controller.on_sense_field(w, 0)
                         else:
@@ -340,6 +351,7 @@ class KrakrobotSimulator(object):
                         current_command = command
                         current_command[1] = int(current_command[1])
                     elif command[0] == FINISH:
+                        logger.info("Communicated finishing")
                         communicated_finished = True
 
                     else:
@@ -349,6 +361,10 @@ class KrakrobotSimulator(object):
 
         except Exception, e:
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.time_elapsed)+ " time")
+            return {"time_elapsed": robot.time_elapsed, "goal_achieved": False,
+                    "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000,
+                    "memory_footprint_estimation_mb": memory_footprint_estimation_mb, "error":str(e)
+                    }
 
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(communicated_finished and self.check_goal(robot)))
         self.goal_achieved = self.check_goal(robot)
@@ -363,11 +379,16 @@ class KrakrobotSimulator(object):
         self.finished = True
         logger.info("Exiting")
 
-        # Return simulation results
-        return {"time_elapsed": robot.time_elapsed, "goal_achieved": communicated_finished and self.check_goal(robot),
-                "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000
-                }
+        try:
+            # Return simulation results
+            return {"time_elapsed": robot.time_elapsed, "goal_achieved": communicated_finished and self.check_goal(robot),
+                    "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000,
+                    "memory_footprint_estimation_mb": memory_footprint_estimation_mb, "error": False
+                    }
 
+        except Exception, e:
+            logger.error("Failed constructing result "+str(e))
+            return {"error":str(e)}
 
     def get_logs(self):
         return self.logs

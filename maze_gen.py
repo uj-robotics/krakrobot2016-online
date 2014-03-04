@@ -336,7 +336,7 @@ def generate_city_map_test2():
     generate_map(40,40, "maps/2.map", "", 4, 4, 4, prunning_prob=0.7)
 
 def gen_map():
-    generate_map(8,8, "maps8_8_p50.map", "", 2, 0, 5, prunning_prob=0.5)
+    generate_map(4,4, "maps4_4_p30.map", "", 2, 0, 5, prunning_prob=0.3vim )
 
 
 if __name__ == "__main__":

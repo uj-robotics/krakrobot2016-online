@@ -967,16 +967,18 @@ class SimulatorGUI(object):
 
 
 import sys
-
+import json
 def main():
-
     if not options.command_line:
         simulator = KrakrobotSimulator(**simulator_params)
         gui = SimulatorGUI(sys.argv, simulator)
         gui.run()
     else:
         simulator = KrakrobotSimulator(simulation_dt=0.0, **simulator_params)
-        print "Simulation has finished. Results: {0}".format(simulator.run())
+        print "Running simulator"
+        results = simulator.run()
+        print "Finished running simulator"
+        print "Simulation has finished. Results:\n{0}".format(json.dumps(results))
 
 
 if __name__ == '__main__':
