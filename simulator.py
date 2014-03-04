@@ -30,7 +30,7 @@ __copyright__ = 'Copyright 2013-2014,\
 __license__ = 'MIT'
 __version__ = '0.0.1a'
 __maintainer__ = u'Stanisław Jastrzębski'
-__email__ = 'staszek.jastrzebski@gmail.com'
+__email__ = 'grimghil@gmail.com'
 __status__ = 'Development'
 
 
