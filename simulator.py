@@ -232,7 +232,7 @@ class KrakrobotSimulator(object):
                 # Temporary memory checking
                 memory_footprint_estimation_mb =  resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000
                 if memory_footprint_estimation_mb > 2000 and not self.visualisation:
-                    raise KrakrobotException("Robot has exceeded 2GB memory footprint")
+                    logger.error("Robot has exceeded 2GB memory footprint")
 
                 if maximum_timedelta <= robot_controller.time_consumed:
                     raise KrakrobotException("Robot has exceeded CPU time limit")
