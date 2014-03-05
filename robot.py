@@ -105,7 +105,7 @@ class Robot:
 
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
-        res.time_elapsed += distance/self.speed # speed is 1.0/time_unit
+        res.time_elapsed += abs(distance/self.speed) # speed is 1.0/time_unit
 
         return res
 
@@ -121,7 +121,7 @@ class Robot:
 
         turn = random.gauss(int(x)*self.tick_rotate, self.steering_noise)
         res.orientation = (res.orientation+turn)%(2*pi)
-        res.time_elapsed += turn/self.speed_turn # speed is pi/time_unit
+        res.time_elapsed += abs(turn/self.speed_turn) # speed is pi/time_unit
         return res
 
 
