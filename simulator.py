@@ -286,8 +286,10 @@ class KrakrobotSimulator(object):
                             if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
                                 raise KrakrobotException\
                                         ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
+                        else:
+                            robot = robot_proposed
 
-                        robot = robot_proposed
+                        ### Register movement, just do not move the robot
 
                         if current_command[1] > 1: current_command = [current_command[0], current_command[1] - 1]
                         else: current_command = None
