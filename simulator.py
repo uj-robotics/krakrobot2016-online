@@ -215,9 +215,7 @@ class KrakrobotSimulator(object):
         self.robot_path.append((robot.x, robot.y))
         collision_counter = 0 # We have maximum collision allowed
 
-        import resource
-        memory_footprint_estimation_mb =  resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000
-
+   
         frame_time_left = self.simulation_dt
         frame_count = 0
         current_command = None
@@ -229,11 +227,7 @@ class KrakrobotSimulator(object):
                 and not self.terminate_flag:
                 #logger.info(robot_controller.time_consumed)
 
-                # Temporary memory checking
-                memory_footprint_estimation_mb =  resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000
-                if memory_footprint_estimation_mb > 2000 and not self.visualisation:
-                    logger.error("Robot has exceeded 2GB memory footprint")
-
+   
                 if maximum_timedelta <= robot_controller.time_consumed:
                     raise KrakrobotException("Robot has exceeded CPU time limit")
 
@@ -366,7 +360,7 @@ class KrakrobotSimulator(object):
             logger.error("Simulation failed with exception " +str(e)+ " after " +str(robot.time_elapsed)+ " time")
             return {"time_elapsed": robot.time_elapsed, "goal_achieved": False,
                     "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000,
-                    "memory_footprint_estimation_mb": memory_footprint_estimation_mb, "error":str(e)
+                     "error":str(e)
                     }
 
         logger.info("Simulation ended after "+str(robot.time_elapsed)+ " seconds with goal reached = "+str(communicated_finished and self.check_goal(robot)))
@@ -386,7 +380,7 @@ class KrakrobotSimulator(object):
             # Return simulation results
             return {"time_elapsed": robot.time_elapsed, "goal_achieved": communicated_finished and self.check_goal(robot),
                     "time_consumed_robot": robot_controller.time_consumed.total_seconds()*1000,
-                    "memory_footprint_estimation_mb": memory_footprint_estimation_mb, "error": False
+                    "error": False
                     }
 
         except Exception, e:
