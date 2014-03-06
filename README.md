@@ -17,7 +17,7 @@ In this package you will find the simulator, example maps in the 'maps' director
 General rules
 -----------------------
 
-1. Contestants have to be students, enrolled at Bachelor's, Master's or PhD level programme in any field.
+1. Contestants have to be students, enrolled at Bachelor's,0 Master's or PhD level programme in any field.
 2. KrakRobot is a team competition – each team has to consist of 2 or 3 people, working together.
 3. The task is simulation based – the appropriate code bundled
  with the example maps and robots is available here: https://github.com/uj-robotics/KrakRobot2014Qualifications
@@ -187,7 +187,7 @@ In act you should return a list. For constants see *defines.py*
 	*  Moving : ["move", number_of_ticks] - consumes variable amount of time: number_of_ticks*TICK_MOVE / speed
 	*  Turning : ["turn", number_of_ticks] - consumes variable amount of time: number_of_ticks*TICK_TURN / speed
 	*  Sense GPS: ["sense_gps"] - consumes variable amount of time: gps_delay
-	*  Sense sonar: ["sense_sonar"] - consumes constant amount of time : 0.01 simulation time unit
+	*  Sense sonar: ["sense_sonar"] - consumes constant amount of time : 0.1 simulation time unit
 	*  Sense field: ["sense_field"] - consumes constant amount of time : 0.01 simulation time_unit
 	*  Communicate finish: ["finish"] - consumes 0 units of time
 	*  Write to console: ["write_console", string] - consumes 0 units of time, however cannot be used in submission (that is
