@@ -1,23 +1,4 @@
-# Tutorial for qualifications task
-
-## Installation and options
-
-The first step is to download .zip uploaded to our website and unpack it. To run
-the code you will need python 2.7 and PyQt python package (see task description
-document for more specific installation guide).
-
-In the root directory
-you will see many files, but the most important one is ``main.py``. It is both GUI interface
-for you, but also it can be used to test quickly execution result. For full list of options run:
-
-``python main.py -h``
-
-For instance to run exemplary bot, without GUI on exemplary map 4 you can run
-
-``python main.py -c -m maps/4.map -r examples/omit_collisions_example.py``
-
-To run GUI with preloaded map and robot remove the "-c" argument.
-
+# Tutorial
 
 ## Turner bot ##
 
