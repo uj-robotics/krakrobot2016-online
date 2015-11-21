@@ -2,13 +2,15 @@
 Standalone command tool for generating maze
 """
 
-from defines import *
 from optparse import OptionParser
-
-
-
 import random
 import sys
+
+from simulator.misc.defines import *
+
+
+
+
 
 
 # constants and help for list access
@@ -323,21 +325,14 @@ def generate_map(N,M, file_name, title = "",
     f = open(file_name, "w")
     f.write("\n".join(lines))
 
-
-
-
-
-
 def generate_simple_maze_test1():
     generate_map(40,40, "maps/4.map", "", 0, 0, 0, prunning_prob=0.0)
-
 
 def generate_city_map_test2():
     generate_map(40,40, "maps/2.map", "", 4, 4, 4, prunning_prob=0.7)
 
 def gen_map():
-    generate_map(4,4, "maps4_4_p30.map", "", 2, 0, 5, prunning_prob=0.3vim )
-
+    generate_map(4,4, "maps4_4_p30.map", "", 2, 0, 5, prunning_prob=0.3)
 
 if __name__ == "__main__":
     gen_map()

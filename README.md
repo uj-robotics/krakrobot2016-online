@@ -1,18 +1,5 @@
-KrakRobot 2014
+KrakRobot 2015
 ==============
-
-Lost in Cracow's alleys
------------------------
-
-
-Welcome to the rules and technical specification for the KrakRobot 2014 online qualifications task.
-
-The qualifications round consists of one task,
-called “Lost in Cracow's alleys”. Your task will be to write the robot's AI allowing
-it to figure out the way through a complex maze of alleys as quick as possible.
-
-In this package you will find the simulator, example maps in the 'maps' directory and example robots in the 'examples' directory.
-
 
 General rules
 -----------------------

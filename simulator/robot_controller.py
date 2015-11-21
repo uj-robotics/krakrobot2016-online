@@ -1,6 +1,6 @@
-from defines import *
-from utils import *
-import random
+from misc import *
+import datetime
+
 class RobotController(object):
     """ You have to implement this class """
     def init(starting_position, steering_noise, distance_noise, sonar_noise,
@@ -23,51 +23,6 @@ class RobotController(object):
     def on_sense_gps(self, x, y):
         """ React to sensory data """
         raise NotImplementedError()
-
-
-
-#class OmitCollisionsCheckAccuracy(RobotController):
-#    """ Exemplary robot controller omitting collisions """
-#    STATE_FORWARD = 0
-#    STATE_LOOK_FOR_SPACE = 1
-#
-#    def init(self, starting_position, steering_noise, distance_noise, measurement_noise, speed, turning_speed):
-#        self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-#        self.speed = speed
-#        self.turn_speed = turning_speed
-#        self.command_queue = []
-#        self.last_distance = 0.0
-#
-#    def act(self):
-#        if len(self.command_queue) == 0:
-#            if self.phase == OmitCollisions.STATE_LOOK_FOR_SPACE:
-#                self.command_queue.append([TURN, random.randint(-1, 1)* 50])
-#                self.command_queue.append([SENSE_SONAR])
-#            else:
-#                self.command_queue.append([MOVE, int(self.last_distance/0.01)])
-#                self.command_queue.append([SENSE_SONAR])
-#                self.command_queue.append([SENSE_FIELD])
-#
-#        return self.command_queue.pop(0)
-#
-#    def on_sense_sonar(self, distance):
-#        self.last_distance = distance
-#
-#        if distance < 0.04:
-#            self.phase = OmitCollisions.STATE_LOOK_FOR_SPACE
-#        else:
-#            self.phase = OmitCollisions.STATE_FORWARD
-#
-
-from collections import defaultdict
-
-
-
-#TODO: fill in this function
-def load_python_controller(file):
-    pass
-
-import datetime
 
 class PythonTimedRobotController(RobotController):
     """ Wrapper class to manage time consumption (also for other language packages) """
@@ -102,14 +57,9 @@ class PythonTimedRobotController(RobotController):
         self.rc.on_sense_gps(x,y)
         self.time_consumed += datetime.datetime.now() - tmp
 
-
-
-
-def importCode(file_name, name, add_to_sys_modules=0):
-    import sys,imp
+def importCode(file_name, name):
+    import imp
     return imp.load_source(name, file_name)
-
-
 
 counter_module = 0
 def compile_robot(file_name, module_name = "contestant_module"):

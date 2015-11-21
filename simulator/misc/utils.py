@@ -1,8 +1,9 @@
 """ Utility functions """
 
 import logging
-from defines import *
 import json
+
+from .defines import *
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,17 +14,14 @@ logger.addHandler(ch)
 logger.propagate = False
 
 def load_map(file_path):
-    """ Loads map and encodes it as a grid (TODO: change class to map) """
+    """ Loads map and encodes it as a grid """
     lines = [l.strip('\n') for l in open(file_path, "r")]
     params = json.loads("{"+lines.pop(0)+"}")
-    if "title" not in params: params["title"] = ""
-
-    # TODO: load all defaults here
-
-
+    if "title" not in params:
+        params["title"] = ""
 
     # Read map
-    grid = [[0]*params["M"] for i in xrange(params["N"])]
+    grid = [[0]*params["M"] for _ in xrange(params["N"])]
 
     found_goal = False
 
