@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-__version__ = '0.0.1a'
+__version__ = '0.9'
 __authors__ = u'Konrad Talik, Stanisław Jastrzębski'
-__copyright__ = 'Copyright 2013-2014,\
+__copyright__ = 'Copyright 2013-2015,\
                     Jagiellonian University Robotics Interest Group'
 __license__ = 'MIT'
 __maintainer__ = 'Konrad Talik'

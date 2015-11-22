@@ -6,6 +6,8 @@
     Simulator which runs the simulation and renders SVG frames.
 """
 
+# TODO: restart fix
+
 from Queue import Queue
 import time
 import datetime
@@ -31,7 +33,7 @@ __email__ = 'grimghil@gmail.com'
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self, map, robot_controller_class, init_position=None,
+    def __init__(self, map, robot_controller, init_position=None,
                  steering_noise=0.01, sonar_noise=0.1, distance_noise=0.001,
                  measurement_noise=0.2,
                  speed=5.0,
@@ -94,7 +96,7 @@ class KrakrobotSimulator(object):
         self.turning_speed = turning_speed
         self.simulation_dt = simulation_dt
         self.frame_dt = frame_dt
-        self.robot_controller = robot_controller_class()
+        self.robot_controller = robot_controller
         self.print_robot = print_robot
         self.print_logger = print_logger
 
@@ -154,7 +156,6 @@ class KrakrobotSimulator(object):
         #         dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
         return robot.sense_field(self.grid) == MAP_GOAL  # dist < self.goal_threshold
 
-    # TODO: test
     def reset(self):
         """ Reset state of the KrakrobotSimulator """
         self.robot_path = []
@@ -182,8 +183,9 @@ class KrakrobotSimulator(object):
 
 
         # Initialize robot controller object given by contestant
-        robot_controller = PythonTimedRobotController(self.robot_controller)
-        robot_controller.init(self.init_position, robot.steering_noise
+        robot_controller = PythonTimedRobotController(self.robot_controller.clone())
+        robot_controller.init(self.init_position[0], self.init_position[1], self.init_position[2],
+                              robot.steering_noise
                               , robot.distance_noise, robot.sonar_noise, robot.measurement_noise, self.speed,
                               self.turning_speed, self.gps_delay,
                               self.execution_cpu_time_limit
@@ -384,3 +386,4 @@ class KrakrobotSimulator(object):
 
     def terminate(self):
         self.terminate_flag = True
+        self.robot_controller.terminate()

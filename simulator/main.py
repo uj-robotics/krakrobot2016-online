@@ -16,7 +16,7 @@
 from optparse import OptionParser
 from gui import SimulatorGUI
 from simulator import KrakrobotSimulator
-from robot_controller import compile_robot
+from robot_controller import compile_robot, construct_cmd_robot
 import sys
 import json
 from os.path import join, dirname
@@ -45,7 +45,7 @@ def create_parser():
         "-r",
         "--robot",
         dest="robot",
-        default="examples/omit_collisions_example.py",
+        default="python2.7 examples/python/omit_collisions_example.py",
         help="Robot that will be compiled and run"
     )
     parser.add_option(
@@ -144,7 +144,7 @@ simulator_params = {"visualisation": not options.command_line,
                     "frame_dt": options.frame_dt,
                     "iteration_write_frequency": options.iteration_write_frequency,
                     "gps_delay": options.gps_delay,
-                    "robot_controller_class": compile_robot(options.robot)[0],
+                    "robot_controller":  construct_cmd_robot(options.robot), #compile_robot(options.robot)[0],
                     "map": options.map
                     }
 
