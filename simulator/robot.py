@@ -3,6 +3,7 @@ from math import (
 )
 import random
 from copy import deepcopy
+from misc.map_utils import get_color
 import numpy as np
 from misc.defines import *
 
@@ -31,7 +32,6 @@ class Robot:
         self.gps_time = gps_time
         self.sonar_time = sonar_time
 
-    # TODO: extract
     def set(self, new_x, new_y, new_orientation):
         """
         Set robot position
@@ -42,7 +42,6 @@ class Robot:
         self.y = float(new_y)
         self.orientation = float(new_orientation) % (2.0 * pi)
 
-    # TODO: extract from this class
     def set_noise(self, new_s_noise, new_d_noise, new_m_noise, new_sonar_noise):
         """
         Set noise parameter
@@ -106,9 +105,8 @@ class Robot:
         res.time_elapsed += abs(turn / self.speed_turn)  # speed is pi/time_unit
         return res
 
-    def sense_field(self, grid):
-        disc_x, disc_y = int(self.x + SQUARE_SIDE / 2.0), int(self.y + SQUARE_SIDE / 2.0)
-        return grid[disc_x][disc_y]
+    def sense_color(self, grid, bitmap):
+        return get_color(bitmap, self.x, self.y, map_height=len(grid), map_width=len(grid[0]))
 
     def sense_gps(self):
         """ Returns estimation for position (GPS signal) """

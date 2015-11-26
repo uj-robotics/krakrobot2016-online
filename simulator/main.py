@@ -37,7 +37,7 @@ def create_parser():
         "-m",
         "--map",
         dest="map",
-        default=join(dirname(__file__), "maps/3.map"),
+        default=join(dirname(__file__), "maps/1.map"),
         help="Map that will be run after hitting Start Simulation button, "
              "or in command_line mode after running the program"
     )
@@ -45,7 +45,7 @@ def create_parser():
         "-r",
         "--robot",
         dest="robot",
-        default="python2.7 examples/python/omit_collisions_example.py",
+        default="python2.7 examples/python/random_search.py",
         help="Robot that will be compiled and run"
     )
     parser.add_option(

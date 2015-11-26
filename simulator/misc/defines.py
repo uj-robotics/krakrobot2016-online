@@ -17,11 +17,11 @@ __website__ = 'www.krakrobot.pl'
 ### act() constants ###
 MOVE = "move" # (move, steer) -> OK
 TURN = "turn"
+BEEP = "beep"
 SENSE_SONAR = "sense_sonar" # (sense_radar) -> ([alpha,dist],[alpha,dist]....)
 SENSE_GPS = "sense_gps" # (sense_gps) -> (x,y)
 FINISH = "finish"
-SENSE_FIELD = "sense_field"
-SENSE_LIGHT_SENSOR = "sense_light_sensor"  # (sense_light_sensor) -> (field_type)   #TODO: add or erase it ? everytime robot knows the field?
+SENSE_COLOR = "sense_color"
 WRITE_CONSOLE = "write_console"
 
 

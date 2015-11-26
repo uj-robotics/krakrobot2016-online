@@ -1,5 +1,9 @@
 # Tutorial
 
+Simulator implements single-threaded simulation of robot. Simulator asks for next action
+in a loop. If you request (as action) reading from sensor, it will wait until results are
+available, pass result to your robot and then continue loop.
+
 ## Turner bot ##
 
 Our goal will be to write bot that is doing 90 degrees turns and is picking fields

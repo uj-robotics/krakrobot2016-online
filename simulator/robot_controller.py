@@ -49,8 +49,8 @@ class CmdLineRobotController(RobotController):
         else:
             return cmd
 
-    def on_sense_field(self, *args):
-        self.p.stdin.write("on_sense_field\n")
+    def on_sense_color(self, *args):
+        self.p.stdin.write("on_sense_color\n")
         self.p.stdin.write(" ".join(map(str, args)) + "\n")
 
     def on_sense_sonar(self, *args):
@@ -90,9 +90,9 @@ class PythonTimedRobotController(RobotController):
         self.rc.on_sense_sonar(dist)
         self.time_consumed += datetime.datetime.now() - x
 
-    def on_sense_field(self, field_type, field_parameter):
+    def on_sense_color(self, r, g, b):
         x = datetime.datetime.now()
-        self.rc.on_sense_field(field_type, field_parameter)
+        self.rc.on_sense_color(r, g, b)
         self.time_consumed += datetime.datetime.now() - x
 
     def on_sense_gps(self, x, y):

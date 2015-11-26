@@ -15,7 +15,8 @@ from math import (
     pi
 )
 
-from misc.utils import logger, load_map
+import traceback
+from misc.map_utils import logger, load_map
 from misc.defines import *
 from robot import Robot
 from robot_controller import PythonTimedRobotController
@@ -68,9 +69,10 @@ class KrakrobotSimulator(object):
         """
 
         if type(map) is str:
-            grid, metadata = load_map(map)
+            grid, bitmap, metadata = load_map(map)
             self.map_title = metadata["title"]
             self.grid = grid
+            self.bitmap = bitmap
             for row in grid:
                 logger.info(row)
         else:
@@ -150,11 +152,6 @@ class KrakrobotSimulator(object):
             raise the Empty exception.
         """
         return self.sim_frames.get_nowait()
-
-    def check_goal(self, robot):
-        """ Checks if goal is within threshold distance"""
-        #         dist = sqrt((float(self.goal[0]) - robot.x) ** 2 + (float(self.goal[1]) - robot.y) ** 2)
-        return robot.sense_field(self.grid) == MAP_GOAL  # dist < self.goal_threshold
 
     def reset(self):
         """ Reset state of the KrakrobotSimulator """
@@ -296,15 +293,9 @@ class KrakrobotSimulator(object):
                         w = robot.sense_sonar(self.grid)
                         robot_controller.on_sense_sonar(w)
                         frame_time_left += self.sonar_time
-                    elif command[0] == SENSE_FIELD:
-                        w = robot.sense_field(self.grid)
-                        if w == MAP_GOAL:
-                            print robot.x, " ", robot.y, " ", w
-                        if type(w) is not list:
-                            robot_controller.on_sense_field(w, 0)
-                        else:
-                            robot_controller.on_sense_field(w[0], w[1])
-
+                    elif command[0] == SENSE_COLOR:
+                        r, g, b = robot.sense_color(self.grid, self.bitmap)
+                        robot_controller.on_sense_color(r, g, b)
                         frame_time_left += self.light_sensor_time
                     elif command[0] == TURN:
                         if len(command) <= 1 or len(command) > 2:
@@ -323,6 +314,8 @@ class KrakrobotSimulator(object):
                         # Move robot
                         current_command = command
                         current_command[1] = int(current_command[1])
+                    elif command[0] == BEEP:
+                        continue # TODO: add registering
                     elif command[0] == FINISH:
                         logger.info("Communicated finishing")
                         communicated_finished = True
@@ -336,12 +329,11 @@ class KrakrobotSimulator(object):
             logger.error("Simulation failed with exception " + str(e) + " after " + str(robot.time_elapsed) + " time")
             return {"time_elapsed": robot.time_elapsed, "goal_achieved": False,
                     "time_consumed_robot": robot_controller.time_consumed.total_seconds() * 1000,
-                    "error": str(e)
+                    "error": str(traceback.format_exc())
                     }
 
         logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds with goal reached = " + str(
-            communicated_finished and self.check_goal(robot)))
-        self.goal_achieved = self.check_goal(robot)
+            communicated_finished))
 
         self.sim_frames.put(self._create_sim_data(robot))
         while frame_time_left >= self.frame_dt and self.visualisation and not self.terminate_flag:
@@ -356,7 +348,8 @@ class KrakrobotSimulator(object):
         try:
             # Return simulation results
             return {"time_elapsed": robot.time_elapsed,
-                    "goal_achieved": communicated_finished and self.check_goal(robot),
+                    # TODO: fix - add beep information
+                    # "goal_achieved": communicated_finished and self.check_goal(robot),
                     "time_consumed_robot": robot_controller.time_consumed.total_seconds() * 1000,
                     "error": False
                     }
@@ -373,15 +366,15 @@ class KrakrobotSimulator(object):
             @returns Descriptor that is sufficient to visualize current frame
         """
         data = {}
-        data['GoalThreshold'] = self.goal_threshold
+        # data['GoalThreshold'] = self.goal_threshold
         data['Sparks'] = []  # ommiting errors list(self.collisions)
         data['ActualPath'] = list(self.robot_path)
         data['ActualPosition'] = [robot.x, robot.y]
         data['ActualOrientation'] = robot.orientation
         data['Map'] = self.grid
         data['StartPos'] = self.init_position
-        data['GoalPos'] = self.goal
-        data['GoalAchieved'] = self.goal_achieved
+        # data['GoalPos'] = self.goal
+        # data['GoalAchieved'] = self.goal_achieved
         return data
 
     def terminate(self):
