@@ -42,6 +42,14 @@ def create_parser():
              "or in command_line mode after running the program"
     )
     parser.add_option(
+        "-o",
+        "--output",
+        dest="output",
+        type="str",
+        default=None,
+        help="Name of file to output results to"
+    )
+    parser.add_option(
         "-r",
         "--robot",
         dest="robot",
@@ -160,6 +168,11 @@ def main():
         simulator = KrakrobotSimulator(**simulator_params)
         gui = SimulatorGUI(sys.argv, simulator, simulator_params)
         gui.run()
+
+    if options.output:
+        print "Writing results to ", options.output
+        with open(options.output, "w") as f:
+            f.write(json.dumps(simulator.get_results()))
 
 
 if __name__ == '__main__':

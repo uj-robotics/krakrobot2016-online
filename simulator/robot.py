@@ -78,8 +78,6 @@ class Robot:
         """
 
         if (abs(x) > 1): raise ("Illegal move")
-
-        # make a new copy (TODO: use deepcopy)
         res = deepcopy(self)
 
         distance = max(0.0, random.gauss(int(x) * self.tick_move, self.distance_noise))

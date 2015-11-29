@@ -38,12 +38,11 @@ class CmdLineRobotController(RobotController):
         return CmdLineRobotController(self.cmd)
 
     def init(self, *args):
-        self.p.stdin.write(" ".join(map(str, args)) + "\n")
+        self.p.stdin.write(" ".join(map(str, args)) + " \n")
 
     def act(self):
         self.p.stdin.write("act\n")
         cmd = self.p.stdout.readline().split()
-        print cmd
         if cmd[0] == "move" or cmd[0] == "turn":
             return cmd[0], int(cmd[1])
         else:

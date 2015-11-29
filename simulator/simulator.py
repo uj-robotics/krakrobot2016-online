@@ -69,8 +69,9 @@ class KrakrobotSimulator(object):
         """
 
         if type(map) is str:
-            grid, bitmap, metadata = load_map(map)
-            self.map_title = metadata["title"]
+            grid, bitmap, meta = load_map(map)
+            self.map_title = meta["title"]
+            self.map_meta = meta
             self.grid = grid
             self.bitmap = bitmap
             for row in grid:
@@ -78,6 +79,7 @@ class KrakrobotSimulator(object):
         else:
             self.grid = map
             self.map_title = ""
+            self.map_params = {}
 
         self.N = len(self.grid)
         self.M = len(self.grid[0])
@@ -157,6 +159,7 @@ class KrakrobotSimulator(object):
         """ Reset state of the KrakrobotSimulator """
         self.robot_path = []
         self.collisions = []
+        self.results = None
 
         self.goal_achieved = False
         self.robot_timer = 0.0
@@ -197,6 +200,7 @@ class KrakrobotSimulator(object):
         frame_count = 0
         current_command = None
         iteration = 0
+        beeps = []
         communicated_finished = False
         try:
             while not communicated_finished \
@@ -315,7 +319,7 @@ class KrakrobotSimulator(object):
                         current_command = command
                         current_command[1] = int(current_command[1])
                     elif command[0] == BEEP:
-                        continue # TODO: add registering
+                        beeps.append((robot.x, robot.y))
                     elif command[0] == FINISH:
                         logger.info("Communicated finishing")
                         communicated_finished = True
@@ -323,13 +327,14 @@ class KrakrobotSimulator(object):
                     else:
                         raise KrakrobotException("Not received command from act(), or command was incorrect :(")
 
-
-
         except Exception, e:
             logger.error("Simulation failed with exception " + str(e) + " after " + str(robot.time_elapsed) + " time")
-            return {"time_elapsed": robot.time_elapsed, "goal_achieved": False,
-                    "time_consumed_robot": robot_controller.time_consumed.total_seconds() * 1000,
-                    "error": str(traceback.format_exc())
+            return {
+                    "sim_time": robot.time_elapsed,
+                    "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
+                    "error": str(traceback.format_exc()),
+                    "beeps": beeps,
+                    "map": self.map_meta
                     }
 
         logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds with goal reached = " + str(
@@ -344,19 +349,24 @@ class KrakrobotSimulator(object):
         # Simulation process finished
         self.finished = True
         logger.info("Exiting")
-
+        self.results = None
         try:
             # Return simulation results
-            return {"time_elapsed": robot.time_elapsed,
-                    # TODO: fix - add beep information
-                    # "goal_achieved": communicated_finished and self.check_goal(robot),
-                    "time_consumed_robot": robot_controller.time_consumed.total_seconds() * 1000,
+            self.results = {"sim_time": robot.time_elapsed,
+                    "map": self.map_meta,
+                    "beeps": beeps,
+                    "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
                     "error": False
                     }
+            return self.results
 
         except Exception, e:
+            self.results = None
             logger.error("Failed constructing result " + str(e))
             return {"error": str(e)}
+
+    def get_results(self):
+        return self.results
 
     def get_logs(self):
         return self.logs
