@@ -37,4 +37,3 @@ if __name__ == "__main__":
     with open(options.problem_file, "r") as f:
         problem = json.loads(f.read())
 
-    

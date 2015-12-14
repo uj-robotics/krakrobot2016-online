@@ -11,22 +11,24 @@ from misc.defines import *
 class Robot:
     """ The main class representing robot that can sense and move """
 
-    def __init__(self, speed, speed_turn, gps_time, sonar_time, tick_move, tick_rotate):
+    def __init__(self, speed, turning_speed, gps_time, sonar_time, tick_move, tick_rotate,
+                 color_sensor_displacement=(SQUARE_SIDE/4.0, 0)):
         """
         Initialize robot
         """
         self.speed = speed
-
+        self.rng = np.random.RandomState(777)
         self.tick_move = tick_move
         self.tick_rotate = tick_rotate
-
-        self.speed_turn = speed_turn
+        self.color_sensor_displacement = color_sensor_displacement
+        self.turning_speed = turning_speed
         self.x = 0.0
         self.y = 0.0
         self.orientation = 0.0
         self.steering_noise = 0.0
         self.distance_noise = 0.0
         self.sonar_noise = 0.0
+        self.color_noise = 0.0
         self.measurement_noise = 0.0
         self.time_elapsed = 0.0
         self.gps_time = gps_time
@@ -42,13 +44,11 @@ class Robot:
         self.y = float(new_y)
         self.orientation = float(new_orientation) % (2.0 * pi)
 
-    def set_noise(self, new_s_noise, new_d_noise, new_m_noise, new_sonar_noise):
+    def set_noise(self, new_s_noise, new_d_noise, new_m_noise, new_sonar_noise, new_c_noise):
         """
-        Set noise parameter
-        :note Cannot be called by contestant
+        Set noise parameters
         """
-        # makes it possible to change the noise parameters
-        # this is often useful in particle filters
+        self.color_noise = float(new_c_noise)
         self.steering_noise = float(new_s_noise)
         self.distance_noise = float(new_d_noise)
         self.measurement_noise = float(new_m_noise)
@@ -65,7 +65,6 @@ class Robot:
 
         dist_x_border = min(abs(self.x - x_disc), abs(self.x - (x_disc + 1)))
         dist_y_border = min(abs(self.y - y_disc), abs(self.y - (y_disc + 1)))
-        dist_border = min(dist_x_border, dist_y_border)
 
         if grid[x_disc][y_disc] == 1:
             return False
@@ -80,7 +79,7 @@ class Robot:
         if (abs(x) > 1): raise ("Illegal move")
         res = deepcopy(self)
 
-        distance = max(0.0, random.gauss(int(x) * self.tick_move, self.distance_noise))
+        distance = max(0.0, self.rng.normal(int(x) * self.tick_move, self.distance_noise))
 
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
@@ -98,19 +97,30 @@ class Robot:
 
         res = deepcopy(self)
 
-        turn = random.gauss(int(x) * self.tick_rotate, self.steering_noise)
+        turn = self.rng.normal(int(x) * self.tick_rotate, self.steering_noise)
         res.orientation = (res.orientation + turn) % (2 * pi)
-        res.time_elapsed += abs(turn / self.speed_turn)  # speed is pi/time_unit
+        res.time_elapsed += abs(turn / self.turning_speed)  # speed is pi/time_unit
         return res
 
     def sense_color(self, grid, bitmap):
-        return get_color(bitmap, self.x, self.y, map_height=len(grid), map_width=len(grid[0]))
+        """
+        Returns color encoded as 3 integers from 0 to 255.
+        """
+        raw_color = get_color(bitmap, self.x + self.color_sensor_displacement[0],
+                         self.y + self.color_sensor_displacement[1], map_height=len(grid), map_width=len(grid[0]))
+
+        random_vector = self.rng.normal(0, 1.0, size=(3,))
+        random_vector /= np.linalg.norm(random_vector)
+        random_vector *= self.color_noise
+
+        return np.clip((raw_color + random_vector), 0, 255).astype(np.int)
+
 
     def sense_gps(self):
         """ Returns estimation for position (GPS signal) """
         self.time_elapsed += self.gps_time
-        ret = [random.gauss(self.x, self.measurement_noise),
-               random.gauss(self.y, self.measurement_noise)]
+        ret = [self.rng.normal(self.x, self.measurement_noise),
+               self.rng.normal(self.y, self.measurement_noise)]
         return ret
 
     def sense_sonar(self, grid):
@@ -188,7 +198,7 @@ class Robot:
                 "Something went wrong with sonar - not found wall! Note: boundary should be walled")
 
         self.time_elapsed += self.sonar_time
-        return random.gauss(float(sqrt(min(x_min_col[2], y_min_col[2]))), self.sonar_noise)
+        return self.rng.normal(float(sqrt(min(x_min_col[2], y_min_col[2]))), self.sonar_noise)
 
     def __repr__(self):
         # return '[x=%.5f y=%.5f orient=%.5f]'  % (self.x, self.y, self.orientation)

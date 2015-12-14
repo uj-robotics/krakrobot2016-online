@@ -31,11 +31,10 @@ def load_map(file_name):
 
     :returns grid, bitmap and metadata, where map and bitmap are arrays of ints
     """
-    lines = [l.strip('\n') for l in open(file_name, "r")]
-    meta = json.loads("{"+lines.pop(0)+"}") # Hack, terrible hack
+    meta = json.loads(open(file_name, "r").read())
 
     try:
-        bitmap = misc.imread(open(os.path.join(os.path.dirname(file_name), meta['color_file'])))
+        bitmap = misc.imread(open(os.path.join(os.path.dirname(file_name), meta['bitmap'])))
     except IOError, e:
         print "Not found color file, exiting"
         raise e
@@ -43,20 +42,12 @@ def load_map(file_name):
     if "title" not in meta:
         meta["title"] = ""
 
-    # Read map
-    grid = [[0]*meta["M"] for _ in xrange(meta["N"])]
-
-    for x in xrange(meta["N"]):
-        if not len(lines):
-            raise KrakrobotException("Not found line. Probably something is wrong with file format (N?)")
-
-        row = lines.pop(0)
-        for y in xrange(meta["M"]):
-            grid[x][y] = MAP_CODING[row[y]]
-
-    if len(lines):
-        raise KrakrobotException("Not parsed last lines. Probably something is wrong with file format")
-
+    # Map is assumed to be always a simple box with 1-cell width wall around
+    # and single start field.
+    grid = [[1]*(meta["M"])]
+    grid += [[1] + [0]*(meta["M"] - 2) + [1] for _ in xrange(meta["N"] - 2)]
+    grid += [[1]*(meta["M"])]
+    grid[meta['start_field'][0]][meta['start_field'][1]] = MAP_START_POSITION
     meta['file_name'] = file_name
 
     return grid, bitmap, meta

@@ -13,17 +13,23 @@ Visit website for further information."""
 
 __website__ = 'www.krakrobot.pl'
 
+### Map constants ###
+MAP_GOAL = 4 # coding MAP_GOAL
+MAP_START_POSITION = 3
+SQUARE_SIDE = 1.0
+MAP_WALL = 1 # coding MAP_WALL
+MAP_WHITE = 0 # coding MAP_WHITE
+MAP_SPECIAL_DIRECTION = 11 # coding [MAP_SPECIAL_DIRECTION, DIRECTION]
 
-### act() constants ###
+### Robot constants ###
 MOVE = "move" # (move, steer) -> OK
 TURN = "turn"
 BEEP = "beep"
-SENSE_SONAR = "sense_sonar" # (sense_radar) -> ([alpha,dist],[alpha,dist]....)
-SENSE_GPS = "sense_gps" # (sense_gps) -> (x,y)
+SENSE_SONAR = "sense_sonar"
+SENSE_GPS = "sense_gps"
 FINISH = "finish"
 SENSE_COLOR = "sense_color"
 WRITE_CONSOLE = "write_console"
-
 
 ### Contest constants ###
 TICK_MOVE = 0.01
@@ -32,13 +38,6 @@ GPS_TIME = 1.0
 SONAR_TIME = 0.1
 FIELD_TIME = 0.1
 
-### Map constants ###
-MAP_GOAL = 4 # coding MAP_GOAL
-MAP_START_POSITION = 3
-SQUARE_SIDE = 1.0
-MAP_WALL = 1 # coding MAP_WALL
-MAP_WHITE = 0 # coding MAP_WHITE
-MAP_SPECIAL_DIRECTION = 11 # coding [MAP_SPECIAL_DIRECTION, DIRECTION]
 
 DEFAULT_ANIMATION_RATE = 100
 

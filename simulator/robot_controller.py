@@ -37,8 +37,10 @@ class CmdLineRobotController(RobotController):
     def clone(self):
         return CmdLineRobotController(self.cmd)
 
-    def init(self, *args):
-        self.p.stdin.write(" ".join(map(str, args)) + " \n")
+    def init(self, **kwargs):
+        assert len(kwargs) == 12, "Expected 12 parameters for constructor"
+        for key, value in kwargs.iteritems():
+            self.p.stdin.write(key + ":" + str(value) + "\n")
 
     def act(self):
         self.p.stdin.write("act\n")
@@ -72,9 +74,9 @@ class PythonTimedRobotController(RobotController):
     def clone(self):
         return PythonTimedRobotController(self.rc)
 
-    def init(self, *args, **dargs):
+    def init(self, **kwargs):
         x = datetime.datetime.now()
-        self.rc.init(*args, **dargs)
+        self.rc.init(**kwargs)
         self.time_consumed += datetime.datetime.now() - x
 
     def act(self):

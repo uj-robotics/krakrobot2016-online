@@ -57,25 +57,32 @@ def create_parser():
         help="Robot that will be compiled and run"
     )
     parser.add_option(
+        "--color_noise",
+        dest="color_noise",
+        default=10,
+        type="float",
+        help="Standard deviation of gaussian noise applied to sensed color"
+    )
+    parser.add_option(
         "--steering_noise",
         dest="steering_noise",
         default=0.0004,
         type="float",
-        help="Sigma of gaussian noise applied to turning motion"
+        help="Standard deviation of gaussian noise applied to turning motion"
     )
     parser.add_option(
         "--sonar_noise",
         dest="sonar_noise",
         default=0.0015,
         type="float",
-        help="Sigma of gaussian noise applied to sensed distance by sonar"
+        help="Standard deviation of gaussian noise applied to sensed distance by sonar"
     )
     parser.add_option(
         "--gps_noise",
         dest="measurement_noise",
         default=0.1,
         type="float",
-        help="Sigma of gaussian noise applied to the sensed GPS position"
+        help="Standard deviation of gaussian noise applied to the sensed GPS position"
     )
     parser.add_option(
         "--gps_delay",
@@ -89,7 +96,7 @@ def create_parser():
         dest="distance_noise",
         default=0.001,
         type="float",
-        help="Sigma of gaussian noise applied to forward motion"
+        help="Standard deviation of gaussian noise applied to forward motion"
     )
     parser.add_option(
         "--speed",
@@ -142,6 +149,7 @@ print options, args
 
 simulator_params = {"visualisation": not options.command_line,
                     "speed": options.speed,
+                    "color_noise": options.color_noise,
                     "distance_noise": options.distance_noise,
                     "steering_noise": options.steering_noise,
                     "sonar_noise": options.sonar_noise,

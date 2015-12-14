@@ -34,8 +34,12 @@ __email__ = 'grimghil@gmail.com'
 class KrakrobotSimulator(object):
     COLLISION_THRESHOLD = 50
 
-    def __init__(self, map, robot_controller, init_position=None,
-                 steering_noise=0.01, sonar_noise=0.1, distance_noise=0.001,
+    def __init__(self, map, robot_controller,
+                 init_position=None,
+                 steering_noise=0.01,
+                 color_noise=10,
+                 sonar_noise=0.1,
+                 distance_noise=0.001,
                  measurement_noise=0.2,
                  speed=5.0,
                  turning_speed=0.4 * pi,
@@ -118,6 +122,7 @@ class KrakrobotSimulator(object):
 
         self.goal_threshold = 0.5  # When to declare goal reach
 
+        self.color_noise = color_noise
         self.sonar_noise = sonar_noise
         self.distance_noise = distance_noise
         self.measurement_noise = measurement_noise
@@ -176,20 +181,28 @@ class KrakrobotSimulator(object):
         # Initialize robot object
         robot = Robot(self.speed, self.turning_speed, self.gps_delay, self.sonar_time, self.tick_move, self.tick_rotate)
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
-        robot.set_noise(self.steering_noise,
-                        self.distance_noise,
-                        self.measurement_noise,
-                        self.sonar_noise)
+        robot.set_noise(new_s_noise=self.steering_noise,
+                        new_d_noise=self.distance_noise,
+                        new_m_noise=self.measurement_noise,
+                        new_sonar_noise=self.sonar_noise,
+                        new_c_noise=self.color_noise)
 
 
         # Initialize robot controller object given by contestant
         robot_controller = PythonTimedRobotController(self.robot_controller.clone())
-        robot_controller.init(self.init_position[0], self.init_position[1], self.init_position[2],
-                              robot.steering_noise
-                              , robot.distance_noise, robot.sonar_noise, robot.measurement_noise, self.speed,
-                              self.turning_speed, self.gps_delay,
-                              self.execution_cpu_time_limit
-                              )
+        robot_controller.init(x=self.init_position[0],
+                              y=self.init_position[1],
+                              angle=self.init_position[2],
+                              steering_noise=robot.steering_noise,
+                              distance_noise=robot.distance_noise,
+                              sonar_noise=robot.sonar_noise,
+                              color_noise=robot.color_noise,
+                              measurement_noise=robot.measurement_noise,
+                              speed=robot.speed,
+                              turning_speed=robot.turning_speed,
+                              gps_delay=self.gps_delay,
+                              execution_cpu_time_limit=self.execution_cpu_time_limit)
+
 
         maximum_timedelta = datetime.timedelta(seconds=self.execution_cpu_time_limit)
 
