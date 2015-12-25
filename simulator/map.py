@@ -7,7 +7,7 @@ from scipy import misc
 import os
 import numpy as np
 
-from .defines import *
+from misc.defines import *
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def load_map(file_name):
     meta = json.loads(open(file_name, "r").read())
 
     try:
-        bitmap = misc.imread(open(os.path.join(os.path.dirname(file_name), meta['bitmap'])))
+        bitmap = misc.imread(open(os.path.join(os.path.dirname(file_name), meta['color_map'])))
     except IOError, e:
         print "Not found color file, exiting"
         raise e
@@ -42,12 +42,17 @@ def load_map(file_name):
     if "title" not in meta:
         meta["title"] = ""
 
-    # Map is assumed to be always a simple box with 1-cell width wall around
-    # and single start field.
-    grid = [[1]*(meta["M"])]
-    grid += [[1] + [0]*(meta["M"] - 2) + [1] for _ in xrange(meta["N"] - 2)]
-    grid += [[1]*(meta["M"])]
-    grid[meta['start_field'][0]][meta['start_field'][1]] = MAP_START_POSITION
-    meta['file_name'] = file_name
+    if "board" not in meta:
+        # Map is assumed to be always a simple box with 1-cell width wall around
+        # and single start field.
+        grid = [[1]*(meta["M"])]
+        grid += [[1] + [0]*(meta["M"] - 2) + [1]]
+        grid += [[1, 0] + [0]*(meta["M"] - 4) + [0, 1] for _ in xrange(meta["N"] - 4)]
+        grid += [[1] + [0]*(meta["M"] - 2) + [1]]
+        grid += [[1]*(meta["M"])]
+        grid[meta['start_field'][0]][meta['start_field'][1]] = MAP_START_POSITION
+        meta['file_name'] = file_name
+    else:
+        raise RuntimeError("Not supported custom board parsing")
 
     return grid, bitmap, meta

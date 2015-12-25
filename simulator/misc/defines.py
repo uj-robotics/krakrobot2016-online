@@ -22,14 +22,14 @@ MAP_WHITE = 0 # coding MAP_WHITE
 MAP_SPECIAL_DIRECTION = 11 # coding [MAP_SPECIAL_DIRECTION, DIRECTION]
 
 ### Robot constants ###
-MOVE = "move" # (move, steer) -> OK
-TURN = "turn"
-BEEP = "beep"
-SENSE_SONAR = "sense_sonar"
-SENSE_GPS = "sense_gps"
-FINISH = "finish"
-SENSE_COLOR = "sense_color"
-WRITE_CONSOLE = "write_console"
+MOVE = "MOVE" # (move, steer) -> OK
+TURN = "TURN"
+BEEP = "BEEP"
+SENSE_SONAR = "SENSE_SONAR"
+SENSE_GPS = "SENSE_GPS"
+FINISH = "FINISH"
+SENSE_COLOR = "SENSE_COLOR"
+WRITE_CONSOLE = "WRITE_CONSOLE"
 
 ### Contest constants ###
 TICK_MOVE = 0.01
@@ -38,6 +38,7 @@ GPS_TIME = 1.0
 SONAR_TIME = 0.1
 FIELD_TIME = 0.1
 
+COLLISION_THRESHOLD = 50
 
 DEFAULT_ANIMATION_RATE = 100
 

@@ -1,10 +1,11 @@
 from math import (
     pi, sqrt, sin, cos
 )
-import random
 from copy import deepcopy
-from misc.map_utils import get_color
+
 import numpy as np
+
+from map import get_color
 from misc.defines import *
 
 

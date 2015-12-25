@@ -13,6 +13,8 @@
 
 """
 
+# TODO: pass constants in initialization
+
 from optparse import OptionParser
 from gui import SimulatorGUI
 from simulator import KrakrobotSimulator
@@ -57,59 +59,31 @@ def create_parser():
         help="Robot that will be compiled and run"
     )
     parser.add_option(
-        "--color_noise",
-        dest="color_noise",
-        default=10,
-        type="float",
-        help="Standard deviation of gaussian noise applied to sensed color"
-    )
-    parser.add_option(
         "--steering_noise",
         dest="steering_noise",
-        default=0.0004,
+        default=0.0004 * 1e-2,
         type="float",
         help="Standard deviation of gaussian noise applied to turning motion"
     )
     parser.add_option(
-        "--sonar_noise",
-        dest="sonar_noise",
-        default=0.0015,
-        type="float",
-        help="Standard deviation of gaussian noise applied to sensed distance by sonar"
-    )
-    parser.add_option(
-        "--gps_noise",
-        dest="measurement_noise",
-        default=0.1,
-        type="float",
-        help="Standard deviation of gaussian noise applied to the sensed GPS position"
-    )
-    parser.add_option(
-        "--gps_delay",
-        dest="gps_delay",
-        default=2.0,
-        type="float",
-        help="Time consumption (in simulation time units) of GPS"
-    )
-    parser.add_option(
         "--distance_noise",
         dest="distance_noise",
-        default=0.001,
+        default=0.001 * 1e-2,
         type="float",
         help="Standard deviation of gaussian noise applied to forward motion"
     )
     parser.add_option(
         "--speed",
         dest="speed",
-        default=5.0,
+        default=0.2,
         type="float",
-        help="Speed of the robot (i.e. units/simulation second)")
+        help="Speed of the robot (units/simulation second)")
     parser.add_option(
         "--turning_speed",
         dest="turning_speed",
         default=1.0,
         type="float",
-        help="Turning speed of the robot (i.e. rad/simulation second)"
+        help="Turning speed of the robot (rad/simulation second)"
     )
     parser.add_option(
         "--execution_cpu_time_limit",
@@ -145,23 +119,29 @@ def create_parser():
 
 parser = create_parser()
 (options, args) = parser.parse_args()
-print options, args
 
-simulator_params = {"visualisation": not options.command_line,
-                    "speed": options.speed,
-                    "color_noise": options.color_noise,
-                    "distance_noise": options.distance_noise,
-                    "steering_noise": options.steering_noise,
-                    "sonar_noise": options.sonar_noise,
-                    "measurement_noise": options.measurement_noise,
-                    "turning_speed": options.turning_speed,
-                    "execution_cpu_time_limit": options.execution_cpu_time_limit,
-                    "simulation_time_limit": options.simulation_time_limit,
-                    "frame_dt": options.frame_dt,
-                    "iteration_write_frequency": options.iteration_write_frequency,
-                    "gps_delay": options.gps_delay,
-                    "robot_controller":  construct_cmd_robot(options.robot), #compile_robot(options.robot)[0],
-                    "map": options.map
+simulator_params = {
+                        # Robot parameters
+                        "speed": options.speed,
+                        "distance_noise": options.distance_noise,
+                        "steering_noise": options.steering_noise,
+                        "turning_speed": options.turning_speed,
+
+                        # Simulation parameters
+                        "command_line": options.command_line,
+                        "execution_cpu_time_limit": options.execution_cpu_time_limit,
+                        "simulation_time_limit": options.simulation_time_limit,
+                        "frame_dt": options.frame_dt,
+                        "iteration_write_frequency": options.iteration_write_frequency,
+
+                        "robot_controller":  construct_cmd_robot(options.robot), #compile_robot(options.robot)[0],
+                        "map": options.map,
+
+                        # Krakrobot 2015 task doesn't allow for using GPS or sonar
+                        "measurement_noise": 0.,
+                        "color_noise": 0.,
+                        "sonar_noise": 0.,
+                        "gps_delay": 0.,
                     }
 
 

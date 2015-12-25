@@ -1,10 +1,10 @@
 {
 
     "title": "",
-    "start_field": [1,1],
+    "start_field": [2,2],
     "M": 9,
     "N": 9,
-    "bitmap": "1.png",
+    "color_map": "1.png",
     "beeps": [[6,5], [4, 5], [2, 7]]
 
 }

@@ -29,18 +29,20 @@ class RobotController(object):
         pass
 
 class CmdLineRobotController(RobotController):
-    def __init__(self, cmd):
-        self.p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, \
-                                  stdin=subprocess.PIPE)
+    def __init__(self, cmd, init_kwargs=None):
         self.cmd = cmd
+        self.init_kwargs = init_kwargs
 
     def clone(self):
-        return CmdLineRobotController(self.cmd)
+        return CmdLineRobotController(self.cmd, self.init_kwargs)
 
     def init(self, **kwargs):
-        assert len(kwargs) == 12, "Expected 12 parameters for constructor"
+        self.p = subprocess.Popen(self.cmd.split(), stdout=subprocess.PIPE, \
+                                  stdin=subprocess.PIPE)
+        assert len(kwargs) == 14, "Expected 14 parameters for constructor"
         for key, value in kwargs.iteritems():
-            self.p.stdin.write(key + ":" + str(value) + "\n")
+            if not self.init_kwargs or key in self.init_kwargs:
+                self.p.stdin.write(key + ":" + str(value) + "\n")
 
     def act(self):
         self.p.stdin.write("act\n")
@@ -51,19 +53,20 @@ class CmdLineRobotController(RobotController):
             return cmd
 
     def on_sense_color(self, *args):
-        self.p.stdin.write("on_sense_color\n")
+        self.p.stdin.write("color\n")
         self.p.stdin.write(" ".join(map(str, args)) + "\n")
 
     def on_sense_sonar(self, *args):
-        self.p.stdin.write("on_sense_sonar\n")
+        self.p.stdin.write("sonar\n")
         self.p.stdin.write(" ".join(map(str, args)) + "\n")
 
     def on_sense_gps(self, *args):
-        self.p.stdin.write("on_sense_gps\n")
+        self.p.stdin.write("g[s\n")
         self.p.stdin.write(" ".join(map(str, args)) + "\n")
 
     def terminate(self):
-        self.p.communicate()
+        if self.p:
+            self.p.communicate()
 
 class PythonTimedRobotController(RobotController):
     """ Wrapper class to manage time consumption (also for other language packages) """
@@ -128,4 +131,5 @@ def compile_robot(file_name, module_name = "contestant_module"):
 
 def construct_cmd_robot(cmd):
     """ Compiles robot from given file and returns class object """
-    return CmdLineRobotController(cmd=cmd)
+    return CmdLineRobotController(cmd=cmd, init_kwargs=["x", "y", "angle", "steering_noise",
+             "distance_noise", "speed", "turning_speed", "execution_cpu_time_limit", "N", "M"])

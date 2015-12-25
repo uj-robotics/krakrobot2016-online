@@ -6,35 +6,24 @@
     Simulator which runs the simulation and renders SVG frames.
 """
 
-# TODO: restart fix
-
 from Queue import Queue
 import time
 import datetime
 from math import (
     pi
 )
-
 import traceback
-from misc.map_utils import logger, load_map
+
+from map import logger, load_map
 from misc.defines import *
 from robot import Robot
 from robot_controller import PythonTimedRobotController
 
-__author__ = u'Stanisław Jastrzębski'
-__copyright__ = 'Copyright 2013-2014,\
-                    Jagiellonian University Robotics Interest Group'
-
-__license__ = 'MIT'
-__version__ = '0.0.1a'
-__maintainer__ = u'Stanisław Jastrzębski'
-__email__ = 'grimghil@gmail.com'
-
-
 class KrakrobotSimulator(object):
-    COLLISION_THRESHOLD = 50
 
-    def __init__(self, map, robot_controller,
+    def __init__(self,
+                 map,
+                 robot_controller,
                  init_position=None,
                  steering_noise=0.01,
                  color_noise=10,
@@ -50,29 +39,28 @@ class KrakrobotSimulator(object):
                  gps_delay=2.0,
                  collision_threshold=50,
                  iteration_write_frequency=1000,
-                 visualisation=True,
+                 command_line=True,
                  print_robot=True,
                  print_logger=False,
+                 accepted_commands=[TURN, MOVE, BEEP, FINISH]
                  ):
         """
-            Initialize KrakrobotSimulator object
+            Construct KrakrobotSimulator instancew
 
             :param steering_noise - variance of steering in move
             :param distance_noise - variance of distance in move
             :param measurement_noise - variance of measurement (GPS??)
             :param map - map for the robot simulator representing the maze or file to map
             :param init_position - starting position of the Robot (can be moved to map class) [x,y,heading]
-
             :param speed - distance travelled by one move action (cannot be bigger than 0.5, or he could traverse the walls)
             :param simulation_time_limit - limit in ms for whole robot execution (also with init)
             :param collision_threshold - maximum number of collisions after which robot is destroyed
             :param simulation_dt -  controlls simulation calculation intensivity
-
             :param frame_dt - save frame every dt
             :param robot - RobotController class that will be simulated in run procedure
         """
 
-        if type(map) is str:
+        if type(map) is str :
             grid, bitmap, meta = load_map(map)
             self.map_title = meta["title"]
             self.map_meta = meta
@@ -107,8 +95,9 @@ class KrakrobotSimulator(object):
         self.robot_controller = robot_controller
         self.print_robot = print_robot
         self.print_logger = print_logger
+        self.accepted_commands = accepted_commands
 
-        self.visualisation = visualisation
+        self.command_line = command_line
 
         self.sonar_time = SONAR_TIME
         self.gps_delay = gps_delay
@@ -201,7 +190,9 @@ class KrakrobotSimulator(object):
                               speed=robot.speed,
                               turning_speed=robot.turning_speed,
                               gps_delay=self.gps_delay,
-                              execution_cpu_time_limit=self.execution_cpu_time_limit)
+                              execution_cpu_time_limit=self.execution_cpu_time_limit,
+                              N=self.map_meta['N'],
+                              M=self.map_meta['M'])
 
 
         maximum_timedelta = datetime.timedelta(seconds=self.execution_cpu_time_limit)
@@ -234,7 +225,8 @@ class KrakrobotSimulator(object):
                 iteration += 1
 
                 time.sleep(self.simulation_dt)
-                if frame_time_left > self.frame_dt and self.visualisation:
+
+                if frame_time_left > self.frame_dt and not self.command_line:
                     ### Save frame <=> last command took long ###
                     if len(self.robot_path) == 0 or \
                                     robot.x != self.robot_path[-1][0] or robot.y != self.robot_path[-1][1]:
@@ -266,10 +258,10 @@ class KrakrobotSimulator(object):
                         if not robot_proposed.check_collision(self.grid):
                             collision_counter += 1
                             self.collisions.append((robot_proposed.x, robot_proposed.y))
-                            logger.error("##Collision##")
-                            if collision_counter >= KrakrobotSimulator.COLLISION_THRESHOLD:
+                            logger.error("Collision")
+                            if collision_counter >= COLLISION_THRESHOLD:
                                 raise KrakrobotException \
-                                    ("The robot has been destroyed by wall. Sorry! We miss WALLE already..")
+                                    ("The robot has been destroyed by wall. Sorry! We miss WALLE already.")
                         else:
                             robot = robot_proposed
 
@@ -280,6 +272,8 @@ class KrakrobotSimulator(object):
                         else:
                             current_command = None
                         frame_time_left += self.tick_move / self.speed
+                    else:
+                        raise KrakrobotException("Robot hasn't supplied any command")
 
                 else:
                     ### Get current command ###
@@ -290,10 +284,14 @@ class KrakrobotSimulator(object):
                     except Exception, e:
                         logger.error("Robot controller failed with exception " + str(e))
                         break
+
                     # logger.info("Received command "+str(command))
                     # logger.info("Robot timer "+str(robot.time_elapsed))
                     if not command or len(command) == 0:
                         raise KrakrobotException("No command passed, or zero length command passed")
+
+                    if command[0] not in self.accepted_commands:
+                        raise KrakrobotException("Not allowed command " + str(command[0]))
 
                     # Dispatch command
                     if command[0] == SENSE_GPS:
@@ -316,7 +314,7 @@ class KrakrobotSimulator(object):
                         frame_time_left += self.light_sensor_time
                     elif command[0] == TURN:
                         if len(command) <= 1 or len(command) > 2:
-                            raise KrakrobotException("Wrong command length")
+                            raise KrakrobotException("Incorrect command length")
                         current_command = command
                         current_command[1] = int(current_command[1])
                         # Turn robot
@@ -324,7 +322,7 @@ class KrakrobotSimulator(object):
 
                     elif command[0] == MOVE:
                         if len(command) <= 1 or len(command) > 2:
-                            raise KrakrobotException("Wrong command length")
+                            raise KrakrobotException("Incorrect command length")
 
                         if command[1] < 0:
                             raise KrakrobotException("Not allowed negative distance")
@@ -336,9 +334,8 @@ class KrakrobotSimulator(object):
                     elif command[0] == FINISH:
                         logger.info("Communicated finishing")
                         communicated_finished = True
-
                     else:
-                        raise KrakrobotException("Not received command from act(), or command was incorrect :(")
+                        raise KrakrobotException("Not received command from act(), or command was incorrect")
 
         except Exception, e:
             logger.error("Simulation failed with exception " + str(e) + " after " + str(robot.time_elapsed) + " time")
@@ -354,7 +351,7 @@ class KrakrobotSimulator(object):
             communicated_finished))
 
         self.sim_frames.put(self._create_sim_data(robot))
-        while frame_time_left >= self.frame_dt and self.visualisation and not self.terminate_flag:
+        while frame_time_left >= self.frame_dt and not self.command_line and not self.terminate_flag:
             ### Save frame <=> last command took long ###
             self.sim_frames.put(self._create_sim_data(robot))
             frame_time_left -= self.frame_dt
