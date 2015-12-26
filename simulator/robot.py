@@ -13,7 +13,7 @@ class Robot:
     """ The main class representing robot that can sense and move """
 
     def __init__(self, speed, turning_speed, gps_time, sonar_time, tick_move, tick_rotate,
-                 color_sensor_displacement=(SQUARE_SIDE/4.0, 0)):
+                 color_sensor_displacement=SQUARE_SIDE/3.0):
         """
         Initialize robot
         """
@@ -103,12 +103,16 @@ class Robot:
         res.time_elapsed += abs(turn / self.turning_speed)  # speed is pi/time_unit
         return res
 
-    def sense_color(self, grid, bitmap):
+    def sense_color(self, map):
         """
         Returns color encoded as 3 integers from 0 to 255.
         """
-        raw_color = get_color(bitmap, self.x + self.color_sensor_displacement[0],
-                         self.y + self.color_sensor_displacement[1], map_height=len(grid), map_width=len(grid[0]))
+        # TODO: uncomment
+        dcx = self.color_sensor_displacement * cos(self.orientation)
+        dcy = self.color_sensor_displacement * sin(self.orientation)
+
+        raw_color = get_color(map, self.x + dcx,
+                         self.y + dcy)
 
         random_vector = self.rng.normal(0, 1.0, size=(3,))
         random_vector /= np.linalg.norm(random_vector)

@@ -14,6 +14,7 @@
 """
 
 # TODO: pass constants in initialization
+# TODO: why frame rate depends on moving speed?
 
 from optparse import OptionParser
 from gui import SimulatorGUI
@@ -55,7 +56,7 @@ def create_parser():
         "-r",
         "--robot",
         dest="robot",
-        default="python2.7 examples/python/random_search.py",
+        default="python2.7 examples/python/random_search_generator.py",
         help="Robot that will be compiled and run"
     )
     parser.add_option(
@@ -75,7 +76,7 @@ def create_parser():
     parser.add_option(
         "--speed",
         dest="speed",
-        default=0.2,
+        default=1.,
         type="float",
         help="Speed of the robot (units/simulation second)")
     parser.add_option(

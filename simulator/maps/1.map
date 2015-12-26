@@ -4,7 +4,7 @@
     "start_field": [2,2],
     "M": 9,
     "N": 9,
-    "color_map": "1.png",
+    "color_bitmap_file": "1.png",
     "beeps": [[6,5], [4, 5], [2, 7]]
 
 }

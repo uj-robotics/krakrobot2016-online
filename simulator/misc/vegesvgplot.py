@@ -3783,11 +3783,13 @@ def SVGGrid(IT, Grid):
 
   GeneralAttributes = DictWithDefaults(
     Grid, 'GeneralAttributes', {
-      'stroke': 'rgba(0, 192, 255, 0.5)',
+      'stroke': 'rgba(0, 0, 0, 0.9)',
       'fill': 'none',
       'stroke-linecap': 'butt',
       'stroke-width': '%g' % (StrokeWidth)
   })
+
+  print GeneralAttributes
 
   XFormList = []
 
@@ -3809,9 +3811,9 @@ def SVGGrid(IT, Grid):
       'stroke-linecap': 'square',
       'stroke-width': '%g' % (max(0.0075, min(0.02, (0.1 / Scale[0]))))
   })
-
+  # GridLineAttributes['stroke'] = "rgba(0, 0, 0, 1)
+  # Grid['GeneralAttributes']['stroke'] = 'black'
   Result += SVGGroup(IT, GeneralAttributes)
-
   if Field('DrawGrid', True):
 
     Result += IT('<!-- Grid lines -->')
@@ -3821,19 +3823,18 @@ def SVGGrid(IT, Grid):
       GridOffset = (-0.5, -0.5)
     else:
       GridOffset = (0.0, 0.0)
-
     AM = AffineMtxTS(GridOffset, 1.0)
 
     Result += IT('<!-- Grid lines parallel to the y axis -->')
     S = []
     for x in range(RangeMinima[0], RangeMaxima[0] + 1):
-      S += [(A, (x, RangeMinima[1])), (A, (x, RangeMaxima[1])), B]
+      S += [(A, (x, RangeMinima[1] + h)), (A, (x, RangeMaxima[1] - h)), B]
     Result += SVGPath(IT, TransformedShape(AM, S))
 
     Result += IT('<!-- Grid lines parallel to the x axis -->')
     S = []
     for y in range(RangeMinima[1], RangeMaxima[1] + 1):
-      S += [(A, (RangeMinima[0], y)), (A, (RangeMaxima[0], y)), B]
+      S += [(A, (RangeMinima[0] + h, y)), (A, (RangeMaxima[0] - h, y)), B]
     Result += SVGPath(IT, TransformedShape(AM, S))
 
     if AddressSquareCentres:
@@ -3868,7 +3869,6 @@ def SVGGrid(IT, Grid):
     Result += IT('<!-- y -->')
     Result += SVGPath(IT, S, {'fill': '#0c0'})
     Result += SVGGroupEnd(IT)
-
   return Result
 
 

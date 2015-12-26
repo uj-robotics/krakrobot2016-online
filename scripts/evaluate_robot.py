@@ -17,7 +17,7 @@ def create_parser():
         "-r",
         "--robot_file",
         dest="robot_file",
-        default="examples/python/random_search.py",
+        default="examples/python/random_search_simple.py",
         help="Path to robot binary"
     )
     parser.add_option(

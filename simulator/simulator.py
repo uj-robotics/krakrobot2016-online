@@ -42,7 +42,7 @@ class KrakrobotSimulator(object):
                  command_line=True,
                  print_robot=True,
                  print_logger=False,
-                 accepted_commands=[TURN, MOVE, BEEP, FINISH]
+                 accepted_commands=[TURN, MOVE, BEEP, FINISH, SENSE_COLOR]
                  ):
         """
             Construct KrakrobotSimulator instancew
@@ -61,20 +61,17 @@ class KrakrobotSimulator(object):
         """
 
         if type(map) is str :
-            grid, bitmap, meta = load_map(map)
-            self.map_title = meta["title"]
-            self.map_meta = meta
-            self.grid = grid
-            self.bitmap = bitmap
-            for row in grid:
+            self.map = load_map(map)
+            self.map_title = self.map["title"]
+            for row in self.map['board']:
                 logger.info(row)
         else:
-            self.grid = map
+            self.map = map
             self.map_title = ""
             self.map_params = {}
 
-        self.N = len(self.grid)
-        self.M = len(self.grid[0])
+        self.N = self.map['N']
+        self.M = self.map['M']
 
         self.iteration_write_frequency = iteration_write_frequency
 
@@ -85,8 +82,8 @@ class KrakrobotSimulator(object):
         else:
             for i in xrange(self.N):
                 for j in xrange(self.M):
-                    if self.grid[i][j] == MAP_START_POSITION:
-                        self.init_position = (i, j, 0)
+                    if self.map['board'][i][j] == MAP_START_POSITION:
+                        self.init_position = (i + 0.5, j + 0.5, 0)
 
         self.speed = speed
         self.turning_speed = turning_speed
@@ -126,7 +123,7 @@ class KrakrobotSimulator(object):
 
         for i in xrange(self.N):
             for j in xrange(self.M):
-                if self.grid[i][j] == MAP_GOAL:
+                if self.map['board'][i][j] == MAP_GOAL:
                     self.goal = (i, j)
 
     def get_next_frame(self):
@@ -189,10 +186,11 @@ class KrakrobotSimulator(object):
                               measurement_noise=robot.measurement_noise,
                               speed=robot.speed,
                               turning_speed=robot.turning_speed,
+                              color_sensor_displacement=robot.color_sensor_displacement,
                               gps_delay=self.gps_delay,
                               execution_cpu_time_limit=self.execution_cpu_time_limit,
-                              N=self.map_meta['N'],
-                              M=self.map_meta['M'])
+                              N=self.map['N'],
+                              M=self.map['M'])
 
 
         maximum_timedelta = datetime.timedelta(seconds=self.execution_cpu_time_limit)
@@ -223,7 +221,7 @@ class KrakrobotSimulator(object):
                     logger.info(current_command)
 
                 iteration += 1
-
+                # TODO: why this sleep is here?
                 time.sleep(self.simulation_dt)
 
                 if frame_time_left > self.frame_dt and not self.command_line:
@@ -231,7 +229,7 @@ class KrakrobotSimulator(object):
                     if len(self.robot_path) == 0 or \
                                     robot.x != self.robot_path[-1][0] or robot.y != self.robot_path[-1][1]:
                         self.robot_path.append((robot.x, robot.y))
-                    self.sim_frames.put(self._create_sim_data(robot))
+                    self.sim_frames.put(self._create_sim_data(robot, beeps))
 
                     frame_count += 1
                     frame_time_left -= self.frame_dt
@@ -255,7 +253,7 @@ class KrakrobotSimulator(object):
                     elif current_command[0] == MOVE:
                         robot_proposed = robot.move(1)
 
-                        if not robot_proposed.check_collision(self.grid):
+                        if not robot_proposed.check_collision(self.map['board']):
                             collision_counter += 1
                             self.collisions.append((robot_proposed.x, robot_proposed.y))
                             logger.error("Collision")
@@ -271,6 +269,7 @@ class KrakrobotSimulator(object):
                             current_command = [current_command[0], current_command[1] - 1]
                         else:
                             current_command = None
+
                         frame_time_left += self.tick_move / self.speed
                     else:
                         raise KrakrobotException("Robot hasn't supplied any command")
@@ -305,11 +304,11 @@ class KrakrobotSimulator(object):
                         if self.print_robot:
                             print new_line
                     elif command[0] == SENSE_SONAR:
-                        w = robot.sense_sonar(self.grid)
+                        w = robot.sense_sonar(self.map['board'])
                         robot_controller.on_sense_sonar(w)
                         frame_time_left += self.sonar_time
                     elif command[0] == SENSE_COLOR:
-                        r, g, b = robot.sense_color(self.grid, self.bitmap)
+                        r, g, b = robot.sense_color(self.map)
                         robot_controller.on_sense_color(r, g, b)
                         frame_time_left += self.light_sensor_time
                     elif command[0] == TURN:
@@ -347,13 +346,13 @@ class KrakrobotSimulator(object):
                     "map": self.map_meta
                     }
 
-        logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds with goal reached = " + str(
+        logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds, communicated_finish=" + str(
             communicated_finished))
 
-        self.sim_frames.put(self._create_sim_data(robot))
+        self.sim_frames.put(self._create_sim_data(robot, beeps))
         while frame_time_left >= self.frame_dt and not self.command_line and not self.terminate_flag:
             ### Save frame <=> last command took long ###
-            self.sim_frames.put(self._create_sim_data(robot))
+            self.sim_frames.put(self._create_sim_data(robot, beeps))
             frame_time_left -= self.frame_dt
 
         # Simulation process finished
@@ -362,8 +361,10 @@ class KrakrobotSimulator(object):
         self.results = None
         try:
             # Return simulation results
+            map_to_save = dict(self.map)
+            del map_to_save['color_bitmap']
             self.results = {"sim_time": robot.time_elapsed,
-                    "map": self.map_meta,
+                    "map": map_to_save,
                     "beeps": beeps,
                     "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
                     "error": False
@@ -381,19 +382,25 @@ class KrakrobotSimulator(object):
     def get_logs(self):
         return self.logs
 
-    def _create_sim_data(self, robot):
+    def _create_sim_data(self, robot, beeps):
         """
             @returns Descriptor that is sufficient to visualize current frame
         """
         data = {}
         # data['GoalThreshold'] = self.goal_threshold
-        data['Sparks'] = []  # ommiting errors list(self.collisions)
+        data['Sparks'] = list(beeps)  # ommiting errors list(self.collisions)
         data['ActualPath'] = list(self.robot_path)
+        # data['Grid'] = {"DrawGrid": True,
+        #
+        #     'CanvasMinima': (0, 0),
+        #     'CanvasMaxima': (20, 20),
+        #     'RangeMinima': (0, 0),
+        #     'RangeMaxima': (5, 5)
+        #                 }
         data['ActualPosition'] = [robot.x, robot.y]
         data['ActualOrientation'] = robot.orientation
-        data['Map'] = self.grid
+        data['Map'] = self.map
         data['StartPos'] = self.init_position
-        # data['GoalPos'] = self.goal
         # data['GoalAchieved'] = self.goal_achieved
         return data
 

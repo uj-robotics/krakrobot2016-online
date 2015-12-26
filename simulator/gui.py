@@ -2,6 +2,7 @@ import os
 import sys
 
 from PyQt4 import QtGui, QtCore, QtSvg
+from PyQt4.QtGui import QPixmap, QApplication
 from simulator import KrakrobotSimulator
 from robot_controller import compile_robot
 from misc.visualisation import PrepareFrame, RenderAnimatedPart, \
@@ -232,7 +233,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _init_ui(self):
 
-        self.window_icon = QtGui.QIcon('./media/iiujrobotics.svg')
+        self.window_icon = QtGui.QIcon('./simulator/media/iiujrobotics.svg')
         self.setWindowIcon(self.window_icon)
 
         ### Toolbar ###
