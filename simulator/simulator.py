@@ -8,6 +8,7 @@
 
 from Queue import Queue
 import time
+import numpy as np
 import datetime
 from math import (
     pi
@@ -62,16 +63,10 @@ class KrakrobotSimulator(object):
 
         if type(map) is str :
             self.map = load_map(map)
-            self.map_title = self.map["title"]
             for row in self.map['board']:
                 logger.info(row)
         else:
             self.map = map
-            self.map_title = ""
-            self.map_params = {}
-
-        self.N = self.map['N']
-        self.M = self.map['M']
 
         self.iteration_write_frequency = iteration_write_frequency
 
@@ -80,8 +75,8 @@ class KrakrobotSimulator(object):
         if init_position is not None:
             self.init_position = tuple(init_position)
         else:
-            for i in xrange(self.N):
-                for j in xrange(self.M):
+            for i in xrange(self.map['N']):
+                for j in xrange(self.map['M']):
                     if self.map['board'][i][j] == MAP_START_POSITION:
                         self.init_position = (i + 0.5, j + 0.5, 0)
 
@@ -98,10 +93,7 @@ class KrakrobotSimulator(object):
 
         self.sonar_time = SONAR_TIME
         self.gps_delay = gps_delay
-        self.light_sensor_time = FIELD_TIME
-
-        self.tick_move = TICK_MOVE
-        self.tick_rotate = TICK_ROTATE
+        self.light_sensor_time = LIGHT_SENSOR_TIME
 
         self.simulation_time_limit = simulation_time_limit
         self.execution_cpu_time_limit = execution_cpu_time_limit
@@ -121,8 +113,8 @@ class KrakrobotSimulator(object):
         else:
             logger.propagate = False
 
-        for i in xrange(self.N):
-            for j in xrange(self.M):
+        for i in xrange(self.map['N']):
+            for j in xrange(self.map['M']):
                 if self.map['board'][i][j] == MAP_GOAL:
                     self.goal = (i, j)
 
@@ -165,7 +157,7 @@ class KrakrobotSimulator(object):
         self.reset()
 
         # Initialize robot object
-        robot = Robot(self.speed, self.turning_speed, self.gps_delay, self.sonar_time, self.tick_move, self.tick_rotate)
+        robot = Robot(self.speed, self.turning_speed, self.gps_delay, self.sonar_time, TICK_MOVE, TICK_ROTATE)
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(new_s_noise=self.steering_noise,
                         new_d_noise=self.distance_noise,
@@ -208,8 +200,6 @@ class KrakrobotSimulator(object):
             while not communicated_finished \
                     and not robot.time_elapsed >= self.simulation_time_limit \
                     and not self.terminate_flag:
-                # logger.info(robot_controller.time_consumed)
-
 
                 if maximum_timedelta <= robot_controller.time_consumed:
                     raise KrakrobotException("Robot has exceeded CPU time limit")
@@ -222,7 +212,7 @@ class KrakrobotSimulator(object):
 
                 iteration += 1
                 # TODO: why this sleep is here?
-                time.sleep(self.simulation_dt)
+                # time.sleep(self.simulation_dt)
 
                 if frame_time_left > self.frame_dt and not self.command_line:
                     ### Save frame <=> last command took long ###
@@ -238,16 +228,13 @@ class KrakrobotSimulator(object):
                     ### Process current command ###
 
                     if current_command[0] == TURN:
-
-                        robot = robot.turn(1) if current_command[1] > 0 else robot.turn(-1)
-                        if current_command[1] > 1:
-                            current_command = [current_command[0], current_command[1] - 1]
-                        elif current_command[1] < 1:
-                            current_command = [current_command[0], current_command[1] + 1]
-                        else:
+                        robot = robot.turn(np.sign(current_command[1]))
+                        if current_command[1] == 0:
                             current_command = None
+                        else:
+                            current_command = [current_command[0], current_command[1] - np.sign(current_command[1])]
 
-                        frame_time_left += self.tick_rotate / self.turning_speed
+                        frame_time_left += TICK_ROTATE / self.turning_speed
 
 
                     elif current_command[0] == MOVE:
@@ -270,7 +257,7 @@ class KrakrobotSimulator(object):
                         else:
                             current_command = None
 
-                        frame_time_left += self.tick_move / self.speed
+                        frame_time_left += TICK_MOVE / self.speed
                     else:
                         raise KrakrobotException("Robot hasn't supplied any command")
 
@@ -316,9 +303,6 @@ class KrakrobotSimulator(object):
                             raise KrakrobotException("Incorrect command length")
                         current_command = command
                         current_command[1] = int(current_command[1])
-                        # Turn robot
-                        # robot = robot.turn(command[1])
-
                     elif command[0] == MOVE:
                         if len(command) <= 1 or len(command) > 2:
                             raise KrakrobotException("Incorrect command length")
@@ -328,6 +312,7 @@ class KrakrobotSimulator(object):
                         # Move robot
                         current_command = command
                         current_command[1] = int(current_command[1])
+
                     elif command[0] == BEEP:
                         beeps.append((robot.x, robot.y))
                     elif command[0] == FINISH:
@@ -337,13 +322,16 @@ class KrakrobotSimulator(object):
                         raise KrakrobotException("Not received command from act(), or command was incorrect")
 
         except Exception, e:
+            # TODO: merge with final result!
             logger.error("Simulation failed with exception " + str(e) + " after " + str(robot.time_elapsed) + " time")
+            map_to_save = dict(self.map)
+            del map_to_save['color_bitmap']
             return {
                     "sim_time": robot.time_elapsed,
                     "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
                     "error": str(traceback.format_exc()),
                     "beeps": beeps,
-                    "map": self.map_meta
+                    "map": map_to_save
                     }
 
         logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds, communicated_finish=" + str(

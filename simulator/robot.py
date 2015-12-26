@@ -13,7 +13,7 @@ class Robot:
     """ The main class representing robot that can sense and move """
 
     def __init__(self, speed, turning_speed, gps_time, sonar_time, tick_move, tick_rotate,
-                 color_sensor_displacement=SQUARE_SIDE/3.0):
+                 color_sensor_displacement=SQUARE_SIDE/2.0):
         """
         Initialize robot
         """
@@ -57,16 +57,15 @@ class Robot:
 
     def check_collision(self, grid):
         """
-        Checks for collisions with some slack
+        Checks for collisions by checking if color sensor is hitting wal
+        (color sensor is located at the tip of the robot)
+
         :note Cannot be called by contestant
         :returns True if no collisions
         """
-
-        x_disc, y_disc = int(self.x + 0.5), int(self.y + 0.5)
-
-        dist_x_border = min(abs(self.x - x_disc), abs(self.x - (x_disc + 1)))
-        dist_y_border = min(abs(self.y - y_disc), abs(self.y - (y_disc + 1)))
-
+        dcx = self.color_sensor_displacement * cos(self.orientation)
+        dcy = self.color_sensor_displacement * sin(self.orientation)
+        x_disc, y_disc = int(self.x + dcx), int(self.y + dcy)
         if grid[x_disc][y_disc] == 1:
             return False
 

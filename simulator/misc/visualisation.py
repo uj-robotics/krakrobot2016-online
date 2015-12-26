@@ -31,7 +31,7 @@ from vegesvgplot import (
 
 def fill_visualisation_descriptor(Data):
     Map = Data['Map']
-    Data['Title'] = 'Krakrobot 2014 Qualifications'
+    Data['Title'] = 'KrakRobot 2015 Qualifications'
     Grid = {
         'CanvasMinima': (0.5, 1.5),
         'CanvasMaxima': (27.5, 18.5),
