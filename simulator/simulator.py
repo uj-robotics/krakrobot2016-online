@@ -334,9 +334,6 @@ class KrakrobotSimulator(object):
                     "map": map_to_save
                     }
 
-        logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds, communicated_finish=" + str(
-            communicated_finished))
-
         self.sim_frames.put(self._create_sim_data(robot, beeps))
         while frame_time_left >= self.frame_dt and not self.command_line and not self.terminate_flag:
             ### Save frame <=> last command took long ###
@@ -357,6 +354,8 @@ class KrakrobotSimulator(object):
                     "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
                     "error": False
                     }
+            logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds, communicated_finish=" + str(
+                communicated_finished))
             return self.results
 
         except Exception, e:

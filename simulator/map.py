@@ -61,7 +61,7 @@ def load_map(file_name):
         map['color_board'] = copy.deepcopy(map['board'])
         for i in range(map['N']):
             for j in range(map['M']):
-                map['color_board'][i][j] = list(get_color(map, i + 0.5, j + 0.5))
+                map['color_board'][i][j] = [int(v) for v in get_color(map, i + 0.5, j + 0.5)]
 
     else:
         raise RuntimeError("Not supported custom board parsing")
