@@ -4,7 +4,7 @@
 """
     Krakrobot Python Simulator
 
-    Krakrobot 2015 Qualifications simulator.
+    Krakrobot 2016 Qualifications simulator.
 
     Many thanks to udacity.com:
     https://www.udacity.com/wiki/CS373%20Visualizing%20Maze%20Driving,
