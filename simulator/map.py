@@ -3,6 +3,7 @@
 import logging
 import json
 import scipy
+import scipy.misc
 import os
 import numpy as np
 import copy
