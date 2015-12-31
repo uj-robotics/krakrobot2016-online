@@ -39,7 +39,7 @@ def load_map(file_name):
     map = json.loads(open(file_name, "r").read())
 
     try:
-        map['color_bitmap'] = imread(open(os.path.join(os.path.dirname(file_name), map['color_bitmap_file'])))
+        map['color_bitmap'] = imread(os.path.join(os.path.dirname(file_name)))
     except IOError, e:
         print "Not found color file, exiting"
         raise e
