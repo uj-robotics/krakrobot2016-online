@@ -3,7 +3,6 @@
 import logging
 import json
 import scipy
-from scipy import misc
 import os
 import numpy as np
 import copy
@@ -38,7 +37,7 @@ def load_map(file_name):
     map = json.loads(open(file_name, "r").read())
 
     try:
-        map['color_bitmap'] = misc.imread(open(os.path.join(os.path.dirname(file_name), map['color_bitmap_file'])))
+        map['color_bitmap'] = scipy.misc.imread(open(os.path.join(os.path.dirname(file_name), map['color_bitmap_file'])))
     except IOError, e:
         print "Not found color file, exiting"
         raise e
