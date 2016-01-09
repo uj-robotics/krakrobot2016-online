@@ -30,6 +30,7 @@ class KrakrobotSimulator(object):
                  color_noise=10,
                  sonar_noise=0.1,
                  distance_noise=0.001,
+                 forward_steering_drift=0,
                  measurement_noise=0.2,
                  speed=5.0,
                  turning_speed=0.4 * pi,
@@ -103,6 +104,7 @@ class KrakrobotSimulator(object):
         self.color_noise = color_noise
         self.sonar_noise = sonar_noise
         self.distance_noise = distance_noise
+        self.forward_steering_drift = forward_steering_drift
         self.measurement_noise = measurement_noise
         self.steering_noise = steering_noise
         self.reset()
@@ -162,6 +164,7 @@ class KrakrobotSimulator(object):
         robot.set_noise(new_s_noise=self.steering_noise,
                         new_d_noise=self.distance_noise,
                         new_m_noise=self.measurement_noise,
+                        new_fs_drift=self.forward_steering_drift,
                         new_sonar_noise=self.sonar_noise,
                         new_c_noise=self.color_noise)
 
@@ -211,8 +214,6 @@ class KrakrobotSimulator(object):
                     logger.info(current_command)
 
                 iteration += 1
-                # TODO: why this sleep is here?
-                # time.sleep(self.simulation_dt)
 
                 if frame_time_left > self.frame_dt and not self.command_line:
                     ### Save frame <=> last command took long ###
@@ -229,17 +230,9 @@ class KrakrobotSimulator(object):
 
                     if current_command[0] == TURN:
                         robot = robot.turn(np.sign(current_command[1]))
-                        if current_command[1] == 0:
-                            current_command = None
-                        else:
-                            current_command = [current_command[0], current_command[1] - np.sign(current_command[1])]
-
                         frame_time_left += TICK_ROTATE / self.turning_speed
-
-
                     elif current_command[0] == MOVE:
-                        #FIXME handle negative MOVE arguments (e.g. MOVE -4)
-                        robot_proposed = robot.move(1)
+                        robot_proposed = robot.move(np.sign(current_command[1]))
 
                         if not robot_proposed.check_collision(self.map['board']):
                             collision_counter += 1
@@ -251,17 +244,14 @@ class KrakrobotSimulator(object):
                         else:
                             robot = robot_proposed
 
-                        ### Register movement, just do not move the robot
-
-                        #FIXME handle negative MOVE arguments
-                        if current_command[1] > 1:
-                            current_command = [current_command[0], current_command[1] - 1]
-                        else:
-                            current_command = None
-
                         frame_time_left += TICK_MOVE / self.speed
                     else:
                         raise KrakrobotException("Robot hasn't supplied any command")
+
+                    if current_command[1] == 0:
+                        current_command = None
+                    else:
+                        current_command = [current_command[0], current_command[1] - np.sign(current_command[1])]
 
                 else:
                     ### Get current command ###
@@ -318,8 +308,7 @@ class KrakrobotSimulator(object):
                         current_command[1] = int(current_command[1])
 
                     elif command[0] == BEEP:
-                        #TODO add beep timestamp
-                        beeps.append((robot.x, robot.y))
+                        beeps.append((robot.x, robot.y, robot.time_elapsed))
                     elif command[0] == FINISH:
                         logger.info("Communicated finishing")
                         communicated_finished = True
