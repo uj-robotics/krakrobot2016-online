@@ -238,6 +238,7 @@ class KrakrobotSimulator(object):
 
 
                     elif current_command[0] == MOVE:
+                        #FIXME handle negative MOVE arguments (e.g. MOVE -4)
                         robot_proposed = robot.move(1)
 
                         if not robot_proposed.check_collision(self.map['board']):
@@ -252,6 +253,7 @@ class KrakrobotSimulator(object):
 
                         ### Register movement, just do not move the robot
 
+                        #FIXME handle negative MOVE arguments
                         if current_command[1] > 1:
                             current_command = [current_command[0], current_command[1] - 1]
                         else:
@@ -266,12 +268,14 @@ class KrakrobotSimulator(object):
 
                     command = None
                     try:
+                        r, g, b = robot.sense_color(self.map)
+                        robot_controller.on_sense_color(r, g, b)
                         command = list(robot_controller.act())
                     except Exception, e:
                         logger.error("Robot controller failed with exception " + str(e))
                         break
 
-                    # logger.info("Received command "+str(command))
+                    logger.info("Received command: "+str(command))
                     # logger.info("Robot timer "+str(robot.time_elapsed))
                     if not command or len(command) == 0:
                         raise KrakrobotException("No command passed, or zero length command passed")
@@ -314,6 +318,7 @@ class KrakrobotSimulator(object):
                         current_command[1] = int(current_command[1])
 
                     elif command[0] == BEEP:
+                        #TODO add beep timestamp
                         beeps.append((robot.x, robot.y))
                     elif command[0] == FINISH:
                         logger.info("Communicated finishing")
