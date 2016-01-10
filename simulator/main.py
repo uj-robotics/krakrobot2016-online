@@ -68,7 +68,14 @@ def create_parser():
         dest="distance_noise",
         default=0.001 * 1e-2,
         type="float",
-        help="Standard deviation of gaussian noise applied to forward motion"
+        help="Standard deviation of gaussian noise applied to position after forward motion"
+    )
+    parser.add_option(
+        "--forward_steering_drift",
+        dest="forward_steering_drift",
+        default=0.0002 * 1e-2,
+        type="float",
+        help="Constant drift applied to robot orientation after forward motion"
     )
     parser.add_option(
         "--speed",
@@ -93,7 +100,7 @@ def create_parser():
     parser.add_option(
         "--simulation_time_limit",
         dest="simulation_time_limit",
-        default=100000.0,
+        default=100.0,
         type="float",
         help="Simulation time limit (in virtual time units)"
     )
@@ -123,6 +130,7 @@ simulator_params = {
                         "speed": options.speed,
                         "distance_noise": options.distance_noise,
                         "steering_noise": options.steering_noise,
+                        "forward_steering_drift": options.forward_steering_drift,
                         "turning_speed": options.turning_speed,
 
                         # Simulation parameters

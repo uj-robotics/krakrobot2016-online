@@ -31,6 +31,7 @@ class Robot:
         self.sonar_noise = 0.0
         self.color_noise = 0.0
         self.measurement_noise = 0.0
+        self.forward_steering_drift = 0.0
         self.time_elapsed = 0.0
         self.gps_time = gps_time
         self.sonar_time = sonar_time
@@ -45,10 +46,11 @@ class Robot:
         self.y = float(new_y)
         self.orientation = float(new_orientation) % (2.0 * pi)
 
-    def set_noise(self, new_s_noise, new_d_noise, new_m_noise, new_sonar_noise, new_c_noise):
+    def set_noise(self, new_s_noise, new_fs_drift, new_d_noise, new_m_noise, new_sonar_noise, new_c_noise):
         """
         Set noise parameters
         """
+        self.forward_steering_drift = float(new_fs_drift)
         self.color_noise = float(new_c_noise)
         self.steering_noise = float(new_s_noise)
         self.distance_noise = float(new_d_noise)
@@ -63,8 +65,10 @@ class Robot:
         :note Cannot be called by contestant
         :returns True if no collisions
         """
-        dcx = self.color_sensor_displacement * cos(self.orientation)
-        dcy = self.color_sensor_displacement * sin(self.orientation)
+        # Collision is checked now against the center of the robot
+        # dcx = self.color_sensor_displacement * cos(self.orientation)
+        # dcy = self.color_sensor_displacement * sin(self.orientation)
+        dcx, dcy = 0, 0
         x_disc, y_disc = int(self.x + dcx), int(self.y + dcy)
         if grid[x_disc][y_disc] == 1:
             return False
@@ -79,11 +83,15 @@ class Robot:
         if (abs(x) > 1): raise ("Illegal move")
         res = deepcopy(self)
 
-        distance = max(0.0, self.rng.normal(int(x) * self.tick_move, self.distance_noise))
+        distance = np.sign(x) * max(0.0, self.rng.normal(int(abs(x)) * self.tick_move, self.distance_noise))
 
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
         res.time_elapsed += abs(distance / self.speed)  # speed is 1.0/time_unit
+
+        turn = self.forward_steering_drift
+
+        res.orientation = (res.orientation + turn) % (2 * pi)
 
         return res
 

@@ -1,3 +1,5 @@
+#TODO: add forward steering noise GUI element
+
 import os
 import sys
 
@@ -265,6 +267,16 @@ class MainWindow(QtGui.QMainWindow):
         self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.steering_noise_edit)
         self.steering_noise_edit.textChanged.connect(self._update_steering_noise)
+
+
+        fsteering_noise_label = QtGui.QLabel('forward_steering_drift: ')
+        params_toolbar.addWidget(fsteering_noise_label)
+        self.fsteering_noise_edit = QtGui.QPlainTextEdit(str(self.simulator_params['forward_steering_drift']))
+        self.fsteering_noise_edit.setMaximumWidth(self.text_edit_width)
+        self.fsteering_noise_edit.setMaximumHeight(self.text_edit_height)
+        params_toolbar.addWidget(self.fsteering_noise_edit)
+        self.fsteering_noise_edit.textChanged.connect(self._update_fsteering_noise)
+
 
         sonar_noise_label = QtGui.QLabel('sonar_noise: ')
         params_toolbar.addWidget(sonar_noise_label)
@@ -677,6 +689,10 @@ class MainWindow(QtGui.QMainWindow):
     def _update_steering_noise(self):
         self.simulator_params['steering_noise'] = \
             float(self.steering_noise_edit.toPlainText())
+
+    def _update_fsteering_noise(self):
+        self.simulator_params['forward_steering_drift'] = \
+            float(self.fsteering_noise_edit.toPlainText())
 
     def _update_sonar_noise(self):
         self.simulator_params['sonar_noise'] = \
