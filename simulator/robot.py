@@ -83,7 +83,7 @@ class Robot:
         if (abs(x) > 1): raise ("Illegal move")
         res = deepcopy(self)
 
-        distance = max(0.0, self.rng.normal(int(x) * self.tick_move, self.distance_noise))
+        distance = np.sign(x) * max(0.0, self.rng.normal(int(abs(x)) * self.tick_move, self.distance_noise))
 
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
