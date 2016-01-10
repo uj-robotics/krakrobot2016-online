@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 # -*- coding: utf-8 -*-
 
 """
     Krakrobot Python Simulator
 
-    Krakrobot 2015 Qualifications simulator.
+    Krakrobot 2016 Qualifications simulator.
 
     Many thanks to udacity.com:
     https://www.udacity.com/wiki/CS373%20Visualizing%20Maze%20Driving,
@@ -14,7 +14,6 @@
 """
 
 from optparse import OptionParser
-from gui import SimulatorGUI
 from simulator import KrakrobotSimulator
 from robot_controller import compile_robot, construct_cmd_robot
 import sys
@@ -161,8 +160,9 @@ def main():
         print "Simulation has finished. Results:\n{0}".format(json.dumps(results))
     else:
         simulator = KrakrobotSimulator(**simulator_params)
-        gui = SimulatorGUI(sys.argv, simulator, simulator_params)
-        gui.run()
+        from gui import SimulatorGUI
+        sim_gui = SimulatorGUI(sys.argv, simulator, simulator_params)
+        sim_gui.run()
 
     if options.output:
         print "Writing results to ", options.output
