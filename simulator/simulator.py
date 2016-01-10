@@ -260,7 +260,7 @@ class KrakrobotSimulator(object):
                     try:
                         r, g, b = robot.sense_color(self.map)
                         robot_controller.on_sense_color(r, g, b)
-                        command = list(robot_controller.act())
+                        command = list(robot_controller.act(robot.time_elapsed))
                     except Exception, e:
                         logger.error("Robot controller failed with exception " + str(e))
                         break

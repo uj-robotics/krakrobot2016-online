@@ -101,7 +101,7 @@ def create_parser():
     parser.add_option(
         "--simulation_time_limit",
         dest="simulation_time_limit",
-        default=100000.0,
+        default=100.0,
         type="float",
         help="Simulation time limit (in virtual time units)"
     )
