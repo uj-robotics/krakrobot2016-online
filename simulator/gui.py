@@ -6,7 +6,7 @@ import sys
 from PyQt4 import QtGui, QtCore, QtSvg
 from PyQt4.QtGui import QPixmap, QApplication
 from simulator import KrakrobotSimulator
-from robot_controller import compile_robot
+from robot_controller import construct_cmd_robot
 from misc.visualisation import PrepareFrame, RenderAnimatedPart, \
     RenderFrameTemplate, fill_visualisation_descriptor
 from misc.defines import __version__, __about__, __authors__, __license__
@@ -500,6 +500,7 @@ class MainWindow(QtGui.QMainWindow):
         ]
 
     def status_bar_message(self, message):
+        print 'Status bar message: ', message
         self.statusBar().showMessage(message)
 
     def update_frame_count(self, frame_count):
@@ -544,14 +545,17 @@ class MainWindow(QtGui.QMainWindow):
             self, 'Open robot source code file...', '.',
             'Python code (*.py)'
         )
+        self.status_bar_message(
+            'Loading source code from ' + str(file_name) + ' ...'
+        )
         try:
-            compilation = compile_robot(str(file_name))[0]
+            cmd_robot = construct_cmd_robot(str(file_name))
         except Exception as error:
             self.status_bar_message(
                 MSG_EMP + 'Robot source code compiling error: ' + str(error)
             )
             return -1
-        self.simulator_params['robot_controller_class'] = compilation
+        self.simulator_params['robot_controller'] = cmd_robot
         self.status_bar_message(
             'Robot source code loaded from ' + str(file_name)
         )
