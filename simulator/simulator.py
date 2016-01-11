@@ -211,7 +211,7 @@ class KrakrobotSimulator(object):
                     logger.info("Iteration {0}, produced {1} frames".format(iteration,
                                                                             frame_count))
                     logger.info("Elapsed {0}".format(robot.time_elapsed))
-                    logger.info(current_command)
+                    logger.info("Current command: {}".format(current_command))
 
                 iteration += 1
 
