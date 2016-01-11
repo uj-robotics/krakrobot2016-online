@@ -41,9 +41,19 @@ def load_map(file_name):
     try:
         file_path = os.path.join(os.path.dirname(file_name), map['color_bitmap_file'])
         map['color_bitmap'] = imread(file_path)
-        map['color_bitmap_path'] = file_path
+        map['color_bitmap_path'] = file_path  # not used now, switched to SVG
     except IOError, e:
         print "Not found color file, exiting"
+        raise e
+
+    # add the path to the SVG graphics file for displaying in the GUI
+    try:
+        file_path = os.path.join(os.path.dirname(file_name), map['vector_graphics_file'])
+        vector_file = open(file_path)
+        map['vector_graphics_path'] = file_path
+        vector_file.close()
+    except IOError, e:
+        print "Not found vector graphics file, exiting"
         raise e
 
     if "title" not in map:

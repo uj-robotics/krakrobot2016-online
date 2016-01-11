@@ -283,7 +283,7 @@ def RenderFrameTemplate(Data, draw_dynamic_elements=True):
     # Background PNG
 
     Result += IT('<!-- Background PNG -->')
-    Result += IT('<image xlink:href="{}" x="0" y="0" width="9" height="9" />'.format(Data['Map']['color_bitmap_path']))
+    Result += IT('<image xlink:href="{}" x="0" y="0" width="9" height="9" />'.format(Data['Map']['vector_graphics_path']))
 
     # Plot with grid
 

@@ -5,6 +5,7 @@
     "M": 9,
     "N": 9,
     "color_bitmap_file": "1.png",
+    "vector_graphics_file": "1.svg",
     "beeps": [[6,5], [4, 5], [2, 7]]
 
 }
