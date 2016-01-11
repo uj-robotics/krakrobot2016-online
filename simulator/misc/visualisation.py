@@ -108,6 +108,7 @@ def SparkSymbolDef(IT, ID, NumPoints=8):
     return Result
 
 def PrepareFrame(frame_template, animated_part):
+    # TODO: cosmetic: when inserting multiline strings into template, preserve indentation
     return frame_template.format(*animated_part)
 
 
@@ -188,8 +189,6 @@ def RenderAnimatedPart(Data):
                 'stroke': '#d00', 'stroke-width': '0.1', 'stroke-linecap': 'butt'
             })
     # End of plot
-
-    path += SVGGroupEnd(IT)
 
     return [robot_sprite, path, sparks]
 
@@ -275,71 +274,82 @@ def RenderFrameTemplate(Data, draw_dynamic_elements=True):
     Result += IT('<!-- Outer group -->')
     Result += SVGGroup(IT, {'stroke': 'black', 'stroke-width': '0.025'})
 
+    # Grid group
+    # Substitute for the group created by SVGGrid that is now deleted
+
+    Result += SVGGroup(IT, {'stroke': 'black', 'stroke-width':'butt',
+        'transform': 'matrix(0, 1.88888888889, 1.88888888889, 0, 5.5, 1.5)', 'fill': 'none'})
+
+    # Background PNG
+
+    Result += IT('<!-- Background PNG -->')
+    Result += IT('<image xlink:href="{}" x="0" y="0" width="9" height="9" />'.format(Data['Map']['color_bitmap_path']))
+
     # Plot with grid
 
-    Result += IT('<!-- Grid -->')
-    Data['Grid'] = \
-        {'SquareAlignment': 'Corner', 'RangeMinima': (0, 0),
-         'GridLineAttributes': {'stroke': 'rgba(0, 192, 255, 0.5)', 'stroke-width': '0.02'},
-         'CanvasMinima': (0.5, 1.5), 'DrawGrid': True, 'YIsUp': False, 'Transpose': True,
-         'DrawUnitAxes': False, 'CanvasMaxima': (27.5, 18.5),
-         'GeneralAttributes': {'stroke': 'black', 'stroke-width': '0.05'}, 'RangeMaxima': (9, 9)}
+    # Result += IT('<!-- Grid -->')
+    # Data['Grid'] = \
+    #     {'SquareAlignment': 'Corner', 'RangeMinima': (0, 0),
+    #      'GridLineAttributes': {'stroke': 'rgba(0, 192, 255, 0)', 'stroke-width': '0.02'},
+    #      'CanvasMinima': (0.5, 1.5), 'DrawGrid': True, 'YIsUp': False, 'Transpose': True,
+    #      'DrawUnitAxes': False, 'CanvasMaxima': (27.5, 18.5),
+    #      'GeneralAttributes': {'stroke': 'black', 'stroke-width': '0.05'}, 'RangeMaxima': (9, 9)}
 
-    Result += SVGGrid(IT, Data['Grid'])
+    # Result += SVGGrid(IT, Data['Grid'])
 
     # Maze
 
-    Map = Data['Map']['board']
-    ColorMap = Data['Map']['color_board']
+    # Map = Data['Map']['board']
+    # ColorMap = Data['Map']['color_board']
 
-    if Map is not None:
+    # if Map is not None:
 
-        Result += IT('<!-- Hazards -->')
-        Result += SVGGroup(IT, {
-            'fill': '#a40',
-            'stroke': 'black',
-            'stroke-width': '0.01',
-            'stroke-linecap': 'butt',
-        })
+    #     Result += IT('<!-- Hazards -->')
+    #     Result += SVGGroup(IT, {
+    #         'fill': '#a40',
+    #         'stroke': 'black',
+    #         'stroke-width': '0.01',
+    #         'stroke-linecap': 'butt',
+    #     })
 
-        scale_color = 255.0 / len(Map)
+    #     scale_color = 255.0 / len(Map)
 
-        arrow_colors = {MAP_SPECIAL_DIRECTION: '00F5F1', MAP_SPECIAL_OPTIMAL: 'F58F00'}
-        for i in range(len(Map)):
-            for j in range(len(Map[0])):
-                if sum(ColorMap[i][j]) > 0:
-                    Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
-                    % (i, j, '#%02x%02x%02x' %  (ColorMap[i][j][0], ColorMap[i][j][1], ColorMap[i][j][2])))
+    #     arrow_colors = {MAP_SPECIAL_DIRECTION: '00F5F1', MAP_SPECIAL_OPTIMAL: 'F58F00'}
+    #     for i in range(len(Map)):
+    #         for j in range(len(Map[0])):
+    #             if sum(ColorMap[i][j]) > 0:
+    #                 Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
+    #                 % (i, j, '#%02x%02x%02x' %  (ColorMap[i][j][0], ColorMap[i][j][1], ColorMap[i][j][2])))
 
-                if Map[i][j] == 1:
-                    # Result += IT('<circle cx="%g" cy="%g" r="0.495"/>\n' % (i, j))
-                    Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="#B30000"/>\n'
-                                 % (i, j))
-                elif type(Map[i][j]) is list:
+    #             if Map[i][j] == 1:
+    #                 # Result += IT('<circle cx="%g" cy="%g" r="0.495"/>\n' % (i, j))
+    #                 Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="#B30000"/>\n'
+    #                              % (i, j))
+    #             elif type(Map[i][j]) is list:
 
-                    if Map[i][j][0] == MAP_SPECIAL_EUCLIDEAN_DISTANCE:
-                        Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="rgb(%g,%g,%g)"/>\n'
-                                     % (i, j,
-                                        max(0, 255 - int(scale_color * Map[i][j][1])),
-                                        max(0, 255 - int(scale_color * Map[i][j][1])),
-                                        max(0, 255 - int(scale_color * Map[i][j][1]))
+    #                 if Map[i][j][0] == MAP_SPECIAL_EUCLIDEAN_DISTANCE:
+    #                     Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="rgb(%g,%g,%g)"/>\n'
+    #                                  % (i, j,
+    #                                     max(0, 255 - int(scale_color * Map[i][j][1])),
+    #                                     max(0, 255 - int(scale_color * Map[i][j][1])),
+    #                                     max(0, 255 - int(scale_color * Map[i][j][1]))
 
-                                        ))
-                    else:
-                        Result += SVGGroup(IT, {'transform': 'translate(%g, %g)' % (i, j)})
-                        Result += SVGGroup(IT, {'transform': 'scale(0.0005)'})
-                        Result += SVGGroup(IT, {
-                            'transform': 'rotate(%g, %g, %g)' % (45 * Map[i][j][1] - 270, i - 0.5, i - 0.5)})
+    #                                     ))
+    #                 else:
+    #                     Result += SVGGroup(IT, {'transform': 'translate(%g, %g)' % (i, j)})
+    #                     Result += SVGGroup(IT, {'transform': 'scale(0.0005)'})
+    #                     Result += SVGGroup(IT, {
+    #                         'transform': 'rotate(%g, %g, %g)' % (45 * Map[i][j][1] - 270, i - 0.5, i - 0.5)})
 
-                        Result += IT('<polygon style="stroke:none; '
-                                     'fill:#%s;" points="100,600 100,-200  '
-                                     '500,200 500,-100  0,-600  -500,-100 -500,'
-                                     '200 -100,-200 -100,600 "/>' % (arrow_colors[Map[i][j][0]],))
-                        Result += SVGGroupEnd(IT)
-                        Result += SVGGroupEnd(IT)
-                        Result += SVGGroupEnd(IT)
+    #                     Result += IT('<polygon style="stroke:none; '
+    #                                  'fill:#%s;" points="100,600 100,-200  '
+    #                                  '500,200 500,-100  0,-600  -500,-100 -500,'
+    #                                  '200 -100,-200 -100,600 "/>' % (arrow_colors[Map[i][j][0]],))
+    #                     Result += SVGGroupEnd(IT)
+    #                     Result += SVGGroupEnd(IT)
+    #                     Result += SVGGroupEnd(IT)
 
-        Result += SVGGroupEnd(IT)
+    #     Result += SVGGroupEnd(IT)
 
     # Iniial position
 
@@ -358,7 +368,7 @@ def RenderFrameTemplate(Data, draw_dynamic_elements=True):
 
     # Robot
     if draw_dynamic_elements:
-        Result += '{0}'
+        Result += IT('{0}')
     else:
         Result += ''
 
@@ -390,7 +400,7 @@ def RenderFrameTemplate(Data, draw_dynamic_elements=True):
 
     # Sparks
     if draw_dynamic_elements:
-        Result += "{2}"
+        Result += IT("{2}")
     else:
         Result += ''
     # if Sparks is not None and len(Sparks) > 0:
@@ -405,9 +415,16 @@ def RenderFrameTemplate(Data, draw_dynamic_elements=True):
 
     # Actual path
     if draw_dynamic_elements:
-        Result += "{1}"
+        Result += IT("{1}")
     else:
         Result += ''
+
+    # End board group
+    # This ends the newly added group substituting the SVGGrid group.
+    # Moved here the SVGGroupEnd which was for some reason previously appended
+    # to the Actual path element making the code look convoluted
+
+    Result += SVGGroupEnd(IT)
 
     # Title and legend
 
