@@ -42,9 +42,8 @@ public class RobotWraper {
 		}
 	}
 
-	static public RobotWraper robotFromConfig() {
+	static public RobotWraper robotFromConfig(Scanner sc) {
 		RobotWraper robot = new RobotWraper();
-		Scanner sc = new Scanner(System.in);
 		String line, key, value;
 		String tmp[];
 		Class<?> c = robot.getClass();
@@ -56,39 +55,40 @@ public class RobotWraper {
 			try {
 				Field f = c.getDeclaredField(key);
 				f.set(robot, Double.parseDouble(value));
+				System.err.println("Set field "+key + " with value: "+value);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		sc.close();
 		return robot;
 	}
 
 	public static void main(String[] args) {
 		String cmd,line;
-		RobotWraper robot = robotFromConfig();
 		Scanner sc = new Scanner (System.in);
+		RobotWraper robot = robotFromConfig(sc);
 		boolean running = true;
 		while (running) {
-			cmd = sc.nextLine();
-			if (cmd.equals("act")) {
+			cmd = sc.nextLine().replaceAll("\\s+", "");
+			if (cmd.equalsIgnoreCase("act")) {
 				Action response = robot.act();
 				if (response.action.equals(FINISH)){
 					running=false;
 				}
 				System.out.println(robot.act());
 				System.out.flush();
-			} else if (cmd.equals("color")) {
+			} else if (cmd.equalsIgnoreCase("color")) {
 				line = sc.nextLine();
 				Scanner sc2 = new Scanner(line);
 				robot.on_sense_color(sc2.nextInt(), sc2.nextInt(), sc2.nextInt());
 				sc2.close();
-				//r=sc.nextInt();g=s
-			} else if (cmd.equals("time")) {
+			} else if (cmd.equalsIgnoreCase("time")) {
 				sc.nextLine();
 			} else {
+				sc.close();
 				throw new RuntimeException("Not recognized cmd \"" + cmd + "\" ");
 			}
 		}
+		sc.close();
 	}
 }
