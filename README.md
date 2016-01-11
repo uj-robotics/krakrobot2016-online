@@ -1,4 +1,4 @@
-KrakRobot 2015
+KrakRobot 2016
 ==============
 
 Installation

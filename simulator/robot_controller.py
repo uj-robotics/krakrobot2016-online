@@ -44,7 +44,9 @@ class CmdLineRobotController(RobotController):
             if not self.init_kwargs or key in self.init_kwargs:
                 self.p.stdin.write(key + ":" + str(value) + "\n")
 
-    def act(self):
+    def act(self, current_time):
+        self.p.stdin.write("time\n")
+        self.p.stdin.write(str(current_time) + "\n")
         self.p.stdin.write("act\n")
         cmd = self.p.stdout.readline().split()
         if cmd[0] == "move" or cmd[0] == "turn":
@@ -61,7 +63,7 @@ class CmdLineRobotController(RobotController):
         self.p.stdin.write(" ".join(map(str, args)) + "\n")
 
     def on_sense_gps(self, *args):
-        self.p.stdin.write("g[s\n")
+        self.p.stdin.write("gps\n")
         self.p.stdin.write(" ".join(map(str, args)) + "\n")
 
     def terminate(self):
@@ -82,10 +84,10 @@ class PythonTimedRobotController(RobotController):
         self.rc.init(**kwargs)
         self.time_consumed += datetime.datetime.now() - x
 
-    def act(self):
+    def act(self, current_time):
         """ Return next action """
         x = datetime.datetime.now()
-        ret = self.rc.act()
+        ret = self.rc.act(current_time)
         self.time_consumed += datetime.datetime.now() - x
         return ret
 

@@ -71,5 +71,8 @@ if __name__ == "__main__":
         elif cmd == "color":
             r, g, b = map(int, raw_input().split())
             robot.on_sense_color(r, g, b)
+        elif cmd == "time":
+            raw_input()
+            pass
         else:
             raise RuntimeError("Not recognized cmd \"" + cmd + "\"")
