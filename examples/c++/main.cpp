@@ -7,6 +7,9 @@ using namespace std;
 enum ACTIONS {
 	TURN, BEEP, MOVE, FINISH
 };
+string ACTIONS_STRING[] = {
+	"TURN", "BEEP", "MOVE", "FINISH"
+};
 class Action {
 public:
 	ACTIONS a;
@@ -19,8 +22,8 @@ public:
 
 	Action act() {
 		Action a;
-		a.a = (rand() < 0) ? TURN : MOVE;
-		a.par = (rand() < 0) ? 1 : -1;
+		a.a = (rand()%2 == 0) ? TURN : MOVE;
+		a.par = (rand()%2 == 0) ? 1 : -1;
 		return a;
 	}
 	void onSenseColor(int r, int g, int b) {
@@ -41,16 +44,20 @@ public:
 };
 void readConfig(Robot& r) {
 	int i = 11;
-	string key;
+	string key, line;
 	double value;
 	while (i--) {
-		cin >> key >> value;
+		getline(cin,line);
+		line.replace(line.find(":"),1," ");
+		stringstream ss(line);
+		ss>>key>>value;
 		r.vars[key] = value;
 		cerr << "Initialize key:" << key << " with:" << value << endl;
 	}
 }
 
 int main() {
+	srand (time(NULL));
 	Robot robot;
 	readConfig(robot);
 	bool running = true;
@@ -62,7 +69,8 @@ int main() {
 			if (response.a == FINISH) {
 				running = false;
 			}
-			cout << response.a << " " << response.par << endl;
+			cout << ACTIONS_STRING[response.a] << " " << response.par << endl;
+			cerr << ACTIONS_STRING[response.a] << " " << response.par << endl;
 		} else if (cmd == "color") {
 			getline(cin, line);
 
