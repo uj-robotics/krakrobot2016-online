@@ -185,12 +185,19 @@ def RenderFrameTemplate(Data):
 
     Result = ''
     Title = Field('Title', '(Untitled)')
+    #
+    # Result += SVGStart(IT, Title, {
+    #     'width': '28cm'.format(Data['Map']['M']),
+    #     'height': '19cm'.format(Data['Map']['N']),
+    #     'viewBox': '0 0 {} {}'.format(Data['Map']['M'], Data['Map']['N'])
+    # })
 
     Result += SVGStart(IT, Title, {
-        'width': '{}cm'.format(Data['Map']['M']),
-        'height': '{}cm'.format(Data['Map']['N']),
-        'viewBox': '0 0 {} {}'.format(Data['Map']['M'], Data['Map']['N'])
+        'width': '9cm',
+        'height': '9cm',
+        'viewBox': '0 0 9 9'
     })
+
     # Background
 
     Result += IT(

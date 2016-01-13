@@ -134,6 +134,7 @@ def RenderAnimatedPart(Data):
         (Data['ActualOrientation'] * 180 / pi) + 180.0,
         Data['ActualPosition'][0], Data['ActualPosition'][1])
                                   })
+
     # robot_sprite += SVGGroup(IT, {'transform': 'scale(2)'})
     robot_sprite += IT('<polygon points="%g,%g %g,%g %g,%g" style="fill:lime;'
                        ''
@@ -278,7 +279,7 @@ def RenderFrameTemplate(Data, draw_dynamic_elements=True):
     # Substitute for the group created by SVGGrid that is now deleted
 
     Result += SVGGroup(IT, {'stroke': 'black', 'stroke-width':'butt',
-        'transform': 'matrix(0, 1.88888888889, 1.88888888889, 0, 5.5, 1.5)', 'fill': 'none'})
+        'transform': 'matrix(1.5, 0, 0, 1.5, 5.5, 1.5)', 'fill': 'none'})
 
     Result += IT('<!-- Background -->')
 

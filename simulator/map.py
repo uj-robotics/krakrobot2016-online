@@ -18,9 +18,9 @@ def get_color(map, x, y):
     # y = float(y/map['M']) * map['color_bitmap'].shape[1]
     #
     #
-    y = np.round(map['color_bitmap'].shape[1] / float(map['M']) * y)
-    x = np.round(map['color_bitmap'].shape[0] / float(map['N']) * x)
-    return map['color_bitmap'][x, y][0:3]
+    y = np.round(map['color_bitmap'].shape[0] / float(map['M']) * y)
+    x = np.round(map['color_bitmap'].shape[1] / float(map['N']) * x)
+    return map['color_bitmap'][y, x][0:3]
 
 def load_map(file_name):
     """
