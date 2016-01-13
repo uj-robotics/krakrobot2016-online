@@ -15,10 +15,19 @@ from math import (
 )
 import traceback
 
-from map import logger, load_map
+from map import load_map
 from misc.defines import *
 from robot import Robot
 from robot_controller import PythonTimedRobotController
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(funcName)s - %(asctime)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+logger.propagate = False
 
 class KrakrobotSimulator(object):
 
@@ -265,7 +274,6 @@ class KrakrobotSimulator(object):
                         logger.error("Robot controller failed with exception " + str(e))
                         break
 
-                    logger.info("Received command: "+str(command))
                     # logger.info("Robot timer "+str(robot.time_elapsed))
                     if not command or len(command) == 0:
                         raise KrakrobotException("No command passed, or zero length command passed")

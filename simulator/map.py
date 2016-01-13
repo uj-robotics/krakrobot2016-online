@@ -10,14 +10,6 @@ import copy
 from misc.defines import *
 from scipy.ndimage.io import imread
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-ch = logging.StreamHandler()
-formatter = logging.Formatter('%(funcName)s - %(asctime)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-logger.propagate = False
-
 def get_color(map, x, y):
     """
     :returns closest (calculated by round) pixel from bitmap as extrapolated using map_width and map_height
@@ -42,19 +34,11 @@ def load_map(file_name):
         file_path = os.path.join(os.path.dirname(file_name), map['color_bitmap_file'])
         map['color_bitmap'] = imread(file_path)
         map['color_bitmap_path'] = file_path  # not used now, switched to SVG
-    except IOError, e:
-        print "Not found color file, exiting"
-        raise e
+    except IOError:
+        print "Warning: Not found color file"
 
-    # add the path to the SVG graphics file for displaying in the GUI
-    try:
-        file_path = os.path.join(os.path.dirname(file_name), map['vector_graphics_file'])
-        vector_file = open(file_path)
-        map['vector_graphics_path'] = file_path
-        vector_file.close()
-    except IOError, e:
-        print "Not found vector graphics file, exiting"
-        raise e
+    if not os.path.isabs(map['vector_graphics_file']):
+        map['vector_graphics_file'] = os.path.join(os.path.dirname(file_name), map['vector_graphics_file'])
 
     if "title" not in map:
         map["title"] = ""
@@ -70,12 +54,6 @@ def load_map(file_name):
         grid[map['start_field'][0]][map['start_field'][1]] = MAP_START_POSITION
         map['file_name'] = file_name
         map['board'] = grid
-
-        map['color_board'] = copy.deepcopy(map['board'])
-        for i in range(map['N']):
-            for j in range(map['M']):
-                map['color_board'][i][j] = [int(v) for v in get_color(map, i + 0.5, j + 0.5)]
-
     else:
         raise RuntimeError("Not supported custom board parsing")
 
