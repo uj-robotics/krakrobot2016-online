@@ -376,21 +376,12 @@ class KrakrobotSimulator(object):
             @returns Descriptor that is sufficient to visualize current frame
         """
         data = {}
-        # data['GoalThreshold'] = self.goal_threshold
         data['Sparks'] = list(beeps)  # ommiting errors list(self.collisions)
         data['ActualPath'] = list(self.robot_path)
-        # data['Grid'] = {"DrawGrid": True,
-        #
-        #     'CanvasMinima': (0, 0),
-        #     'CanvasMaxima': (20, 20),
-        #     'RangeMinima': (0, 0),
-        #     'RangeMaxima': (5, 5)
-        #                 }
         data['ActualPosition'] = [robot.x, robot.y]
         data['ActualOrientation'] = robot.orientation
         data['Map'] = self.map
         data['StartPos'] = self.init_position
-        # data['GoalAchieved'] = self.goal_achieved
         return data
 
     def terminate(self):
