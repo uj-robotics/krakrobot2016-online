@@ -1,4 +1,4 @@
-#!/bin/python2.7
+#!/bin/python3
 
 import sys
 import random
@@ -84,9 +84,9 @@ if __name__ == "__main__":
             sys.stdout.write(" ".join(map(str, response)) + "\n")
             sys.stdout.flush()
         elif cmd == "color":
-            r, g, b = map(int, raw_input().split())
+            r, g, b = map(int, input().split())
             robot.on_sense_color(r, g, b)
         elif cmd == "time":
-            robot.on_time(float(raw_input()))
+            robot.on_time(float(input()))
         else:
             raise RuntimeError("Not recognized cmd \"" + cmd + "\"")
