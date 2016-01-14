@@ -96,15 +96,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.08"
-     inkscape:cx="1932.6173"
-     inkscape:cy="2698.1245"
+     inkscape:cx="3837.7287"
+     inkscape:cy="2638.0077"
      inkscape:document-units="px"
-     inkscape:current-layer="layer3"
+     inkscape:current-layer="layer2"
      showgrid="true"
-     inkscape:window-width="1920"
-     inkscape:window-height="1056"
-     inkscape:window-x="0"
-     inkscape:window-y="24"
+     inkscape:window-width="1547"
+     inkscape:window-height="876"
+     inkscape:window-x="1973"
+     inkscape:window-y="687"
      inkscape:window-maximized="1"
      inkscape:snap-global="true"
      inkscape:snap-nodes="true"
@@ -134,7 +134,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -143,10 +143,9 @@
      id="layer2"
      inkscape:label="board"
      transform="translate(177.16534,5786.2207)"
-     style="display:inline;opacity:1"
-     sodipodi:insensitive="true">
+     style="display:inline;opacity:1">
     <rect
-       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#808080;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;opacity:1;fill:#b30000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
        id="rect3365-9"
        width="7015.748"
        height="7015.748"
@@ -164,8 +163,7 @@
      inkscape:label="grid"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(177.16534,5786.2207)"
-     sodipodi:insensitive="true">
+     transform="translate(177.16534,5786.2207)">
     <g
        id="g4286"
        style="filter:url(#filter4303)">
