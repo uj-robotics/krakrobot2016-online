@@ -106,7 +106,7 @@ class Robot:
         res = deepcopy(self)
 
         turn = self.rng.normal(int(x) * self.tick_rotate, self.steering_noise)
-        res.orientation = (res.orientation + turn) % (2 * pi)
+        res.orientation = (res.orientation - turn) % (2 * pi)
         res.time_elapsed += abs(turn / self.turning_speed)  # speed is pi/time_unit
         return res
 
