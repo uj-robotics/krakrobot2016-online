@@ -272,6 +272,7 @@ class KrakrobotSimulator(object):
                         command = list(robot_controller.act(robot.time_elapsed))
                     except Exception, e:
                         logger.error("Robot controller failed with exception " + str(e))
+                        logger.error(traceback.format_exc())
                         break
 
                     # logger.info("Robot timer "+str(robot.time_elapsed))
