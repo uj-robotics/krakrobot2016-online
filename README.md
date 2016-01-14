@@ -39,11 +39,11 @@ Instalacja
 ### Windows
 
 W systemie Windows należy zainstalować Python 2.7 : http://www.python.org/getit/ . Należy upewnić się, że python.exe zostało dodane do zmiennej środowiskowej PATH.
-Następnie należy zainstalować pakiety numpy oraz PyQt. Instalacja tych pakietów dla Windows może być wykonana przy użyciu kodów binarnych ze strony http://www.lfd.uci.edu/~gohlke/pythonlibs/. Można także użyć systemu zarządzania pakietami do Pythona, na przykład pip.
+Następnie należy zainstalować pakiety numpy, scipy oraz PyQt. Instalacja tych pakietów dla Windows może być wykonana przy użyciu kodów binarnych ze strony http://www.lfd.uci.edu/~gohlke/pythonlibs/. Można także użyć systemu zarządzania pakietami do Pythona, na przykład pip.
 
 ### Linux
 
-W systemie Linux należy zainstalować Python 2.7 oraz pakiety PyQt i numpy. Można zainstalować numpy używając pip. Dla dystrybucji Ubuntu, pakiet Qt jest dostępny pod nazwą python-qt4, więc można po prostu wykonać w terminalu polecenie ``sudo apt-get install python-qt4``
+W systemie Linux należy zainstalować Python 2.7 oraz pakiety PyQt i numpy oraz scipy. Można zainstalować numpy i scipy używając pip. Dla dystrybucji Ubuntu, pakiet Qt jest dostępny pod nazwą python-qt4, więc można po prostu wykonać w terminalu polecenie ``sudo apt-get install python-qt4``
 
 
 Symulator
@@ -130,6 +130,17 @@ Obecnie w symulatorze dostępna jest pojedyncza przykładowa mapa do gry (przypo
 ![Implementacja planszy](1_grid.png)
 
 Warto zauważyć, że początek układu współrzędnych symulatora znajduje się w punkcie, który według regulaminu znajduje się poza planszą. Dlatego robot, w przypadku gdyby startował w lewym górnym narożniku kraty, miałby współrzędne początkowe (2.5, 2.5). Z kolei wymiary planszy (M x N) podawane na starcie symulacji botowi będą wynosiły 9 x 9.
+
+### Generator map
+
+W obecnej wersji dołączony jest prosty generator map (``simulator/generate_map.py``), który generuje plik SVG i PNG na podstawie pliku ``.map``.
+
+Do konwersji pliku SVG na PNG narzędzie to wymaga zainstalowanego na komputerze programu Inkscape wraz z jego interfejsem konsolowym (CLI). W przypadku braku tego programu zostanie wygenerowany plik SVG, który następnie można ręcznie przekonwertować do pliku PNG innym programem. Domyślna wielkość pliku PNG przyjmowana przez symulator to 512x512 px.
+
+Dostępne opcje programu to:
+* ``--map_file`` - ścieżka do pliku typu ``.map`` (domyślnie: ``maps/1.map``)
+* ``--svg_output_file`` - ścieżka do wyjściowego pliku SVG (przy braku opcji pobierana z pliku ``.map``)
+* ``--png_output_file`` - ścieżka do wyjściowego pliku PNG (przy braku opcji pobierana z pliku ``.map``)
 
 Bot
 ---------
