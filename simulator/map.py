@@ -22,7 +22,7 @@ def get_color(map, x, y):
     x = np.round(map['color_bitmap'].shape[1] / float(map['N']) * x)
     return map['color_bitmap'][y, x][0:3]
 
-def load_map(file_name):
+def load_map(file_name, load_graphics=True):
     """
     Loads map and encodes it as a grid
 
@@ -30,10 +30,12 @@ def load_map(file_name):
     """
     map = json.loads(open(file_name, "r").read())
 
+    if not os.path.isabs(map['color_bitmap_file']):
+        map['color_bitmap_file'] = os.path.join(os.path.dirname(file_name), map['color_bitmap_file'])
+
     try:
-        file_path = os.path.join(os.path.dirname(file_name), map['color_bitmap_file'])
-        map['color_bitmap'] = imread(file_path)
-        map['color_bitmap_path'] = file_path  # not used now, switched to SVG
+        if load_graphics:
+            map['color_bitmap'] = imread(map['color_bitmap_file'])
     except IOError:
         print "Warning: Not found color file"
 
