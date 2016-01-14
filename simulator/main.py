@@ -73,7 +73,7 @@ def create_parser():
     parser.add_option(
         "--forward_steering_drift",
         dest="forward_steering_drift",
-        default=0.0002 * 1e-2,
+        default=0.008 * 1e-2,
         type="float",
         help="Constant drift applied to robot orientation after forward motion"
     )
@@ -100,7 +100,7 @@ def create_parser():
     parser.add_option(
         "--simulation_time_limit",
         dest="simulation_time_limit",
-        default=100.0,
+        default=240.0,
         type="float",
         help="Simulation time limit (in virtual time units)"
     )
