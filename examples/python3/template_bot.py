@@ -28,15 +28,15 @@ def deg_to_ticks(deg):
 class TemplateBot(object):
     """ Example robot controller moving randomly """
 
-    def init(self, x, y, angle, steering_noise, color_sensor_displacement,
-             distance_noise, speed, turning_speed, execution_cpu_time_limit, N, M):
+    def init(self, x, y, angle, steering_noise, distance_noise, forward_steering_drift,
+        speed, turning_speed, execution_cpu_time_limit, N, M):
         self.x = x
         self.y = y
         self.angle = angle
 
         self.steering_noise = steering_noise
-        self.color_sensor_displacement = color_sensor_displacement
         self.distance_noise = distance_noise
+        self.forward_steering_drift = forward_steering_drift
 
         self.speed = speed
         self.turning_speed = turning_speed
