@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 """
 Simple script for generating maps for KrakRobot 2016. Generates .svg and .png file for
@@ -247,16 +248,30 @@ def RenderFrameTemplate(Data):
 
 
 parser = optparse.OptionParser()
-parser.add_option("--png_output_file", type="string", default="maps/1_simple.png")
-parser.add_option("--svg_output_file", type="string", default="maps/1_simple.svg")
-parser.add_option("--map_file", type="string", default="maps/1_simple.map")
+parser.add_option("--png_output_file", type="string")
+parser.add_option("--svg_output_file", type="string")
+parser.add_option("--map_file", type="string", default="maps/1.map")
 
 if __name__ == "__main__":
     (opts, args) = parser.parse_args()
-    map_ = load_map(opts.map_file)
-    png_output_file = opts.png_output_file
-    svg_output_file = opts.svg_output_file
-    open(svg_output_file, "w").write(RenderFrameTemplate({"Map": map_}))
-    res = os.system("svg2png {} {}".format(svg_output_file, png_output_file))
+    map_ = load_map(opts.map_file, load_graphics=False)
+
+    print map_
+
+    if opts.svg_output_file:
+        svg_output_file = opts.svg_output_file
+    else:
+        svg_output_file = map_["vector_graphics_file"]
+
+    if opts.png_output_file:
+        png_output_file = opts.png_output_file
+    else:
+        png_output_file = map_["color_bitmap_file"]
+
+    svg_file = open(svg_output_file, "w")
+    svg_file.write(RenderFrameTemplate({"Map": map_}))
+    svg_file.close()
+    print "Successfully generated SVG file '{}'. Converting to PNG '{}' now...".format(svg_output_file, png_output_file)
+    res = os.system("inkscape -z -e {} -w 512 -h 512 {}".format(png_output_file, svg_output_file))
     if res != 0:
-        print "Failed svg2png call"
+        print "Failed convert call"
