@@ -53,7 +53,7 @@ def create_parser():
         "-r",
         "--robot",
         dest="robot",
-        default="python2.7 examples/python/random_search_command_queue.py",
+        default="python2.7 examples/python/template_bot.py",
         help="Robot that will be compiled and run"
     )
     parser.add_option(
