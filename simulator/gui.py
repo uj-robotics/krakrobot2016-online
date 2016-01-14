@@ -2,6 +2,7 @@
 
 import os
 import sys
+import pprint
 
 from PyQt4 import QtGui, QtCore, QtSvg
 from PyQt4.QtGui import QPixmap, QApplication
@@ -32,7 +33,7 @@ class SimulationThread(QtCore.QThread):
 
     def run(self):
         """Running KrakrobotSimulator simulation"""
-        print "Simulation has finished. Results: {0}".format(self.simulator.run())
+        print "Simulation has finished. Results:\n{0}".format(pprint.pformat(self.simulator.run(), indent=1))
 
 
 class KrakrobotBoardAnimation(QtGui.QGraphicsView):
@@ -260,69 +261,52 @@ class MainWindow(QtGui.QMainWindow):
 
         params_toolbar = self.addToolBar('Simulator parameters')
 
+        frame_dt_label = QtGui.QLabel('frame_dt: ')
+        params_toolbar.addWidget(frame_dt_label)
+        self.frame_dt_edit = QtGui.QLineEdit(str(self.simulator_params['frame_dt']))
+        params_toolbar.addWidget(self.frame_dt_edit)
+        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
+
         steering_noise_label = QtGui.QLabel('steering_noise: ')
         params_toolbar.addWidget(steering_noise_label)
-        self.steering_noise_edit = QtGui.QPlainTextEdit(str(self.simulator_params['steering_noise']))
-        self.steering_noise_edit.setMaximumWidth(self.text_edit_width)
-        self.steering_noise_edit.setMaximumHeight(self.text_edit_height)
+        self.steering_noise_edit = QtGui.QLineEdit(str(self.simulator_params['steering_noise']))
         params_toolbar.addWidget(self.steering_noise_edit)
         self.steering_noise_edit.textChanged.connect(self._update_steering_noise)
 
-
         fsteering_noise_label = QtGui.QLabel('forward_steering_drift: ')
         params_toolbar.addWidget(fsteering_noise_label)
-        self.fsteering_noise_edit = QtGui.QPlainTextEdit(str(self.simulator_params['forward_steering_drift']))
-        self.fsteering_noise_edit.setMaximumWidth(self.text_edit_width)
-        self.fsteering_noise_edit.setMaximumHeight(self.text_edit_height)
+        self.fsteering_noise_edit = QtGui.QLineEdit(str(self.simulator_params['forward_steering_drift']))
         params_toolbar.addWidget(self.fsteering_noise_edit)
         self.fsteering_noise_edit.textChanged.connect(self._update_fsteering_noise)
 
         distance_noise_label = QtGui.QLabel('distance_noise: ')
         params_toolbar.addWidget(distance_noise_label)
-        self.distance_noise_edit = QtGui.QPlainTextEdit(str(self.simulator_params['distance_noise']))
-        self.distance_noise_edit.setMaximumWidth(self.text_edit_width)
-        self.distance_noise_edit.setMaximumHeight(self.text_edit_height)
+        self.distance_noise_edit = QtGui.QLineEdit(str(self.simulator_params['distance_noise']))
         params_toolbar.addWidget(self.distance_noise_edit)
         self.distance_noise_edit.textChanged.connect(self._update_distance_noise)
 
-        frame_dt_label = QtGui.QLabel('frame_dt: ')
-        params_toolbar.addWidget(frame_dt_label)
-        self.frame_dt_edit = QtGui.QPlainTextEdit(str(self.simulator_params['frame_dt']))
-        self.frame_dt_edit.setMaximumWidth(self.text_edit_width)
-        self.frame_dt_edit.setMaximumHeight(self.text_edit_height)
-        params_toolbar.addWidget(self.frame_dt_edit)
-        self.frame_dt_edit.textChanged.connect(self._update_frame_dt)
-
         speed_label = QtGui.QLabel('speed: ')
         params_toolbar.addWidget(speed_label)
-        self.speed_edit = QtGui.QPlainTextEdit(str(self.simulator_params['speed']))
-        self.speed_edit.setMaximumWidth(self.text_edit_width)
-        self.speed_edit.setMaximumHeight(self.text_edit_height)
+        self.speed_edit = QtGui.QLineEdit(str(self.simulator_params['speed']))
         params_toolbar.addWidget(self.speed_edit)
         self.speed_edit.textChanged.connect(self._update_speed)
 
         turning_speed_label = QtGui.QLabel('turning_speed: ')
         params_toolbar.addWidget(turning_speed_label)
-        self.turning_speed_edit = QtGui.QPlainTextEdit(str(self.simulator_params['turning_speed']))
-        self.turning_speed_edit.setMaximumWidth(self.text_edit_width)
-        self.turning_speed_edit.setMaximumHeight(self.text_edit_height)
+        self.turning_speed_edit = QtGui.QLineEdit(str(self.simulator_params['turning_speed']))
         params_toolbar.addWidget(self.turning_speed_edit)
         self.turning_speed_edit.textChanged.connect(self._update_turning_speed)
 
         execution_cpu_time_limit_label = QtGui.QLabel('execution_cpu_time_limit: ')
         params_toolbar.addWidget(execution_cpu_time_limit_label)
-        self.execution_cpu_time_limit_edit = QtGui.QPlainTextEdit(
+        self.execution_cpu_time_limit_edit = QtGui.QLineEdit(
             str(self.simulator_params['execution_cpu_time_limit']))
-        self.execution_cpu_time_limit_edit.setMaximumWidth(self.text_edit_width)
-        self.execution_cpu_time_limit_edit.setMaximumHeight(self.text_edit_height)
         params_toolbar.addWidget(self.execution_cpu_time_limit_edit)
         self.execution_cpu_time_limit_edit.textChanged.connect(self._update_execution_cpu_time_limit)
 
         simulation_time_limit_label = QtGui.QLabel('simulation_time_limit: ')
         params_toolbar.addWidget(simulation_time_limit_label)
-        self.simulation_time_limit_edit = QtGui.QPlainTextEdit(str(self.simulator_params['simulation_time_limit']))
-        self.simulation_time_limit_edit.setMaximumWidth(self.text_edit_width)
-        self.simulation_time_limit_edit.setMaximumHeight(self.text_edit_height)
+        self.simulation_time_limit_edit = QtGui.QLineEdit(str(self.simulator_params['simulation_time_limit']))
         params_toolbar.addWidget(self.simulation_time_limit_edit)
         self.simulation_time_limit_edit.textChanged.connect(self._update_simulation_time_limit)
 
@@ -454,6 +438,7 @@ class MainWindow(QtGui.QMainWindow):
             self.start_sim_action,
             self.steering_noise_edit,
             self.distance_noise_edit,
+            self.fsteering_noise_edit,
             self.speed_edit,
             self.turning_speed_edit,
             self.execution_cpu_time_limit_edit,
@@ -575,12 +560,16 @@ class MainWindow(QtGui.QMainWindow):
             self.board_animation.pause_animation()
 
     def _skip_forward(self):
-        self.scroll_bar.setValue(self.scroll_bar.maximum() - 1)
+        offset = self.scroll_bar.maximum() / 10
+        new_value = min(self.scroll_bar.value() + offset, self.scroll_bar.maximum() - 1)
+        self.scroll_bar.setValue(new_value)
         self._send_scroll_bar_value()
         self._pause_progress_animation()
 
     def _skip_backward(self):
-        self.scroll_bar.setValue(self.scroll_bar.minimum())
+        offset = self.scroll_bar.maximum() / 10
+        new_value = max(self.scroll_bar.value() - offset, self.scroll_bar.minimum())
+        self.scroll_bar.setValue(new_value)
         self._send_scroll_bar_value()
         self._pause_progress_animation()
 
@@ -654,55 +643,55 @@ class MainWindow(QtGui.QMainWindow):
 
     def _update_steering_noise(self):
         self.simulator_params['steering_noise'] = \
-            float(self.steering_noise_edit.toPlainText())
+            float(self.steering_noise_edit.text())
 
     def _update_fsteering_noise(self):
         self.simulator_params['forward_steering_drift'] = \
-            float(self.fsteering_noise_edit.toPlainText())
+            float(self.fsteering_noise_edit.text())
 
     def _update_sonar_noise(self):
         self.simulator_params['sonar_noise'] = \
-            float(self.sonar_noise_edit.toPlainText())
+            float(self.sonar_noise_edit.text())
 
     def _update_distance_noise(self):
         self.simulator_params['distance_noise'] = \
-            float(self.distance_noise_edit.toPlainText())
+            float(self.distance_noise_edit.text())
 
     def _update_measurement_noise(self):
         self.simulator_params['measurement_noise'] = \
-            float(self.measurement_noise_edit.toPlainText())
+            float(self.measurement_noise_edit.text())
 
     def _update_speed(self):
         self.simulator_params['speed'] = \
-            float(self.speed_edit.toPlainText())
+            float(self.speed_edit.text())
 
     def _update_turning_speed(self):
         self.simulator_params['turning_speed'] = \
-            float(self._edit.toPlainText())
+            float(self._edit.text())
 
     def _update_execution_cpu_time_limit(self):
         self.simulator_params['execution_cpu_time_limit'] = \
-            float(self.execution_cpu_time_limit_edit.toPlainText())
+            float(self.execution_cpu_time_limit_edit.text())
 
     def _update_simulation_time_limit(self):
         self.simulator_params['simulation_time_limit'] = \
-            float(self.simulation_time_limit_edit.toPlainText())
+            float(self.simulation_time_limit_edit.text())
 
     def _update_simulation_dt(self):
         self.simulator_params['simulation_dt'] = \
-            float(self.simulation_dt_edit.toPlainText())
+            float(self.simulation_dt_edit.text())
 
     def _update_frame_dt(self):
         self.simulator_params['frame_dt'] = \
-            float(self.frame_dt_edit.toPlainText())
+            float(self.frame_dt_edit.text())
 
     def _update_gps_delay(self):
         self.simulator_params['gps_delay'] = \
-            float(self.gps_delay_edit.toPlainText())
+            float(self.gps_delay_edit.text())
 
     def _update_iteration_write_frequency(self):
         self.simulator_params['iteration_write_frequency'] = \
-            float(self.iteration_write_frequency_edit.toPlainText())
+            float(self.iteration_write_frequency_edit.text())
 
 
 class SimulatorGUI(object):
