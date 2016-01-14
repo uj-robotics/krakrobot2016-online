@@ -4,7 +4,7 @@ import subprocess
 
 class RobotController(object):
     """ You have to implement this class """
-    def init(starting_position, steering_noise, distance_noise, sonar_noise,
+    def init(starting_position, steering_noise, distance_noise, sonar_noise, forward_steering_drift,
                      measurement_noise, speed, turning_speed, gps_delay, execution_cpu_time_limit):
         """ @param starting_position - (x,y) tuple representing current_position """
         raise NotImplementedError()
@@ -39,7 +39,7 @@ class CmdLineRobotController(RobotController):
     def init(self, **kwargs):
         self.p = subprocess.Popen(self.cmd.split(), stdout=subprocess.PIPE, \
                                   stdin=subprocess.PIPE)
-        assert len(kwargs) == 15, "Expected 15 parameters for constructor"
+        assert len(kwargs) == 11, "Expected 11 parameters for constructor"
         for key, value in kwargs.iteritems():
             if not self.init_kwargs or key in self.init_kwargs:
                 self.p.stdin.write(key + ":" + str(value) + "\n")
@@ -134,4 +134,4 @@ def compile_robot(file_name, module_name = "contestant_module"):
 def construct_cmd_robot(cmd):
     """ Compiles robot from given file and returns class object """
     return CmdLineRobotController(cmd=cmd, init_kwargs=["x", "y", "angle", "steering_noise",
-             "distance_noise", "speed", "turning_speed", "execution_cpu_time_limit", "N", "M", "color_sensor_displacement"])
+             "distance_noise", "forward_steering_drift", "speed", "turning_speed", "execution_cpu_time_limit", "N", "M"])
