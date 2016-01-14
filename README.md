@@ -76,6 +76,13 @@ W obu trybach można kontrolować parametry symulacji.
 
 Wszystkie opcje, które przyjmuje symulator, są zdefiniowane i opisane w pliku ``simulator/main.py`` - wszystkim początkującym użytkownikom polecamy używanie trybu graficznego symulatora, gdzie można zmieniać parametry symulacji.
 
+### GUI
+
+W trybie graficznym ważne są dwie opcje:
+
+* ``frame_dt`` - jeden z parametrów symulatora (edycja możliwa u góry okna), wyznacza okres między klatkami animacji - im mniejsza wartość, tym dokładniej symulacja będzie wizualizowana (przydatne, jeżeli chce się zobaczyć szczegółowe działanie robota w pewnym krótkim czasie)
+* ``Anim. rate`` - (widoczna obok paska przewijania) szybkość wyświetlania kolejnych klatek animacji. Warto zwiększyć, jeżeli wyświetlenie całej symulacji zajmuje zbyt dużo czasu.
+
 ### Implementacja symulatora
 
 Parametry, które mogą się zmieniać między przejazdami, są podawane botowi na starcie symulacji.
@@ -169,8 +176,8 @@ Parametry podawane przez symulator to (obecnie wartości wszystkich podawanych p
 * ``forward_steering_drift`` - wartość błędu, który jest dodawany do _orientacji_ robota przy każdym kroku ``MOVE`` (symulacja błędu wynikającego z konstrukcji robota, który powoduje zbaczanie z drogi)
 * ``speed`` - szybkość jazdy robota
 * ``turning_speed`` - szybkość obrotu robota
-* ``N`` - liczba pól planszy w symulatorze na osi x
-* ``M`` - liczba pól planszy w symulatorze na osi y
+* ``M`` - liczba pól planszy w symulatorze na osi x
+* ``N`` - liczba pól planszy w symulatorze na osi y
 * ``execution_cpu_time_limit`` - limit czasu obliczeń przeznaczonego dla bota na całą symulację
 
 UWAGA: kolejność podawania argumentów na wejście bota nie jest zagwarantowana.
@@ -197,7 +204,7 @@ UWAGA: kolejność podawania informacji ``color`` i ``time`` nie jest zagwaranto
 
 Polecenie ``act`` wysyłane przez symulator oznacza, że bot powinien podjąć decyzję co do następnej akcji robota. Dostępne są następujące komendy:
 
-* ``MOVE <int>`` - liczba kroków jazdy do przodu (dodatnie argumenty) lub do tyłu (ujemne argumenty). UWAGA: w przypadku podanie argumentu większego niż 1 lub mniejszego niż -1 (np. ``MOVE 43``) symulator najpierw wykona odpowiednią liczbę kroków symulacji potrzebną do zrealizowania polecenia, a dopiero potem zapyta bota o kolejną komendę
+* ``MOVE <int>`` - liczba kroków jazdy do przodu (dodatnie argumenty) lub do tyłu (ujemne argumenty). UWAGA: w przypadku podania argumentu większego niż 1 lub mniejszego niż -1 (np. ``MOVE 43``) symulator najpierw wykona odpowiednią liczbę kroków symulacji potrzebną do zrealizowania polecenia, a dopiero potem zapyta bota o kolejną komendę
 * ``TURN <int>`` - podobnie jak ``MOVE``, ale dotyczy liczby kroków dla obracania się robota
 * ``BEEP`` - robot ma wydać pojedyncze piknięcie. Akcja ta jest niezbędna do zdobywania punktów w tegorocznym zadaniu.
 * ``FINISH`` - zakończenie przejazdu. Po tej akcji zadanie się kończy i punkty mogą być podliczone.
@@ -223,6 +230,8 @@ Punktacja
 --------------------
 
 Obecna wersja symulatora jest przeznaczona do testowania lokalnego. Zawodnicy mogą podliczać punkty po przejeździe robota zgodnie z regulaminem. Liczenie punktów będzie zrealizowane automatycznie na testerce online, która zostanie uruchomiona nie później niż trzy tygodnie przed terminem nadsyłania rozwiązań wyznaczonym w regulaminie zawodów.
+
+W momencie ostatecznego podliczania punktów, programy wszystkich drużyn zostaną uruchomione na takich samych zestawach parametrów i na takiej samej planszy.
 
 Wskazówki
 -------------
