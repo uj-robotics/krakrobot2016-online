@@ -13,6 +13,7 @@ FINISH = "FINISH"
 
 TICK_MOVE = 0.01
 TICK_ROTATE = 0.002
+COLOR_SENSOR_DIST = 0.5
 FIELD_SIZE_CM = 22
 
 def deg_to_rad(deg):
