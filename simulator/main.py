@@ -107,7 +107,7 @@ def create_parser():
     parser.add_option(
         "--frame_dt",
         dest="frame_dt",
-        default=1,
+        default=0.25,
         type="float",
         help="How often (in simulation time units) to produce a frame"
     )
@@ -157,7 +157,7 @@ def main():
         print "Running simulator"
         results = simulator.run()
         print "Finished running simulator"
-        print "Simulation has finished. Results:\n{0}".format(json.dumps(results))
+        print "Simulation has finished. Results:\n{0}".format(json.dumps(results, indent=1))
     else:
         simulator = KrakrobotSimulator(**simulator_params)
         from gui import SimulatorGUI
