@@ -98,17 +98,16 @@ W każdym kroku symulacji, wykonywane jest jedno polecenie (z odpowiednim zaapli
 * Jechać do przodu lub do tyłu (odległość o którą przemieszcza się robot w jednym kroku jest zdefiniowana na liście stałych poniżej)
 * Skręcać (odległość kątowa zdefiniowana poniżej)
 * Zakomunikować zakończenie zadania
-* Odczytać kolor podłoża pod czujnikiem koloru (obecnie funkcja ta nie jest potrzebna ponieważ kolor jest przesyłany automatycznie - patrz powyżej)
 
 Mimo, że krata na planszy składa się z dyskretnych pól, pozycja robota jest zakodowana jako 64-bitowa liczba rzeczywista - nie jako liczba całkowita.
 
-Jeżeli podczas ruchu robot miałby wyjechać poza granice planszy, ruch nie odbywa się (chociaż czas potrzebny na jego wykonanie jest zużywany). Obszar poza planszą ma kolor szary i taki kolor zostanie zarejestrowany przez czujnik koloru robota, gdy ten będzie wyjeżdżał za granicę planszy
+Jeżeli podczas ruchu robot miałby wyjechać poza granice planszy, ruch nie odbywa się (chociaż czas potrzebny na jego wykonanie jest zużywany). Obszar poza planszą ma kolor ciemnoczerwony (179, 0, 0) i taki kolor zostanie zarejestrowany przez czujnik koloru robota, gdy ten będzie wyjeżdżał za granicę planszy
 
-**WAŻNE**: Odczyt koloru z planszy jest zaimplementowany przy pomocy pliku graficznego PNG, z którego pobierany jest kolor planszy. Do graficznej reprezentacji planszy celowo został zaaplikowany efekt rozmycia (blur), który sprawia że kolor między linią a polem nie przechodzi od razu od czarnego (0, 0, 0) do białego (255, 255, 255), ale robot może (choć nie musi) zarejestrować także wartości pośrednie. Dlatego niejednoznaczne jest, czy kolor szary (128, 128, 128) oznacza, że robot przekracza właśnie linię, czy też że wyjeżdża poza planszę.
+**WAŻNE**: Odczyt koloru z planszy jest zaimplementowany przy pomocy pliku graficznego PNG, z którego pobierany jest kolor planszy. Ponieważ przy konwersji pliku SVG na PNG na granicach kolorów dochodzi do mieszania kolorów, kolor między linią a polem nie przechodzi od razu od czarnego (0, 0, 0) do białego (255, 255, 255) czy innych kolorów, ale robot może (choć nie musi) zarejestrować także wartości pośrednie.
 
 ### Jednostki miar
 
-**WAŻNE!** : w regulaminie wymiary elementów planszy są podane w centymetrach, tak by zawodnicy łatwiej mogli sobie wyobrazić zależności między wielkościami tych elementów. Jednak z powodów implementacyjnych symulator używa innej jednostki, gdzie liczba 1.0 odpowiada szerokości jednego pola kraty - czyli 22 cm (szerokość białego obszaru pola to 20 cm, podczas gdy każda czarna linia ma 2 cm, jednak tylko połowa grubości każdej linii wlicza się do szerokości pola, co daje 20 + 2 * 1 = 22). Wszystkie odległości i wymiary podane w niniejszej instrukcji (poza tymi, gdzie wyraźnie jako jednostka zaznaczone są centymetry) wyrażone są w opisanych powyżej jednostkach symulatora.
+**WAŻNE!** : w oficjalnym regulaminie wymiary elementów planszy są podane w centymetrach, tak by zawodnicy łatwiej mogli sobie wyobrazić zależności między wielkościami tych elementów. Jednak z powodów implementacyjnych symulator używa innej jednostki, gdzie liczba 1.0 odpowiada szerokości jednego pola kraty - czyli 22 cm (szerokość białego obszaru pola to 20 cm, podczas gdy każda czarna linia ma 2 cm, jednak tylko połowa grubości każdej linii wlicza się do szerokości pola, co daje 20 + 2 * 1 = 22). Wszystkie odległości i wymiary podane w niniejszej instrukcji (poza tymi, gdzie wyraźnie jako jednostka zaznaczone są centymetry) oraz wartości podawane przez symulator, wyrażone są w opisanych powyżej jednostkach symulatora.
 
 Jeżeli chodzi o kąty (używane przy obrotach), przyjętą jednostką są radiany (pełen obrót = 2&pi;), gdzie wartości dodatnie to obrót w lewo, a wartości ujemne to obrót w prawo.
 
@@ -156,8 +155,8 @@ Parametry symulacji są podawane botowi na początku programu przez standardowe 
 na przykład
 
 ```
-color_sensor_displacement
-0.5
+speed
+0.2
 ```
 
 Parametry podawane przez symulator to (obecnie wartości wszystkich podawanych parametrów są typu ``float``:
@@ -167,7 +166,7 @@ Parametry podawane przez symulator to (obecnie wartości wszystkich podawanych p
 * ``angle`` - orientacja startowa (od 0 do 2&pi; - kąt mierzony w radianach)
 * ``steering_noise`` - wskaźnik (sigma szumu gaussowskiego) błędu aplikowanego do skręcania (im większy, tym bardziej faktyczna wielkość skrętu może się różnić od argumentu podanego do komendy ``TURN``)
 * ``distance_noise`` - wskaźnik (sigma szumu gaussowskiego) błędu aplikowanego do jazdy (im większy, tym bardziej faktyczna odległość jazdy może się różnić od argumentu podanego do komendy ``MOVE``)
-* ``color_sensor_displacement`` - odległość między środkiem robota a pozycją czujnika koloru
+* ``forward_steering_drift`` - wartość błędu, który jest dodawany do _orientacji_ robota przy każdym kroku ``MOVE`` (symulacja błędu wynikającego z konstrukcji robota, który powoduje zbaczanie z drogi)
 * ``speed`` - szybkość jazdy robota
 * ``turning_speed`` - szybkość obrotu robota
 * ``N`` - liczba pól planszy w symulatorze na osi x
@@ -202,7 +201,6 @@ Polecenie ``act`` wysyłane przez symulator oznacza, że bot powinien podjąć d
 * ``TURN <int>`` - podobnie jak ``MOVE``, ale dotyczy liczby kroków dla obracania się robota
 * ``BEEP`` - robot ma wydać pojedyncze piknięcie. Akcja ta jest niezbędna do zdobywania punktów w tegorocznym zadaniu.
 * ``FINISH`` - zakończenie przejazdu. Po tej akcji zadanie się kończy i punkty mogą być podliczone.
-* ``SENSE_COLOR`` - ta komenda jest akceptowana przez symulator i spowoduje przesłanie aktualnego odczytu z czujnika koloru. Jednak przy obecnej implementacji jej użycie jest zbędne, gdyż aktualne odczyty są zawsze przesyłane przed poleceniem ``act``
 
 UWAGA: dla poleceń ``MOVE`` i ``TURN`` argumentem jest liczba całkowita wyrażająca **liczbę kroków** symulacji, przez które robot ma wykonywać daną czynność - nie jest to odległość do przejechania. Aby obliczyć ile kroków jest potrzebnych do przejechania danej odległości, należy odnieść się do obliczeń na końcu tej instrukcji.
 
@@ -211,12 +209,15 @@ Krok symulacji nie wyznacza czasu, który zostanie pochłonięty przez daną akc
 Ograniczenia dla parametrów
 ----------------------------
 
-Wartości parametrów mogą się różnić w poszczególnych przejazdach. Te wartości będą się zawierać w poniższych przedziałach:
+Wartości parametrów błędu mogą się różnić w poszczególnych przejazdach. Te wartości będą się zawierać w poniższych przedziałach:
 
-* ``steering_noise`` : [0, 1.0]
-* ``distance_noise`` : [0, 1.0]
-* ``speed`` : [0, 10]
-* ``turning_speed`` : [0, 10]
+* ``steering_noise`` : [0, 4e-05]
+* ``distance_noise`` : [0, 6e-04]
+* ``forward_steering_drift``: [-4e-04, 4e-04]
+
+Początkowe ustawienie robota będzie podane na początku rozgrywki. Robot będzie ustawiony na środku jednego z pól kraty, a kąt ``angle`` będzie miał dowolną wartość z przedziału [0, 2&pi;).
+
+Pozostałe parametry takie jak ``speed`` i ``turning_speed`` będą podane robotowi przez symulator, jednak ich wartości nie mają wpływu na strategię rozgrywki.
 
 Punktacja
 --------------------
@@ -235,9 +236,9 @@ Niezbędne stałe i wyliczenia
 Aby obliczyć, przez ile kroków symulacji należy jechać lub skręcać, by przebyć żądaną odległość/kąt, należy skorzystać z poniższych stałych:
 
 * odległość (w jednostkach symulatora), którą robot przebywa w ciągu jednego kroku:
-TICK_MOVE = 0.01
+``TICK_MOVE = 0.01``
 * kąt (w radianach), o który robot obraca się w ciągu jednego kroku:
-TICK_ROTATE = 0.002
+``TICK_ROTATE = 0.002``
 
 Czyli na przykład, aby przejechać szerokość jednego pola planszy, potrzeba ``1.0 / TICK_MOVE`` kroków. Przypominamy, że liczba ta musi być zaokrąglona do liczby całkowitej, aby została przyjęta przez symulator.
 
@@ -245,3 +246,6 @@ Aby obliczyć czas wykonania akcji dla ``n`` kroków symulacji:
 
 * ``MOVE n``: ``time = n * TICK_MOVE / speed``
 * ``TURN n``: ``time = n * TICK_ROTATE / turning_speed``
+
+Czujnik koloru oddalony jest od środka robota o 11 cm, czyli:
+``COLOR_SENSOR_DISTANCE = 0.5``
