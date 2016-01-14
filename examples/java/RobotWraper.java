@@ -3,15 +3,27 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class RobotWraper {
+
+	/* Important constanst */
+	public static final double TICK_MOVE = 0.01;
+	public static final double TICK_ROTATE = 0.002;
+	public static final double COLOR_SENSOR_DIST = 0.5;
+	public static final int FIELD_SIZE_CM = 22;
+
+
 	/* Possible commands */
 	public static final String TURN = "TURN";
 	public static final String BEEP = "BEEP";
 	public static final String MOVE = "MOVE";
 	public static final String FINISH = "FINISH";
+
 	/* Simulation vars, they MUST be named in python_way */
-	private double x, y, angle, steering_noise, color_sensor_displacement, distance_noise, speed;
-	private double turning_speed, execution_cpu_time_limit, N, M;
-	private int[] current_color = new int[3];
+	private double x, y, angle, steering_noise, distance_noise, forward_steering_drift;
+	private double speed, turning_speed, execution_cpu_time_limit, M, N;
+
+	private int[] currentColor = new int[3];
+	private double elapsedTime = 0;
+
 
 	public RobotWraper() {
 
@@ -22,7 +34,13 @@ public class RobotWraper {
 		public Object arg;
 
 		public String toString() {
-			return action + " " + arg;
+
+			String result = action;
+			if(arg != null){
+				result += " " + arg;
+			}
+
+			return result;
 		}
 	}
 
@@ -34,15 +52,19 @@ public class RobotWraper {
 		return a;
 	}
 
-	public void on_sense_color(int r, int g, int b) {
+	public void onSenseColor(int r, int g, int b) {
 		if (0 <= r && 0 <= g && 0 <= b && r <= 255 && g <= 255 && b <= 255) {
-			current_color[0] = r;
-			current_color[1] = g;
-			current_color[2] = b;
+			currentColor[0] = r;
+			currentColor[1] = g;
+			currentColor[2] = b;
 		}
 	}
 
-	static public RobotWraper robotFromConfig(Scanner sc) {
+	public void onTime(double elapsed) {
+		elapsedTime = elapsed;
+	}
+
+	static public RobotWraper robotFromConfig(Scanner sc) throws Exception {
 		RobotWraper robot = new RobotWraper();
 		String line, key, value;
 		String tmp[];
@@ -58,12 +80,13 @@ public class RobotWraper {
 				System.err.println("Set field "+key + " with value: "+value);
 			} catch (Exception e) {
 				e.printStackTrace();
+				throw e;
 			}
 		}
 		return robot;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		String cmd,line;
 		Scanner sc = new Scanner (System.in);
 		RobotWraper robot = robotFromConfig(sc);
@@ -80,10 +103,13 @@ public class RobotWraper {
 			} else if (cmd.equalsIgnoreCase("color")) {
 				line = sc.nextLine();
 				Scanner sc2 = new Scanner(line);
-				robot.on_sense_color(sc2.nextInt(), sc2.nextInt(), sc2.nextInt());
+				robot.onSenseColor(sc2.nextInt(), sc2.nextInt(), sc2.nextInt());
 				sc2.close();
 			} else if (cmd.equalsIgnoreCase("time")) {
-				sc.nextLine();
+				line = sc.nextLine();
+				Scanner sc2 = new Scanner(line);
+				robot.onTime(sc2.nextDouble());
+				sc2.close();
 			} else {
 				sc.close();
 				throw new RuntimeException("Not recognized cmd \"" + cmd + "\" ");
