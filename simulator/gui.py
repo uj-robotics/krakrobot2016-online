@@ -490,7 +490,7 @@ class MainWindow(QtGui.QMainWindow):
 
         file_name = QtGui.QFileDialog.getOpenFileName(
             self, 'Open robot source code file...', '.',
-            'Python code (*.py)'
+            'Python code (*.py);;Shell script (*.sh);;Any file (*)'
         )
         self.status_bar_message(
             'Loading source code from ' + str(file_name) + ' ...'
