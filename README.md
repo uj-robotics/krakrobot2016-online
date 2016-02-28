@@ -145,6 +145,7 @@ Dostępne opcje programu to:
 * ``--png_output_file`` - ścieżka do wyjściowego pliku PNG (przy braku opcji pobierana z pliku ``.map``)
 
 Obecnie mechanizm rozmieszczania kolorowych pól na planszy jest w sposób uproszczony realizowany przy pomocy tablicy ``beeps`` zawartej w pliku ``.map`` - pierwsze współrzędne w tablicy wyznaczają pozycję pola czerwonego, a dalej - zielonego i niebieskiego. Tym samym generator może tworzyć tylko plansze, na których znajduje się co najwyżej jedno pole z każdego koloru (przypominamy, że regulamin nie precyzuje górnego limitu pól z jednego koloru).
+Jeżeli zawodnicy chcą przetestować działanie swojego bota na bardziej skomplikowanej mapie, sugerujemy stworzenie własnego generatora bądź ręczne edytowanie pliku SVG z mapą w dobrym programie do edycji grafiki wektorowej typu Inkscape.
 
 Bot
 ---------
@@ -161,7 +162,7 @@ Kod źródłowy bota jest podawany symulatorowi przy pomocy opcji -r w konsoli, 
 
 lub dla bota napisanego w c++:
 
-``python2.7 simulator/main.py -r "./examples/c++/run.sh"``
+``python2.7 simulator/main.py -r "./examples/cpp/run.sh"``
 
 UWAGA: Powyższy przykład dla języka C++ zadziała tylko w systemach typu Unix/Linux lub w systemie Windows z zainstalowanym środowiskiem symulującym działanie Uniksowego terminala, jak na przykład Git Bash. Chcąc pracować wyłącznie w linii komend systemu Windows, zawodnicy muszą napisać swój własny skrypt do uruchamiania bota.
 
@@ -228,7 +229,7 @@ UWAGA: dla poleceń ``MOVE`` i ``TURN`` argumentem jest liczba całkowita wyraż
 
 Krok symulacji nie wyznacza czasu, który zostanie pochłonięty przez daną akcję, gdyż jazda i obrót zajmują różne ilości czasu. Stosowne obliczenia dotyczące długości poszczególnych akcji znajdują się na końcu tej instrukcji.
 
-Ograniczenia dla parametrów
+Ograniczenia/wartości parametrów
 ----------------------------
 
 Wartości parametrów błędu mogą się różnić w poszczególnych przejazdach. Te wartości będą się zawierać w poniższych przedziałach:
@@ -237,9 +238,22 @@ Wartości parametrów błędu mogą się różnić w poszczególnych przejazdach
 * ``distance_noise`` : [0, 6e-04]
 * ``forward_steering_drift``: [-4e-04, 4e-04]
 
-Początkowe ustawienie robota będzie podane na początku rozgrywki. Robot będzie ustawiony na środku jednego z pól kraty, a kąt ``angle`` będzie miał dowolną wartość z przedziału [0, 2&pi;).
 
-Pozostałe parametry takie jak ``speed`` i ``turning_speed`` będą podane robotowi przez symulator, jednak ich wartości nie mają wpływu na strategię rozgrywki.
+Pozostałe parametry podawane robotowi są w tegorocznej konkurencji ustalone i mają podane poniżej wartości:
+
+Początkowe ustawienie robota (zgodnie z regulaminem konkurencji):
+* ``x = 2.5``
+* ``y = 2.5``
+* ``angle = 0.0``
+
+Szybkość robota:
+
+* ``speed = 0.2``
+* ``turning_speed = 1.0``
+
+Limit czasu obliczeń:
+
+* `` execution_cpu_time_limit = 100.0``
 
 Punktacja
 --------------------
@@ -247,6 +261,8 @@ Punktacja
 Obecna wersja symulatora jest przeznaczona do testowania lokalnego. Zawodnicy mogą podliczać punkty po przejeździe robota zgodnie z regulaminem. Liczenie punktów będzie zrealizowane automatycznie na testerce online, która zostanie uruchomiona nie później niż trzy tygodnie przed terminem nadsyłania rozwiązań wyznaczonym w regulaminie zawodów.
 
 W momencie ostatecznego podliczania punktów, programy wszystkich drużyn zostaną uruchomione na takich samych zestawach parametrów i na takiej samej planszy.
+
+Bot każdej z drużyn zostanie uruchomiony __jednokrotnie__ i na podstawie tego przejazdu wyliczana będzie liczba punktów.
 
 Wskazówki
 -------------
