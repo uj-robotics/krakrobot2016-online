@@ -140,7 +140,7 @@ UWAGA: to narzędzie jest obecnie w początkowym stadium rozwoju. Organizatorzy 
 Do konwersji pliku SVG na PNG narzędzie to wymaga zainstalowanego na komputerze programu Inkscape wraz z jego interfejsem konsolowym (CLI). W przypadku braku tego programu zostanie wygenerowany plik SVG, który następnie można ręcznie przekonwertować do pliku PNG innym programem. Domyślna wielkość pliku PNG przyjmowana przez symulator to 512x512 px.
 
 Dostępne opcje programu to:
-* ``--map`` - ścieżka do pliku typu ``.map`` (domyślnie: ``maps/1.map``)
+* ``--map_file`` - ścieżka do pliku typu ``.map`` (domyślnie: ``maps/1.map``)
 * ``--svg_output_file`` - ścieżka do wyjściowego pliku SVG (przy braku opcji pobierana z pliku ``.map``)
 * ``--png_output_file`` - ścieżka do wyjściowego pliku PNG (przy braku opcji pobierana z pliku ``.map``)
 
