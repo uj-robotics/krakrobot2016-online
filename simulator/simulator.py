@@ -325,13 +325,16 @@ class KrakrobotSimulator(object):
             logger.error("Simulation failed with exception " + str(e) + " after " + str(robot.time_elapsed) + " time")
             map_to_save = dict(self.map)
             del map_to_save['color_bitmap']
-            return {
+            self.results = {
                     "sim_time": robot.time_elapsed,
                     "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
                     "error": str(traceback.format_exc()),
+                    "finished": communicated_finished,
                     "beeps": beeps,
                     "map": map_to_save
                     }
+
+            return self.results
 
         self.sim_frames.put(self._create_sim_data(robot, beeps))
         while frame_time_left >= self.frame_dt and not self.command_line and not self.terminate_flag:
@@ -347,11 +350,13 @@ class KrakrobotSimulator(object):
             # Return simulation results
             map_to_save = dict(self.map)
             del map_to_save['color_bitmap']
-            self.results = {"sim_time": robot.time_elapsed,
-                    "map": map_to_save,
-                    "beeps": beeps,
+            self.results = {
+                    "sim_time": robot.time_elapsed,
                     "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
-                    "error": False
+                    "error": False,
+                    "finished": communicated_finished,
+                    "beeps": beeps,
+                    "map": map_to_save
                     }
             logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds, communicated_finish=" + str(
                 communicated_finished))
