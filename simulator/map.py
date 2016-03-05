@@ -30,6 +30,33 @@ def load_map(file_name, load_graphics=True):
     """
     map_ = json.loads(open(file_name, "r").read())
 
+    color_names = ['red', 'green', 'blue']
+    for color in color_names:
+        if map_.has_key(color) and isinstance(map_[color], list) and len(map_[color]):
+            # if the first element is also a list (list of fields notation)
+            if isinstance(map_[color][0], list):
+                map_[color] = map(tuple, map_[color])
+
+            #if the first element is not a list (single field notation)
+            else:
+                map_[color] = [tuple(map_[color][0])]
+        else:
+            print "Warning: no coordinates provided or unsupported type for '{}' fields in the map file. Overwriting with empty list".format(color)
+            map_[color] = []
+
+    # convert beeps list to red, green and blue lists
+    if map_.has_key('beeps'):
+        beeps = map_['beeps']
+        print "Warning: beeps is deprecated - use separate red, green and blue field lists in map file"
+        assert len(beeps)==3, "The beeps list must have exactly 3 elements."
+        for i, color in enumerate(color_names):
+            map_[color].append(tuple(beeps[i]))
+
+    fields = sum((map_[color] for color in color_names), [])
+    # check for overlapping fields
+    assert len(set(fields)) == len(fields), "There are some color fields with the same coordinates"
+
+
     if not os.path.isabs(map_['color_bitmap_file']):
         map_['color_bitmap_file'] = os.path.join(os.path.dirname(file_name), map_['color_bitmap_file'])
 

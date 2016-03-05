@@ -215,24 +215,6 @@ def RenderFrameTemplate(Data):
         'blue': (0, 0, 255)
     }
 
-    fields = {color_name: [] for color_name in color_values.keys()}
-
-    if Map.has_key('beeps'):
-        Beeps = Map['beeps']
-        assert len(Beeps)==3, "The beeps list must have exactly 3 elements. NOTE: beeps is deprecated. Use separate red, green and blue field lists."
-        fields['red'].append(tuple(Beeps[0]))
-        fields['green'].append(tuple(Beeps[1]))
-        fields['blue'].append(tuple(Beeps[2]))
-
-    for color in color_values.keys():
-        if Map.has_key(color):
-            new_fields = Map[color]
-            if len(new_fields) > 0:
-                if isinstance(new_fields[0], list):
-                    fields[color].extend(map(tuple,new_fields))
-                else:
-                    fields[color].append(tuple(new_fields))
-
     Result += SVGGroup(IT, {
         'fill': '#a40',
         'stroke': 'black',
@@ -240,18 +222,10 @@ def RenderFrameTemplate(Data):
         'stroke-linecap': 'butt',
     })
 
-    # check for overlapping fields
-    assert len(set(sum(fields.values(), []))) == sum(map(len, fields.values())), "There are some color fields with the same coordinates"
-
     for color in color_values.keys():
-        for field in fields[color]:
+        for field in Map[color]:
             Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
                      % (field[0], field[1], '#%02x%02x%02x' % color_values[color]))
-
-    # Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
-    #          % (Beeps[1][0], Beeps[1][1], '#%02x%02x%02x' % (0, 255 ,0)))
-    # Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
-    #          % (Beeps[2][0], Beeps[2][1], '#%02x%02x%02x' % (0, 0 ,255)))
 
     for i in range(len(Board)):
         for j in range(len(Board[0])):
