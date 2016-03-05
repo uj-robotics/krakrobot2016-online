@@ -1,0 +1,12 @@
+{
+
+    "title": "",
+    "start_field": [2,2],
+    "M": 9,
+    "N": 9,
+    "color_bitmap_file": "2.png",
+    "vector_graphics_file": "2.svg",
+    "red": [[6,6], [3, 6]],
+    "green": [[3, 4], [5, 4], [2, 2]],
+    "blue": [[6, 2], [2, 6]]
+}

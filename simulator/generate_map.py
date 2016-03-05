@@ -207,8 +207,31 @@ def RenderFrameTemplate(Data):
 
     # Maze
     Result += IT('<!-- Board -->')
-    Map = Data['Map']['board']
-    Beeps = Data['Map']['beeps']
+    Map = Data['Map']
+    Board = Map['board']
+    color_values ={
+        'red': (255, 0, 0),
+        'green': (0, 255, 0),
+        'blue': (0, 0, 255)
+    }
+
+    fields = {color_name: [] for color_name in color_values.keys()}
+
+    if Map.has_key('beeps'):
+        Beeps = Map['beeps']
+        assert len(Beeps)==3, "The beeps list must have exactly 3 elements. NOTE: beeps is deprecated. Use separate red, green and blue field lists."
+        fields['red'].append(Beeps[0])
+        fields['green'].append(Beeps[1])
+        fields['blue'].append(Beeps[2])
+
+    for color in color_values.keys():
+        if Map.has_key(color):
+            new_fields = Map[color]
+            if len(new_fields) > 0:
+                if isinstance(new_fields[0], list):
+                    fields[color].extend(new_fields)
+                else:
+                    fields[color].append(new_fields)
 
     Result += SVGGroup(IT, {
         'fill': '#a40',
@@ -217,16 +240,19 @@ def RenderFrameTemplate(Data):
         'stroke-linecap': 'butt',
     })
 
-    Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
-             % (Beeps[0][0], Beeps[0][1], '#%02x%02x%02x' % (255, 0 ,0)))
-    Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
-             % (Beeps[1][0], Beeps[1][1], '#%02x%02x%02x' % (0, 255 ,0)))
-    Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
-             % (Beeps[2][0], Beeps[2][1], '#%02x%02x%02x' % (0, 0 ,255)))
+    for color in color_values.keys():
+        for field in fields[color]:
+            Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
+                     % (field[0], field[1], '#%02x%02x%02x' % color_values[color]))
 
-    for i in range(len(Map)):
-        for j in range(len(Map[0])):
-            if Map[i][j] == 1:
+    # Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
+    #          % (Beeps[1][0], Beeps[1][1], '#%02x%02x%02x' % (0, 255 ,0)))
+    # Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="%s"/>\n'
+    #          % (Beeps[2][0], Beeps[2][1], '#%02x%02x%02x' % (0, 0 ,255)))
+
+    for i in range(len(Board)):
+        for j in range(len(Board[0])):
+            if Board[i][j] == 1:
                 # Result += IT('<circle cx="%g" cy="%g" r="0.495"/>\n' % (i, j))
                 Result += IT('<rect x="%g" y="%g" width="1" height="1" stroke="none" fill="#B30000"/>\n'
                              % (i, j))
