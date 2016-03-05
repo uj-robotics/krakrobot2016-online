@@ -220,18 +220,18 @@ def RenderFrameTemplate(Data):
     if Map.has_key('beeps'):
         Beeps = Map['beeps']
         assert len(Beeps)==3, "The beeps list must have exactly 3 elements. NOTE: beeps is deprecated. Use separate red, green and blue field lists."
-        fields['red'].append(Beeps[0])
-        fields['green'].append(Beeps[1])
-        fields['blue'].append(Beeps[2])
+        fields['red'].append(tuple(Beeps[0]))
+        fields['green'].append(tuple(Beeps[1]))
+        fields['blue'].append(tuple(Beeps[2]))
 
     for color in color_values.keys():
         if Map.has_key(color):
             new_fields = Map[color]
             if len(new_fields) > 0:
                 if isinstance(new_fields[0], list):
-                    fields[color].extend(new_fields)
+                    fields[color].extend(map(tuple,new_fields))
                 else:
-                    fields[color].append(new_fields)
+                    fields[color].append(tuple(new_fields))
 
     Result += SVGGroup(IT, {
         'fill': '#a40',
@@ -239,6 +239,9 @@ def RenderFrameTemplate(Data):
         'stroke-width': '0.01',
         'stroke-linecap': 'butt',
     })
+
+    # check for overlapping fields
+    assert len(set(sum(fields.values(), []))) == sum(map(len, fields.values())), "There are some color fields with the same coordinates"
 
     for color in color_values.keys():
         for field in fields[color]:
