@@ -18,6 +18,7 @@ from simulator import KrakrobotSimulator
 from robot_controller import compile_robot, construct_cmd_robot
 import sys
 import json
+import pprint
 from os.path import join, dirname
 
 # TODO: pass constants to robot
@@ -157,7 +158,7 @@ def main():
         print "Running simulator"
         results = simulator.run()
         print "Finished running simulator"
-        print "Simulation has finished. Results:\n{0}".format(json.dumps(results, indent=1))
+        print "Simulation has finished. Results:\n{0}".format(pprint.pformat(results, indent=1))
     else:
         simulator = KrakrobotSimulator(**simulator_params)
         from gui import SimulatorGUI
