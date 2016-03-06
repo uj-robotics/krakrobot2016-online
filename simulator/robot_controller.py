@@ -48,11 +48,7 @@ class CmdLineRobotController(RobotController):
         self.p.stdin.write("time\n")
         self.p.stdin.write(str(current_time) + "\n")
         self.p.stdin.write("act\n")
-        cmd = self.p.stdout.readline().split()
-        if cmd[0] == "move" or cmd[0] == "turn":
-            return cmd[0], int(cmd[1])
-        else:
-            return cmd
+        return self.p.stdout.readline().split()
 
     def on_sense_color(self, *args):
         self.p.stdin.write("color\n")

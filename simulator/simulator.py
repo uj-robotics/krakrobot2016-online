@@ -159,6 +159,8 @@ class KrakrobotSimulator(object):
         self.robot_timer = 0.0
         self.sim_frames = Queue(100000)
         self.finished = False
+        self.error = None
+        self.error_traceback = None
         self.terminate_flag = False
 
         self.logs = []
@@ -245,13 +247,13 @@ class KrakrobotSimulator(object):
                             logger.error("Collision")
                             if collision_counter >= COLLISION_THRESHOLD:
                                 raise KrakrobotException \
-                                    ("The robot has been destroyed by wall. Sorry! We miss WALLE already.")
+                                    ("The robot has been destroyed by a wall.")
                         else:
                             robot = robot_proposed
 
                         frame_time_left += TICK_MOVE / self.speed
                     else:
-                        raise KrakrobotException("Robot hasn't supplied any command")
+                        raise KrakrobotException("The robot hasn't supplied any command")
 
                     if current_command[1] == 0:
                         current_command = None
@@ -265,15 +267,20 @@ class KrakrobotSimulator(object):
                     try:
                         r, g, b = robot.sense_color(self.map)
                         robot_controller.on_sense_color(r, g, b)
-                        command = list(robot_controller.act(robot.time_elapsed))
+                        command = robot_controller.act(robot.time_elapsed)
                     except Exception, e:
                         logger.error("Robot controller failed with exception " + str(e))
                         logger.error(traceback.format_exc())
-                        break
+                        raise KrakrobotException("Robot controller failed with exception " + str(e))
 
                     # logger.info("Robot timer "+str(robot.time_elapsed))
-                    if not command or len(command) == 0:
-                        raise KrakrobotException("No command passed, or zero length command passed")
+                    if not command :
+                        raise KrakrobotException("No command returned from the robot controller")
+
+                    command = list(command)
+
+                    if len(command) == 0:
+                        raise KrakrobotException("Zero length command returned from the robot controller")
 
                     if command[0] not in self.accepted_commands:
                         raise KrakrobotException("Not allowed command " + str(command[0]))
@@ -301,17 +308,18 @@ class KrakrobotSimulator(object):
                         if len(command) <= 1 or len(command) > 2:
                             raise KrakrobotException("Incorrect command length")
                         current_command = command
-                        current_command[1] = int(current_command[1])
+                        try:
+                            current_command[1] = int(current_command[1])
+                        except ValueError:
+                            raise KrakrobotException("TURN: Incorrect argument type: expected int, got '{}'".format(current_command[1]))
                     elif command[0] == MOVE:
                         if len(command) <= 1 or len(command) > 2:
                             raise KrakrobotException("Incorrect command length")
-
-                        if command[1] < 0:
-                            raise KrakrobotException("Not allowed negative distance")
-                        # Move robot
                         current_command = command
-                        current_command[1] = int(current_command[1])
-
+                        try:
+                            current_command[1] = int(current_command[1])
+                        except ValueError:
+                            raise KrakrobotException("MOVE: Incorrect argument type: expected int, got '{}'".format(current_command[1]))
                     elif command[0] == BEEP:
                         beeps.append((robot.x, robot.y, robot.time_elapsed))
                     elif command[0] == FINISH:
@@ -321,20 +329,9 @@ class KrakrobotSimulator(object):
                         raise KrakrobotException("Not received command from act(), or command was incorrect")
 
         except Exception, e:
-            # TODO: merge with final result!
             logger.error("Simulation failed with exception " + str(e) + " after " + str(robot.time_elapsed) + " time")
-            map_to_save = dict(self.map)
-            del map_to_save['color_bitmap']
-            self.results = {
-                    "sim_time": robot.time_elapsed,
-                    "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
-                    "error": str(traceback.format_exc()),
-                    "finished": communicated_finished,
-                    "beeps": beeps,
-                    "map": map_to_save
-                    }
-
-            return self.results
+            self.error = str(e)
+            self.error_traceback = str(traceback.format_exc())
 
         self.sim_frames.put(self._create_sim_data(robot, beeps))
         while frame_time_left >= self.frame_dt and not self.command_line and not self.terminate_flag:
@@ -351,13 +348,44 @@ class KrakrobotSimulator(object):
             map_to_save = dict(self.map)
             del map_to_save['color_bitmap']
             self.results = {
-                    "sim_time": robot.time_elapsed,
-                    "cpu_time": robot_controller.time_consumed.total_seconds() * 1000,
-                    "error": False,
-                    "finished": communicated_finished,
-                    "beeps": beeps,
-                    "map": map_to_save
-                    }
+                "sim_time": robot.time_elapsed,
+                "cpu_time": robot_controller.time_consumed.total_seconds(),
+                "error": self.error or False,
+                "error_traceback": self.error_traceback or False,
+                "finished": communicated_finished,
+                "beeps": beeps,
+                "map": map_to_save
+            }
+
+            # calculate points for this year's task
+
+            # if there was any error in the simulation
+            if self.error:
+                points = 0
+                task_time = self.simulation_time_limit
+            # if the robot didn't finish the task in the time limit
+            elif not communicated_finished:
+                points = 0
+                task_time = self.simulation_time_limit
+            # if the robot finished before the time limit
+            else:
+                n=len(beeps)
+                # if the robot made more than 3 beeps
+                if n>3:
+                    points = 0
+                else:
+                    points = 0
+                    beeps_sequence = ['red', 'green', 'blue']
+                    for i, color in enumerate(beeps_sequence):
+                        # if there were enough beeps and the i-th beep was at a field of the right color
+                        if i < n and (int(beeps[i][0]), int(beeps[i][1])) in self.map[color]:
+                            points += 1
+                task_time = robot.time_elapsed - beeps[0][2]
+
+            self.results['points'] = points
+            self.results['task_time'] = task_time
+
+
             logger.info("Simulation ended after " + str(robot.time_elapsed) + " seconds, communicated_finish=" + str(
                 communicated_finished))
             return self.results
