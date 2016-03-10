@@ -62,11 +62,11 @@ Symulator
 Są dwa sposoby uruchomienia symulatora: w trybie graficznym lub w trybie konsolowym.
 Tryb graficzny umożliwia zobaczenie przejazdu robota na wizualizacji, jak również odtwarzanie przejazdu lub jego fragmentów w ramach powtórki. Aby uruchomić symulator w trybie graficznym, należy wykonać polecenie
 
-``python simulator/main.py``
+``python2.7 simulator/main.py``
 
 Uruchamianie symulatora w trybie konsolowym:
 
-``python simulator/main.py -c``
+``python2.7 simulator/main.py -c``
 
 wiąże się z podaniem programowi opcji konfiguracyjnych (patrz niżej).
 
@@ -74,7 +74,28 @@ W obu trybach można kontrolować parametry symulacji.
 
 ### Opcje symulatora
 
-Wszystkie opcje, które przyjmuje symulator, są zdefiniowane i opisane w pliku ``simulator/main.py`` - wszystkim początkującym użytkownikom polecamy używanie trybu graficznego symulatora, gdzie można zmieniać parametry symulacji.
+Poniżej znajduje się spis wszystkich opcji dostępnych w symulatorze. Każda z opcji ma ustawioną wartość domyślną, dzięki czemu podawanie opcji nie jest konieczne.
+
+#### Parametry ogólne:
+* ``-c`` / ``--command_line`` - uruchomienie w trybie konsolowym (bez wizualizacji)
+* ``-m`` / ``--map`` - ścieżka do pliku z mapą
+* ``-o`` / ``--output`` - nazwa pliku, do którego zostanie wypisany wynik symulacji
+* ``-r`` / ``--robot`` - komenda uruchomienia programu z botem, np. `` -r "python3 examples/python3/template_bot.py"``
+
+#### Parametry symulacji (dokładny opis w rozdziale **Bot**):
+* ``--steering_noise``
+* ``--distance_noise``
+* ``--forward_steering_drift``
+* ``--speed``
+* ``--turning_speed``
+* ``--execution_cpu_time_limit``
+* ``--simulation_time_limit``
+
+#### Parametry animacji/logowania:
+* ``--frame_dt`` - czas symulacji pomiędzy kolejnymi zapisami klatek animacji
+* ``--iteration_write_frequency`` - co ile kroków symulacji symulator będzie wypisywał podstawowe informacje o stanie symulacji (przydatne do debugowania)
+
+Opcje, które przyjmuje symulator, są zdefiniowane i opisane w pliku ``simulator/main.py`` - wszystkim początkującym użytkownikom polecamy używanie trybu graficznego symulatora, gdzie można zmieniać parametry symulacji.
 
 ### GUI
 
@@ -112,6 +133,8 @@ Jeżeli podczas ruchu robot miałby wyjechać poza granice planszy, ruch nie odb
 
 **WAŻNE**: Odczyt koloru z planszy jest zaimplementowany przy pomocy pliku graficznego PNG, z którego pobierany jest kolor planszy. Ponieważ przy konwersji pliku SVG na PNG na granicach kolorów dochodzi do mieszania kolorów, kolor między linią a polem nie przechodzi od razu od czarnego (0, 0, 0) do białego (255, 255, 255) czy innych kolorów, ale robot może (choć nie musi) zarejestrować także wartości pośrednie.
 
+Rozdzielczość pliku PNG przyjmowanego przez symulator to 512x512 pikseli.
+
 ### Jednostki miar
 
 **WAŻNE!** : w oficjalnym regulaminie wymiary elementów planszy są podane w centymetrach, tak by zawodnicy łatwiej mogli sobie wyobrazić zależności między wielkościami tych elementów. Jednak z powodów implementacyjnych symulator używa innej jednostki, gdzie liczba 1.0 odpowiada szerokości jednego pola kraty - czyli 22 cm (szerokość białego obszaru pola to 20 cm, podczas gdy każda czarna linia ma 2 cm, jednak tylko połowa grubości każdej linii wlicza się do szerokości pola, co daje 20 + 2 * 1 = 22). Wszystkie odległości i wymiary podane w niniejszej instrukcji (poza tymi, gdzie wyraźnie jako jednostka zaznaczone są centymetry) oraz wartości podawane przez symulator, wyrażone są w opisanych powyżej jednostkach symulatora.
@@ -121,9 +144,10 @@ Jeżeli chodzi o kąty (używane przy obrotach), przyjętą jednostką są radia
 
 ### Plansza do gry
 
-Obecnie w symulatorze dostępna jest pojedyncza przykładowa mapa do gry (przypominamy, że liczba i położenie pól kolorowych nie jest zdefiniowane w regulaminie i najprawdopodobniej będzie inne w ostatecznym ułożeniu planszy, używanym do oficjalnego testowania nadesłanych rozwiązań).
+Obecnie w symulatorze dostępne są dwie przykładowe plansze do gry (przypominamy, że liczba i położenie pól kolorowych nie jest zdefiniowane w regulaminie i najprawdopodobniej będzie inne w ostatecznym ułożeniu planszy, używanym do oficjalnego testowania nadesłanych rozwiązań).
 
 ![Przykładowa plansza](simulator/maps/1.png)
+![Przykładowa plansza](simulator/maps/2.png)
 
 **WAŻNE!** : Zgodnie z regulaminem, krata na planszy ma 5x5 pól. Jednak w implementacji symulatora, plansza jest większa - ma 9x9 pól, czyli w sumie z każdej strony planszy są dodane dwa pola - jest to spowodowane faktem, że krata na planszy jest otoczona białym pustym obszarem, a dodatkowo w implementacji dochodzi jeszcze obszar, na którym sprawdzana jest kolizja - wyjeżdżanie poza planszę. Poniżej prezentujemy planszę z regulaminu z polami naniesionymi tak, jak wyglądają od strony implementacji symulatora oraz z osiami układu współrzędnych.
 
@@ -133,9 +157,7 @@ Warto zauważyć, że początek układu współrzędnych symulatora znajduje si�
 
 ### Generator map
 
-W obecnej wersji dołączony jest prosty generator map (``simulator/generate_map.py``), który generuje plik SVG i PNG na podstawie pliku ``.map``.
-
-UWAGA: to narzędzie jest obecnie w początkowym stadium rozwoju. Organizatorzy udostępniają je zawodnikom w celu ułatwienia pracy przy tworzeniu nowych plansz, jednak podczas działania mogą ujawnić się błędy lub ograniczenia.
+Do symulatora dodany jest generator map (``simulator/generate_map.py``), który generuje plik SVG i PNG na podstawie pliku ``.map``.
 
 Do konwersji pliku SVG na PNG narzędzie to wymaga zainstalowanego na komputerze programu Inkscape wraz z jego interfejsem konsolowym (CLI). W przypadku braku tego programu zostanie wygenerowany plik SVG, który następnie można ręcznie przekonwertować do pliku PNG innym programem. Domyślna wielkość pliku PNG przyjmowana przez symulator to 512x512 px.
 
@@ -144,8 +166,19 @@ Dostępne opcje programu to:
 * ``--svg_output_file`` - ścieżka do wyjściowego pliku SVG (przy braku opcji pobierana z pliku ``.map``)
 * ``--png_output_file`` - ścieżka do wyjściowego pliku PNG (przy braku opcji pobierana z pliku ``.map``)
 
-Obecnie mechanizm rozmieszczania kolorowych pól na planszy jest w sposób uproszczony realizowany przy pomocy tablicy ``beeps`` zawartej w pliku ``.map`` - pierwsze współrzędne w tablicy wyznaczają pozycję pola czerwonego, a dalej - zielonego i niebieskiego. Tym samym generator może tworzyć tylko plansze, na których znajduje się co najwyżej jedno pole z każdego koloru (przypominamy, że regulamin nie precyzuje górnego limitu pól z jednego koloru).
-Jeżeli zawodnicy chcą przetestować działanie swojego bota na bardziej skomplikowanej mapie, sugerujemy stworzenie własnego generatora bądź ręczne edytowanie pliku SVG z mapą w dobrym programie do edycji grafiki wektorowej typu Inkscape.
+Pola kolorowe są rozmieszczane na planszy na podstawie trzech zawartych w pliku ``.map`` wartości: ``red``, ``green`` oraz ``blue``. Każda z nich powinna być listą współrzędnych pól. Przykładowo:
+
+```
+{
+	...
+
+	"red": [[6,6], [3, 6]],
+    "green": [[3, 4], [5, 4], [2, 2]],
+    "blue": [[6, 2], [2, 6]]
+}
+```
+
+Poprzedni mechanizm oparty na pojedynczym polu ``beeps``, który służył do generowania map z jednym polem każdego koloru - jest nadal obsługiwany, jednak zalecamy tworzenie nowych map w oparciu o powyższy mechanizm.
 
 Bot
 ---------
@@ -258,11 +291,58 @@ Limit czasu obliczeń:
 Punktacja
 --------------------
 
-Obecna wersja symulatora jest przeznaczona do testowania lokalnego. Zawodnicy mogą podliczać punkty po przejeździe robota zgodnie z regulaminem. Liczenie punktów będzie zrealizowane automatycznie na testerce online, która zostanie uruchomiona nie później niż trzy tygodnie przed terminem nadsyłania rozwiązań wyznaczonym w regulaminie zawodów.
+Obecna wersja symulatora zawiera mechanizm liczenia punktów za zadanie. Liczenie punktów odbywa się, zgodnie z formalnym regulaminem, na następujących zasadach:
 
-W momencie ostatecznego podliczania punktów, programy wszystkich drużyn zostaną uruchomione na takich samych zestawach parametrów i na takiej samej planszy.
+Robot otrzymuje 0 punktów i maksymalny czas wykonania zadania (240 sekund) jeżeli:
+* podczas przejazdu działanie robota wywoła błąd w symulatorze (na przykład program zawodników ulegnie awarii i przestanie odpowiadać albo zwrócona zostanie niedozwolona komenda)
+* robot przekroczy limit czasu obliczeń lub nie zakończy przejazdu przed limitem czasu symulacji
+* robot ulegnie zniszczeniu wskutek wyjechania poza planszę
 
-Bot każdej z drużyn zostanie uruchomiony __jednokrotnie__ i na podstawie tego przejazdu wyliczana będzie liczba punktów.
+Jeżeli robot bezbłędnie zakończy przejazd przed upływem limitu czasowego:
+
+Punkty za piknięcia (beeps) są podliczane zgodnie z regulaminem:
+* 1 punkt za pierwsze piknięcie nad dowolnym polem czerwonym
+* 1 punkt za drugie piknięcie nad dowolnym polem zielonym
+* 1 punkt za trzecie piknięcie nad dowolnym polem niebieskim
+
+Za czas wykonania zadania przyjmuje się czas między pierwszym piknięciem a zasygnalizowaniem przez robota zakończenia przejazdu.
+
+Jeżeli robot wyda więcej niż 3 piknięcia, otrzymuje zero punktów, jednak czas wykonania zadania liczy się tak jak powyżej.
+
+Automatyczna testerka rozwiązań
+-------------
+
+Organizatorzy udostępniają automatyczną testerkę rozwiązań do nadsyłania i ewaluowania rozwiązań. Po terminie rejestracji aktualne rozwiązanie będzie ocenione
+
+### Sposób nadsyłania rozwiązań
+
+Testerka będzie dostępna pod adresem <http://krakrobot.matinf.uj.edu.pl>
+
+Zasady nadsyłania rozwiązań:
+* logowanie na testerkę odbywa się przy pomocy loginu i hasła, które wszystkie zarejestrowane drużyny otrzymają drogą mailową
+* każda drużyna ma na testerce miejsce na dwa rozwiązania, z limitem objętości 5 MB na jedno. Po nadesłaniu nowego rozwiązania, z bazy danych usuwane jest starsze z dwóch rozwiązań - w każdym momencie przechowywane są w historii najwyżej dwa najnowsze rozwiązania każdej drużyny
+* rozwiązanie powinno być przesyłane w formie wszystkich plików spakowanych do archiwum ``.zip``, pliki powinny znajdować się bezpośrednio w archiwum (nie w dodatkowym folderze)
+* **UWAGA**: ze względu na sposób uruchamiania botów na testerce, wymagane jest, żeby każdy bot w C++ lub Javie zawierał główny plik ``run.sh`` z *shebangiem* ``#!/bin/bash`` w pierwszej linijce lub - dla programów pisanych w Python - plik ``run.py`` z *shebangiem* ``#!/bin/env python2.7`` lub ``#!/bin/env python3`` w pierwszej linijce (w zależności od użytej wersji Pythona) - najlepiej użyć w tym celu gotowych plików run.sh / run.py udostępnionych przez organizatorów w folderach z szablonami botów (w przypadku pliku run.py należy wypełnić szablon bota swoim kodem)
+* zainstalowane na testerce wersje języków programowania:
+	* Java SE 8 (polecenia ``javac``, ``java``)
+	* C++11 (kompilacja poleceniem ``g++``)
+	* Python 2.7 (polecenie ``python2.7``)
+	* Python 3 (polecenie ``python3``)
+
+### Testowanie przed ostatecznym terminem
+
+Przed terminem nadsyłania rozwiązań, każde przesłane rozwiązanie będzie uruchamiane na kilku przykładowych ułożeniach planszy. Zawodnicy mogą przeglądać wyniki każdego uruchomienia.
+
+### Ostateczna ocena rozwiązań
+
+Dla zmniejszenia wariancji przy testowaniu rozwiązań, organizatorzy zdecydowali się na wielokrotne uruchomienie botów. Ta zmiana nie wpływa na poprawność rozwiązań, jednak dzięki niej czynniki losowe takie jak niedokładność reprezentacji liczbowej w symulatorze będą miały dużo mniejszy wpływ na ocenę rozwiązań zawodników.
+
+Każde rozwiązanie zostanie uruchomione wielokrotnie, na kilku zestawach parametrów, gdzie zmieniać się będą jedynie (w granicach opisanych w powyższej instrukcji):
+* liczba i ułożenie kolorowych pól na planszy
+* parametry szumu: ``steering_noise``, ``distance_noise``, ``forward_steering_drift``
+
+Wyniki dla każdej drużyny zostaną później uśrednione i na tej podstawie zostanie opublikowany ranking etapu online.
+
 
 Wskazówki
 -------------
