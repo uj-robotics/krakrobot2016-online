@@ -33,7 +33,8 @@ class SimulationThread(QtCore.QThread):
 
     def run(self):
         """Running KrakrobotSimulator simulation"""
-        print "Simulation has finished. Results:\n{0}".format(pprint.pformat(self.simulator.run(), indent=1))
+        results = self.simulator.run()
+        print "Simulation has finished. Results:\n{0}".format(pprint.pformat(results, indent=1))
 
 
 class KrakrobotBoardAnimation(QtGui.QGraphicsView):
@@ -135,7 +136,8 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
             self.status_bar_message.emit('Animation played...')
 
     def terminate_simulation(self):
-        self.simulation_thread.terminate()
+        if self.simulation_thread:
+            self.simulation_thread.terminate()
         self.simulator.terminate()
         self.frames_timer.stop()
 
@@ -192,16 +194,16 @@ class KrakrobotBoardAnimation(QtGui.QGraphicsView):
 
             scene.setSceneRect(self.svg_item.boundingRect().adjusted(-10, -10, 10, 10))
 
-            if not self.animation_paused:
-                previous_frame = self.current_frame
-                self.current_frame += self.animation_speed
 
             # GUI update #
             main_window = self.parent().parent()
             main_window.update_current_frame(self.current_frame)
             # Animation output update - we must calculate frames we have skipped
-            for frame in range(previous_frame, self.current_frame + 1):
-                main_window.check_and_update_animation_console(frame)
+            if not self.animation_paused:
+                previous_frame = self.current_frame
+                self.current_frame += self.animation_speed
+                for frame in range(previous_frame, self.current_frame + 1):
+                    main_window.check_and_update_animation_console(frame)
 
             if self.refresh_rate >= 10:
                 self.animation_timer.setInterval(self.refresh_rate)
@@ -223,10 +225,11 @@ class MainWindow(QtGui.QMainWindow):
     text_edit_width = 80
     text_edit_height = 30
 
-    def __init__(self, simulator, simulator_params):
+    def __init__(self, simulator, simulator_params, output):
         super(MainWindow, self).__init__()
         self.simulator = simulator
         self.simulator_params = simulator_params
+        self.output = output
         self.update_slider = True
         self.currently_simulating = False
         self.console_dict = {}
@@ -236,7 +239,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _init_ui(self):
 
-        self.window_icon = QtGui.QIcon('./simulator/media/iiujrobotics.svg')
+        self.window_icon = QtGui.QIcon(os.path.join(sys.path[0],'media/iiujrobotics.svg'))
         self.setWindowIcon(self.window_icon)
 
         ### Toolbar ###
@@ -395,15 +398,17 @@ class MainWindow(QtGui.QMainWindow):
 
         self.animation_console = QtGui.QTextBrowser()
         self.animation_console.setFont(self.console_font)
-        self.animation_console_dock_widget = QtGui.QDockWidget(
-            '  &Animation output console  ',
-            self
-        )
-        self.animation_console_dock_widget.setWidget(self.animation_console)
-        self.addDockWidget(
-            QtCore.Qt.BottomDockWidgetArea,
-            self.animation_console_dock_widget
-        )
+        # self.animation_console_dock_widget = QtGui.QDockWidget(
+            # '  &Animation output console  ',
+            # self
+        # )
+
+        # # turned off the animation console
+        # self.animation_console_dock_widget.setWidget(self.animation_console)
+        # self.addDockWidget(
+            # QtCore.Qt.BottomDockWidgetArea,
+            # self.animation_console_dock_widget
+        # )
 
         ### Menu ###
         map_menu = QtGui.QMenu('&Map', self)
@@ -416,14 +421,14 @@ class MainWindow(QtGui.QMainWindow):
         self.open_source_action.triggered.connect(self.open_source)
         self.menuBar().addMenu(robot_menu)
 
-        widgets_menu = QtGui.QMenu('&Widgets', self)
-        self.console_action = widgets_menu.addAction(
-            self.console_dock_widget.toggleViewAction()
-        )
-        self.animation_console_action = widgets_menu.addAction(
-            self.animation_console_dock_widget.toggleViewAction()
-        )
-        self.menuBar().addMenu(widgets_menu)
+        # widgets_menu = QtGui.QMenu('&Widgets', self)
+        # self.console_action = widgets_menu.addAction(
+            # self.console_dock_widget.toggleViewAction()
+        # )
+        # self.animation_console_action = widgets_menu.addAction(
+            # self.animation_console_dock_widget.toggleViewAction()
+        # )
+        # self.menuBar().addMenu(widgets_menu)
 
         help_menu = QtGui.QMenu('&Help', self)
         self.about_action = help_menu.addAction(
@@ -595,6 +600,11 @@ class MainWindow(QtGui.QMainWindow):
         for action in self.conflicting_with_sim:
             action.setEnabled(True)
 
+        # show results JSON in the output console
+        results = self.simulator.get_results()
+        if results:
+            self.output_console.append(pprint.pformat(results, indent=1))
+
     def _save_code(self):
         data = self.code_text_edit.toPlainText()
         self._save_to_file(self.code_text_edit.file_name, data)
@@ -697,11 +707,7 @@ class MainWindow(QtGui.QMainWindow):
 class SimulatorGUI(object):
     """GUI master class"""
 
-    simulator = None
-    application_thread = None
-    qt_app = None
-
-    def __init__(self, argv, simulator, simulator_params):
+    def __init__(self, argv, simulator, simulator_params, output=None):
         """ Initialize GUI
 
         @param argv - program arguments values
@@ -712,10 +718,20 @@ class SimulatorGUI(object):
         # TODO(kudkudak): remove simulator_params
         self.simulator_params = simulator_params
         self.qt_app = QtGui.QApplication(argv)
+        self.main_window = None
+        self.output = output
 
     def run(self):
-        main_window = MainWindow(self.simulator, self.simulator_params)
-        main_window.showMaximized()
-        main_window.raise_()
+        self.main_window = MainWindow(self.simulator, self.simulator_params, self.output)
+        self.main_window.showMaximized()
+        self.main_window.raise_()
 
-        sys.exit(self.qt_app.exec_())
+        # periodically give control back to the console, so that closing with CTR-C works
+        timer = QtCore.QTimer()
+        timer.start(500)
+        timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
+
+        self.qt_app.exec_()
+
+    def close(self):
+        self.main_window.close()

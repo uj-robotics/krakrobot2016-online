@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 """
@@ -19,7 +19,8 @@ from robot_controller import compile_robot, construct_cmd_robot
 import sys
 import json
 import pprint
-from os.path import join, dirname
+import os
+import signal
 
 # TODO: pass constants to robot
 
@@ -38,7 +39,7 @@ def create_parser():
         "-m",
         "--map",
         dest="map",
-        default=join(dirname(__file__), "maps/1.map"),
+        default=os.path.join(os.path.dirname(__file__), "maps/1.map"),
         help="Map that will be run after hitting Start Simulation button, "
              "or in command_line mode after running the program"
     )
@@ -54,7 +55,7 @@ def create_parser():
         "-r",
         "--robot",
         dest="robot",
-        default="python2.7 examples/python/template_bot.py",
+        default="python2.7 " + os.path.join(os.path.dirname(__file__), "../examples/python/run.py"),
         help="Robot that will be compiled and run"
     )
     parser.add_option(
@@ -151,8 +152,10 @@ simulator_params = {
                         "gps_delay": 0.,
                     }
 
+sim_gui = None
 
 def main():
+    global sim_gui
     if options.command_line:
         simulator = KrakrobotSimulator(simulation_dt=0.0, **simulator_params)
         print "Running simulator"
@@ -162,14 +165,20 @@ def main():
     else:
         simulator = KrakrobotSimulator(**simulator_params)
         from gui import SimulatorGUI
-        sim_gui = SimulatorGUI(sys.argv, simulator, simulator_params)
+        sim_gui = SimulatorGUI(sys.argv, simulator, simulator_params, options.output)
         sim_gui.run()
+        results = simulator.get_results()
 
-    if options.output:
+    if results and options.output:
         print "Writing results to ", options.output
         with open(options.output, "w") as f:
             f.write(json.dumps(simulator.get_results()))
 
+def close_gracefully(signal, frame):
+    if sim_gui:
+        sim_gui.close()
+    sys.exit(0)
 
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, close_gracefully)
     main()
