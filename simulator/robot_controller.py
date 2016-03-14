@@ -1,6 +1,7 @@
 from misc import *
 import datetime
 import subprocess
+import shlex
 
 class RobotController(object):
     """ You have to implement this class """
@@ -37,7 +38,7 @@ class CmdLineRobotController(RobotController):
         return CmdLineRobotController(self.cmd, self.init_kwargs)
 
     def init(self, **kwargs):
-        self.p = subprocess.Popen(self.cmd.split(), stdout=subprocess.PIPE, \
+        self.p = subprocess.Popen(shlex.split(self.cmd), shell=True, stdout=subprocess.PIPE, \
                                   stdin=subprocess.PIPE)
         assert len(kwargs) == 11, "Expected 11 parameters for constructor"
         for key, value in kwargs.iteritems():
