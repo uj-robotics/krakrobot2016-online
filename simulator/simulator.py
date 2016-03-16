@@ -354,7 +354,12 @@ class KrakrobotSimulator(object):
                 "error_traceback": self.error_traceback or False,
                 "finished": communicated_finished,
                 "beeps": beeps,
-                "map": map_to_save
+                "map": map_to_save,
+                "parameters": {
+                    "distance_noise": self.distance_noise,
+                    "steering_noise": self.steering_noise,
+                    "forward_steering_drift": self.forward_steering_drift
+                }
             }
 
             # calculate points for this year's task
