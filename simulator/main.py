@@ -44,6 +44,14 @@ def create_parser():
              "or in command_line mode after running the program"
     )
     parser.add_option(
+        "-s",
+        "--seed",
+        dest="seed",
+        type="int",
+        default=777,
+        help="Seed used during robot noise generation"
+    )
+    parser.add_option(
         "-o",
         "--output",
         dest="output",
@@ -55,7 +63,7 @@ def create_parser():
         "-r",
         "--robot",
         dest="robot",
-        default="python2.7 " + os.path.join(os.path.dirname(__file__), "../examples/python/run.py"),
+        default="python2.7 " + os.path.join(os.path.dirname(__file__), "../examples/python/template_bot.py"),
         help="Robot that will be compiled and run"
     )
     parser.add_option(
@@ -128,6 +136,7 @@ parser = create_parser()
 (options, args) = parser.parse_args()
 
 simulator_params = {
+                        "seed": options.seed,
                         # Robot parameters
                         "speed": options.speed,
                         "distance_noise": options.distance_noise,

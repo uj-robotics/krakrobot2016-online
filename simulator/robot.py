@@ -13,12 +13,12 @@ class Robot:
     """ The main class representing robot that can sense and move """
 
     def __init__(self, speed, turning_speed, gps_time, sonar_time, tick_move, tick_rotate,
-                 color_sensor_displacement=SQUARE_SIDE/2.0):
+                 color_sensor_displacement=SQUARE_SIDE/2.0, seed=777):
         """
         Initialize robot
         """
         self.speed = speed
-        self.rng = np.random.RandomState(777)
+        self.rng = np.random.RandomState(seed)
         self.tick_move = tick_move
         self.tick_rotate = tick_rotate
         self.color_sensor_displacement = color_sensor_displacement

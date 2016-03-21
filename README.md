@@ -83,6 +83,7 @@ Poniżej znajduje się spis wszystkich opcji dostępnych w symulatorze. Każda z
 * ``-r`` / ``--robot`` - komenda uruchomienia programu z botem, np. `` -r "python3 examples/python3/template_bot.py"``
 
 #### Parametry symulacji (dokładny opis w rozdziale **Bot**):
+* ``-s`` / ``--seed`` - seed, który jest używany podczas generowania szumu
 * ``--steering_noise``
 * ``--distance_noise``
 * ``--forward_steering_drift``
