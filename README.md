@@ -316,13 +316,13 @@ Organizatorzy udostępniają automatyczną testerkę rozwiązań do nadsyłania 
 
 ### Sposób nadsyłania rozwiązań
 
-Testerka będzie dostępna pod adresem <http://krakrobot.matinf.uj.edu.pl>
+Testerka będzie dostępna pod adresem <http://krakrobot.nkr.matinf.uj.edu.pl>
 
 Zasady nadsyłania rozwiązań:
 * logowanie na testerkę odbywa się przy pomocy loginu i hasła, które wszystkie zarejestrowane drużyny otrzymają drogą mailową
 * każda drużyna ma na testerce miejsce na dwa rozwiązania, z limitem objętości 5 MB na jedno. Po nadesłaniu nowego rozwiązania, z bazy danych usuwane jest starsze z dwóch rozwiązań - w każdym momencie przechowywane są w historii najwyżej dwa najnowsze rozwiązania każdej drużyny
 * rozwiązanie powinno być przesyłane w formie wszystkich plików spakowanych do archiwum ``.zip``, pliki powinny znajdować się bezpośrednio w archiwum (nie w dodatkowym folderze)
-* **UWAGA**: ze względu na sposób uruchamiania botów na testerce, wymagane jest, żeby każdy bot w C++ lub Javie zawierał główny plik ``run.sh`` z *shebangiem* ``#!/bin/bash`` w pierwszej linijce lub - dla programów pisanych w Python - plik ``run.py`` z *shebangiem* ``#!/bin/env python2.7`` lub ``#!/bin/env python3`` w pierwszej linijce (w zależności od użytej wersji Pythona) - najlepiej użyć w tym celu gotowych plików run.sh / run.py udostępnionych przez organizatorów w folderach z szablonami botów (w przypadku pliku run.py należy wypełnić szablon bota swoim kodem)
+* **UWAGA**: ze względu na sposób uruchamiania botów na testerce, wymagane jest, żeby każdy bot w C++ lub Javie zawierał główny plik ``run.sh`` z *shebangiem* ``#!/bin/bash`` w pierwszej linijce lub - dla programów pisanych w Python - plik ``run.py`` z *shebangiem* ``#!/usr/bin/env python2.7`` lub ``#!/usr/bin/env python3`` w pierwszej linijce (w zależności od użytej wersji Pythona) - najlepiej użyć w tym celu gotowych plików run.sh / run.py udostępnionych przez organizatorów w folderach z szablonami botów (w przypadku pliku run.py należy wypełnić szablon bota swoim kodem)
 * zainstalowane na testerce wersje języków programowania:
 	* Java SE 8 (polecenia ``javac``, ``java``)
 	* C++11 (kompilacja poleceniem ``g++``)
