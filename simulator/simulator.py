@@ -52,6 +52,7 @@ class KrakrobotSimulator(object):
                  iteration_write_frequency=1000,
                  command_line=True,
                  print_robot=True,
+                 seed=777,
                  print_logger=False,
                  accepted_commands=[TURN, MOVE, BEEP, FINISH, SENSE_COLOR]
                  ):
@@ -91,6 +92,7 @@ class KrakrobotSimulator(object):
                         self.init_position = (i + 0.5, j + 0.5, 0)
 
         self.speed = speed
+        self.seed = seed
         self.turning_speed = turning_speed
         self.simulation_dt = simulation_dt
         self.frame_dt = frame_dt
@@ -170,7 +172,7 @@ class KrakrobotSimulator(object):
         self.reset()
 
         # Initialize robot object
-        robot = Robot(self.speed, self.turning_speed, self.gps_delay, self.sonar_time, TICK_MOVE, TICK_ROTATE)
+        robot = Robot(self.speed, self.turning_speed, self.gps_delay, self.sonar_time, TICK_MOVE, TICK_ROTATE, seed=self.seed)
         robot.set(self.init_position[0], self.init_position[1], self.init_position[2])
         robot.set_noise(new_s_noise=self.steering_noise,
                         new_d_noise=self.distance_noise,
@@ -348,6 +350,7 @@ class KrakrobotSimulator(object):
             map_to_save = dict(self.map)
             del map_to_save['color_bitmap']
             self.results = {
+                "final_position": (robot.x, robot.y),
                 "sim_time": robot.time_elapsed,
                 "cpu_time": robot_controller.time_consumed.total_seconds(),
                 "error": self.error or False,

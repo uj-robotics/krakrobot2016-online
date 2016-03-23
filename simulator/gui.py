@@ -276,6 +276,12 @@ class MainWindow(QtGui.QMainWindow):
         params_toolbar.addWidget(self.steering_noise_edit)
         self.steering_noise_edit.textChanged.connect(self._update_steering_noise)
 
+        seed_label = QtGui.QLabel('seed: ')
+        params_toolbar.addWidget(seed_label)
+        self.seed_edit = QtGui.QLineEdit(str(self.simulator_params['seed']))
+        params_toolbar.addWidget(self.seed_edit)
+        self.seed_edit.textChanged.connect(self._update_seed)
+
         fsteering_noise_label = QtGui.QLabel('forward_steering_drift: ')
         params_toolbar.addWidget(fsteering_noise_label)
         self.fsteering_noise_edit = QtGui.QLineEdit(str(self.simulator_params['forward_steering_drift']))
@@ -663,6 +669,10 @@ class MainWindow(QtGui.QMainWindow):
         self.simulator_params['sonar_noise'] = \
             float(self.sonar_noise_edit.text())
 
+    def _update_seed(self):
+        self.simulator_params['seed'] = \
+            int(self.seed_edit.text())
+
     def _update_distance_noise(self):
         self.simulator_params['distance_noise'] = \
             float(self.distance_noise_edit.text())
@@ -715,7 +725,6 @@ class SimulatorGUI(object):
 
         """
         self.simulator = simulator
-        # TODO(kudkudak): remove simulator_params
         self.simulator_params = simulator_params
         self.qt_app = QtGui.QApplication(argv)
         self.main_window = None
