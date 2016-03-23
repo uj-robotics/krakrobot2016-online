@@ -63,7 +63,7 @@ def create_parser():
         "-r",
         "--robot",
         dest="robot",
-        default="python2.7 " + os.path.join(os.path.dirname(__file__), "../examples/python/template_bot.py"),
+        default="python2.7 " + os.path.join(os.path.dirname(__file__), "../examples/python/run.py"),
         help="Robot that will be compiled and run"
     )
     parser.add_option(
