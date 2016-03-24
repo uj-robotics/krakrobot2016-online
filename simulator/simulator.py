@@ -361,7 +361,8 @@ class KrakrobotSimulator(object):
                 "parameters": {
                     "distance_noise": self.distance_noise,
                     "steering_noise": self.steering_noise,
-                    "forward_steering_drift": self.forward_steering_drift
+                    "forward_steering_drift": self.forward_steering_drift,
+                    "seed": self.seed,
                 }
             }
 
