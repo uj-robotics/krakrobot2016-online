@@ -81,10 +81,10 @@ class Robot:
         """
 
         if (abs(x) > 1): raise ("Illegal move")
-        res = deepcopy(self)
+
 
         distance = np.sign(x) * max(0.0, self.rng.normal(int(abs(x)) * self.tick_move, self.distance_noise))
-
+        res = deepcopy(self)
         res.x += distance * cos(res.orientation)
         res.y += distance * sin(res.orientation)
         res.time_elapsed += abs(distance / self.speed)  # speed is 1.0/time_unit
@@ -103,9 +103,10 @@ class Robot:
         if abs(x) > 1:
             raise RuntimeError("Illegal turn")
 
-        res = deepcopy(self)
+
 
         turn = self.rng.normal(int(x) * self.tick_rotate, self.steering_noise)
+        res = deepcopy(self)
         res.orientation = (res.orientation - turn) % (2 * pi)
         res.time_elapsed += abs(turn / self.turning_speed)  # speed is pi/time_unit
         return res
