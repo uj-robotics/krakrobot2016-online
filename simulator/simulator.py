@@ -235,8 +235,8 @@ class KrakrobotSimulator(object):
                     frame_time_left -= self.frame_dt
 
                 if current_command is not None:
-                    ### Process current command ###
 
+                    ### Process current command ###
                     if current_command[0] == TURN:
                         robot = robot.turn(np.sign(current_command[1]))
                         frame_time_left += TICK_ROTATE / self.turning_speed
@@ -257,10 +257,10 @@ class KrakrobotSimulator(object):
                     else:
                         raise KrakrobotException("The robot hasn't supplied any command")
 
+                    current_command = [current_command[0], current_command[1] - np.sign(current_command[1])]
+
                     if current_command[1] == 0:
                         current_command = None
-                    else:
-                        current_command = [current_command[0], current_command[1] - np.sign(current_command[1])]
 
                 else:
                     ### Get current command ###
